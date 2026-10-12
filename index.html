@@ -59,10 +59,13 @@ header.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;backgroun
 .btn:hover{background:transparent;color:var(--accent);border-color:var(--accent)}
 .btn.ghost{background:transparent;color:var(--fg);border-color:var(--line)}
 .btn.ghost:hover{border-color:var(--fg)}
-.nav .btn{padding:.6em 1em}
+.nav .btn{padding:.6em 1em;white-space:nowrap}
+.nav-ctas{display:flex;gap:8px;align-items:center}
 details.menu{display:none}
 @media (max-width:1180px){
   .links,.nav .btn{display:none}
+  .nav .wrap>.nav-ctas{margin-left:auto}
+  .nav .shop-btn{display:inline-flex;padding:.5em .8em;font-size:.8rem}
   details.menu{display:block}
   details.menu summary{list-style:none;cursor:pointer;font:500 .8rem var(--mono);letter-spacing:.12em;border:1px solid var(--line);padding:.5em .8em}
   details.menu summary::-webkit-details-marker{display:none}
@@ -311,10 +314,9 @@ footer ul a:hover{color:var(--accent)}
       <a href="#command">Command</a>
       <a href="#divisions">Divisions</a>
       <a href="#ops">Operations</a>
-      <a href="#shop" data-shop hidden>Shop</a>
       <a href="#faq">FAQ</a>
     </nav>
-    <a class="btn" href="#join" data-link="join_button">Join the Corps</a>
+    <span class="nav-ctas"><a class="btn ghost shop-btn" href="#shop" data-shop hidden>Shop</a><a class="btn" href="#join" data-link="join_button">Join the Corps</a></span>
     <details class="menu">
       <summary>MENU</summary>
       <nav aria-label="Mobile">
