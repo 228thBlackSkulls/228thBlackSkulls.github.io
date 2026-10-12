@@ -191,18 +191,12 @@ ol.steps{margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);bor
 .reqs{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
 .reqs span{font:500 .78rem var(--mono);letter-spacing:.06em;border:1px solid var(--line);padding:.45em .75em}
 
-/* discord */
-.discord{background:var(--panel)}
-.discord .split{align-items:center}
-.discord-btns{display:flex;flex-wrap:wrap;gap:.6rem}
-.hub{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
-.hub a{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:end;padding:20px;background:var(--bg);text-decoration:none;color:var(--fg);transition:background .2s}
-.hub a .label{grid-column:1/-1}
-.hub a b{font:800 1.35rem/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em}
-.hub a i{font-style:normal;color:var(--accent);font-family:var(--mono);transition:transform .2s}
-.hub a:hover{background:var(--panel)}
-.hub a:hover i{transform:translateX(4px)}
-@media (max-width:520px){.hub{grid-template-columns:1fr}}
+/* recruitment: discord invites */
+.invites{display:grid;grid-template-columns:1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin:0 0 56px}
+.invite{display:grid;grid-template-columns:200px 1fr auto;gap:8px 32px;align-items:center;padding:24px 28px;background:var(--panel)}
+.invite h3{font:800 1.8rem/1.05 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:4px 0 0}
+.invite p{color:var(--soft);margin:0}
+@media (max-width:760px){.invite{grid-template-columns:1fr;gap:10px;padding:22px}.invite .btn{justify-self:start;margin-top:4px}}
 
 /* faq */
 .faq{border-top:1px solid var(--line)}
@@ -573,8 +567,13 @@ html.intro-on,html.intro-on body{overflow:hidden}
     <div class="wrap">
       <div class="head reveal">
         <p class="label"><b>07</b> &nbsp;/&nbsp; Enlistment</p>
-        <h2>Join the Corps</h2>
-        <p style="color:var(--soft)">Members, guests, and allies are all welcome. <span class="tbd">CONFIRM STEPS</span></p>
+        <h2>Recruitment Center</h2>
+        <p style="color:var(--soft)">Members, guests, and allies are all welcome. Pick the game you play, join that Discord, and follow the steps below. <span class="tbd">CONFIRM STEPS</span></p>
+      </div>
+      <div class="invites reveal" aria-label="Discord invites">
+        <div class="invite"><div><span class="label">Main deployment</span><h3>VRChat</h3></div><p>Our home base and where most of the Corps serves today. Events, trainings, and roleplay deployments are all run here.</p><a class="btn" href="https://discord.gg/2bXwURsNsE" target="_blank" rel="noopener" data-link="discord_vrchat">Join the Discord</a></div>
+        <div class="invite"><div><span class="label">Milsim</span><h3>Arma 3</h3></div><p>Where the 228th got its start in milsim. Tactical operations and training for troopers who want boots on the ground in Arma 3.</p><a class="btn ghost" href="https://discord.gg/2kR8MPGF4t" target="_blank" rel="noopener" data-link="discord_arma">Join the Discord</a></div>
+        <div class="invite"><div><span class="label">Community</span><h3>Minecraft</h3></div><p>The off-duty side of the Corps. Build, explore, and hang out with the unit outside of deployments.</p><a class="btn ghost" href="https://discord.gg/aXgfeUm7pV" target="_blank" rel="noopener" data-link="discord_minecraft">Join the Discord</a></div>
       </div>
       <ol class="steps" id="c-steps">
         <li class="reveal"><span class="n">01</span><h3>Join the Discord</h3><p>Say hello, read the rules, and grab the guest role so you can see upcoming events.</p></li>
@@ -587,29 +586,11 @@ html.intro-on,html.intro-on body{overflow:hidden}
     </div>
   </section>
 
-  <section class="block discord" id="discord">
-    <div class="wrap split">
-      <div class="head reveal" style="margin-bottom:0">
-        <p class="label"><b>08</b> &nbsp;/&nbsp; Comms</p>
-        <h2>Everything starts here</h2>
-        <p style="color:var(--soft)">This site is the 228th's information hub: who we are, how we're organized, when we deploy, and how to join. Day-to-day conversation and event pings happen on our Discord servers, one for each game we play.</p>
-        <div class="cta discord-btns"><a class="btn" href="https://discord.gg/2bXwURsNsE" target="_blank" rel="noopener" data-link="discord_vrchat">VRChat Discord</a> <a class="btn ghost" href="https://discord.gg/2kR8MPGF4t" target="_blank" rel="noopener" data-link="discord_arma">Arma 3 Discord</a> <a class="btn ghost" href="https://discord.gg/aXgfeUm7pV" target="_blank" rel="noopener" data-link="discord_minecraft">Minecraft Discord</a></div>
-      </div>
-      <nav class="hub reveal" aria-label="Quick links">
-        <a href="#command"><span class="label">Command</span><b>Leadership</b><i>→</i></a>
-        <a href="#divisions"><span class="label">Structure</span><b>MOS's &amp; qualifications</b><i>→</i></a>
-        <a href="#ops"><span class="label">Schedule</span><b>Operations &amp; training</b><i>→</i></a>
-        <a href="#join"><span class="label">Enlistment</span><b>How to join</b><i>→</i></a>
-        <a href="#faq"><span class="label">Regulations</span><b>FAQ &amp; rules</b><i>→</i></a>
-        <a href="#shop" data-shop hidden><span class="label">Quartermaster</span><b>Shop</b><i>→</i></a>
-      </nav>
-    </div>
-  </section>
 
   <section class="block" id="shop" data-shop hidden>
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>09</b> &nbsp;/&nbsp; Quartermaster</p>
+        <p class="label"><b>08</b> &nbsp;/&nbsp; Quartermaster</p>
         <h2 id="shop-title">Gear up</h2>
         <p style="color:var(--soft)" id="shop-intro">Official 228th merch, printed to order and shipped by our store partner.</p>
       </div>
@@ -620,7 +601,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
 
   <section class="block" id="faq" style="border-bottom:0">
     <div class="wrap split">
-      <div class="head reveal"><p class="label"><b>10</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
+      <div class="head reveal"><p class="label"><b>09</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
       <div class="faq" id="c-faq">
         <details><summary>Do I need a VR headset?</summary><p>No. VRChat runs on desktop too, so you can take part with a keyboard and mouse.</p></details>
         <details><summary>Do I need to know Star Wars lore?</summary><p>No. You'll pick it up as you go, and plenty of members are happy to explain the 228th's own lore.</p></details>
@@ -637,7 +618,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
       <div><a class="brand" href="#top">228TH BLACK SKULLS CORPS</a><p class="motto" id="c-motto">A place you can call home.</p></div>
       <div><span class="label">The Corps</span><ul><li><a href="#about">About</a></li><li><a href="#history">History</a></li><li><a href="#command">Command</a></li></ul></div>
       <div><span class="label">Serve</span><ul><li><a href="#divisions">Divisions</a></li><li><a href="#ops">Operations</a></li><li><a href="#faq">FAQ</a></li></ul></div>
-      <div><span class="label">Enlist</span><ul><li><a href="#join">Join the Corps</a></li><li><a href="#discord">Discord</a></li><li data-shop hidden><a href="#shop">Shop</a></li></ul></div>
+      <div><span class="label">Enlist</span><ul><li><a href="#join">Recruitment Center</a></li><li data-shop hidden><a href="#shop">Shop</a></li></ul></div>
     </div>
     <div class="legal label"><span>© 2010–2026 228th Black Skulls Corps</span><span>Fan community. Star Wars is a trademark of Lucasfilm Ltd.</span></div>
   </div>
