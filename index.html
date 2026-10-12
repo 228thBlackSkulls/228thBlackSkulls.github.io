@@ -296,9 +296,43 @@ footer ul a:hover{color:var(--accent)}
 @keyframes heroOut{to{opacity:.15;transform:translateY(-70px) scale(.94)}}
 @keyframes gridDrift{to{transform:translateY(120px) scale(1.15)}}
 @keyframes spinIn{from{transform:rotate(-25deg) scale(.6);opacity:.2}}
+
+/* opening intro: plays once per visit, skippable, never for reduced motion */
+#intro{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;transition:opacity .9s ease}
+#intro::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(150,10,18,.55),rgba(60,0,4,.25) 45%,transparent 75%);opacity:0;animation:introGlow 5s 3.5s ease-in forwards}
+@keyframes introGlow{to{opacity:1}}
+#intro .disc{--s:min(80vw,62vh,460px);width:var(--s);height:var(--s);position:relative;-webkit-mask:radial-gradient(closest-side,#000 95%,transparent 100%);mask:radial-gradient(closest-side,#000 95%,transparent 100%)}
+#intro video{width:100%;height:100%;object-fit:cover;display:block}
+#intro button{position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));background:none;border:1px solid #333;color:#aaa;font:500 .75rem 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;padding:.6em 1em;cursor:pointer}
+#intro button:hover{color:#fff;border-color:#777}
+#intro.out{opacity:0;pointer-events:none}
+html.intro-on,html.intro-on body{overflow:hidden}
 </style>
 </head>
 <body>
+
+<div id="intro" aria-hidden="true" hidden>
+  <div class="disc"><video id="intro-video" muted playsinline preload="auto"><source src="intro.mp4" type="video/mp4"><source id="intro-last" src="intro.webm" type="video/webm"></video></div>
+  <button type="button" id="intro-skip">Skip</button>
+</div>
+<script>
+(function(){
+  // Opening animation: once per visit, not in the edit page preview, not for reduced-motion viewers.
+  var box=document.getElementById('intro'), v=document.getElementById('intro-video'), seen=false;
+  try{seen=sessionStorage.getItem('228th-intro')==='1';}catch(e){}
+  if(seen||/[?&]preview\b/.test(location.search)||matchMedia('(prefers-reduced-motion: reduce)').matches){box.remove();return;}
+  var root=document.documentElement, done=false;
+  box.hidden=false; root.classList.add('intro-on');
+  function end(){ if(done)return; done=true; try{sessionStorage.setItem('228th-intro','1');}catch(e){} box.classList.add('out'); root.classList.remove('intro-on'); setTimeout(function(){box.remove();},1000); }
+  document.getElementById('intro-skip').onclick=end;
+  v.addEventListener('ended',end); document.getElementById('intro-last').addEventListener('error',end);
+  v.addEventListener('timeupdate',function(){ if(v.duration&&v.currentTime>v.duration-0.6)end(); });
+  // Low Power Mode and some browsers block autoplay; don't leave people staring at black.
+  var p=v.play(); if(p&&p.catch)p.catch(end);
+  setTimeout(function(){ if(!done&&(v.paused||v.currentTime<0.1))end(); },2500);
+  setTimeout(end,14000);
+})();
+</script>
 
 <div class="ticker" aria-hidden="true"><span>228TH BLACK SKULLS CORPS &nbsp;//&nbsp; <em>EST. 28 FEB 2010</em> &nbsp;//&nbsp; COMMUNITY FIRST &nbsp;//&nbsp; PEOPLE MATTER MORE THAN PIXELS &nbsp;//&nbsp; NOW OPERATING ON VRCHAT &nbsp;//&nbsp; <em>A PLACE YOU CAN CALL HOME</em> &nbsp;//&nbsp; 228TH BLACK SKULLS CORPS &nbsp;//&nbsp; EST. 28 FEB 2010 &nbsp;//&nbsp; COMMUNITY FIRST</span></div>
 
