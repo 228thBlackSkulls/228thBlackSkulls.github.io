@@ -3,7 +3,7 @@
 # and GitHub Pages republishes the site about a minute later.
 backend:
   name: github
-  repo: Flanker228th/228th-Black-Skulls-Corps-Website
+  repo: 228thBlackSkulls/228thBlackSkulls.github.io
   branch: main
 
 media_folder: images
