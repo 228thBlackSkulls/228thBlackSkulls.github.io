@@ -149,6 +149,15 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 .divs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .div{border:1px solid var(--line);padding:22px;display:grid;gap:10px;align-content:start}
 .div p{color:var(--soft);font-size:.98rem}
+.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:28px}
+.product{border:1px solid var(--line);display:grid;grid-template-rows:auto 1fr;text-decoration:none;color:inherit;transition:border-color .2s}
+.product:hover{border-color:var(--accent)}
+.product .pic{aspect-ratio:1;background:var(--panel) center/cover no-repeat;border-bottom:1px solid var(--line)}
+.product .pic.empty{background:var(--panel) url("logo.png") center/55% no-repeat;opacity:.5}
+.product .meta{padding:16px 18px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.product h3{font-size:1.05rem}
+.product .price{font:500 .85rem var(--mono);color:var(--accent);white-space:nowrap}
+[hidden]{display:none!important}
 
 /* ops */
 .ops{display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
@@ -302,13 +311,14 @@ footer ul a:hover{color:var(--accent)}
       <a href="#command">Command</a>
       <a href="#divisions">Divisions</a>
       <a href="#ops">Operations</a>
+      <a href="#shop" data-shop hidden>Shop</a>
       <a href="#faq">FAQ</a>
     </nav>
     <a class="btn" href="#join" data-link="join_button">Join the Corps</a>
     <details class="menu">
       <summary>MENU</summary>
       <nav aria-label="Mobile">
-        <a href="#about">About</a><a href="#history">History</a><a href="#command">Command</a><a href="#divisions">Divisions</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#faq">FAQ</a>
+        <a href="#about">About</a><a href="#history">History</a><a href="#command">Command</a><a href="#divisions">Divisions</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
       </nav>
     </details>
   </div>
@@ -544,9 +554,21 @@ footer ul a:hover{color:var(--accent)}
     </div>
   </section>
 
+  <section class="block" id="shop" data-shop hidden>
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="label"><b>08</b> &nbsp;/&nbsp; Quartermaster</p>
+        <h2 id="shop-title">Gear up</h2>
+        <p style="color:var(--soft)" id="shop-intro">Official 228th merch, printed to order and shipped by our store partner.</p>
+      </div>
+      <div class="products" id="c-products"></div>
+      <a class="btn" id="shop-btn" href="#" target="_blank" rel="noopener">Visit the store</a>
+    </div>
+  </section>
+
   <section class="block" id="faq" style="border-bottom:0">
     <div class="wrap split">
-      <div class="head reveal"><p class="label"><b>08</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
+      <div class="head reveal"><p class="label"><b>09</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
       <div class="faq" id="c-faq">
         <details><summary>Do I need a VR headset?</summary><p>No. VRChat runs on desktop too, so you can take part with a keyboard and mouse.</p></details>
         <details><summary>Do I need to know Star Wars lore?</summary><p>No. You'll pick it up as you go, and plenty of members are happy to explain the 228th's own lore.</p></details>
@@ -563,7 +585,7 @@ footer ul a:hover{color:var(--accent)}
       <div><a class="brand" href="#top">228TH BLACK SKULLS CORPS</a><p class="motto" id="c-motto">A place you can call home.</p></div>
       <div><span class="label">The Corps</span><ul><li><a href="#about">About</a></li><li><a href="#history">History</a></li><li><a href="#command">Command</a></li></ul></div>
       <div><span class="label">Serve</span><ul><li><a href="#divisions">Divisions</a></li><li><a href="#ops">Operations</a></li><li><a href="#faq">FAQ</a></li></ul></div>
-      <div><span class="label">Enlist</span><ul><li><a href="#join">Join the Corps</a></li><li><a href="#discord">Discord</a></li></ul></div>
+      <div><span class="label">Enlist</span><ul><li><a href="#join">Join the Corps</a></li><li><a href="#discord">Discord</a></li><li data-shop hidden><a href="#shop">Shop</a></li></ul></div>
     </div>
     <div class="legal label"><span>© 2010–2026 228th Black Skulls Corps</span><span>Fan community. Star Wars is a trademark of Lucasfilm Ltd.</span></div>
   </div>
@@ -622,15 +644,26 @@ footer ul a:hover{color:var(--accent)}
     list('c-schedule',c.schedule,function(x){var d=el('div');d.appendChild(el('span','day',x.day));var t=el('span',null,x.title);t.appendChild(el('small',null,x.details));d.appendChild(t);d.appendChild(el('span','time',x.time));return d;});
     list('c-steps',c.join_steps,function(x,i){var li=el('li','reveal');li.appendChild(el('span','n',pad(i+1)));li.appendChild(el('h3',null,x.title));li.appendChild(el('p',null,x.text));return li;});
     list('c-reqs',c.requirements,function(x){return el('span',null,x);});
+    var sh=c.shop||{}, on=!!sh.show;
+    [].forEach.call(document.querySelectorAll('[data-shop]'),function(e){e.hidden=!on;});
+    text('shop-title',sh.heading); text('shop-intro',sh.intro);
+    var sb=document.getElementById('shop-btn'); if(sb){sb.href=sh.store_url||'#';sb.hidden=!sh.store_url;}
+    var pr=document.getElementById('c-products'); if(pr){pr.textContent='';(Array.isArray(sh.products)?sh.products:[]).forEach(function(x){
+      var a=el('a','product reveal'); a.href=x.link||sh.store_url||'#'; a.target='_blank'; a.rel='noopener';
+      var pic=el('div','pic'+(x.image?'':' empty')); if(x.image)pic.style.backgroundImage='url("'+String(x.image).replace(/"/g,'%22')+'")'; a.appendChild(pic);
+      var m=el('div','meta'); m.appendChild(el('h3',null,x.name)); if(x.price)m.appendChild(el('span','price',x.price)); a.appendChild(m); pr.appendChild(a);});}
     list('c-faq',c.faq,function(x){var d=el('details');d.appendChild(el('summary',null,x.question));d.appendChild(el('p',null,x.answer));return d;});
   }
   // Edit page live preview: admin/ shows this page in a frame and sends unsaved content here.
   var preview=/[?&]preview\b/.test(location.search);
   if(preview){
+    // A hidden section (like the Shop before it's switched on) is scrolled to once it appears.
+    var waiting=null;
+    function go(id){var t=document.getElementById(id);if(!t||t.closest('[hidden]')){waiting=id;return;}waiting=null;window.scrollTo(0,t.getBoundingClientRect().top+scrollY-60);}
     window.addEventListener('message',function(e){
       if(e.origin!==location.origin||!e.data)return;
-      if(e.data.type==='228th-content'&&e.data.content)applyContent(e.data.content);
-      if(e.data.type==='228th-goto'){var t=document.getElementById(e.data.id);if(t)window.scrollTo(0,t.getBoundingClientRect().top+scrollY-60);}
+      if(e.data.type==='228th-content'&&e.data.content){applyContent(e.data.content);if(waiting)go(waiting);}
+      if(e.data.type==='228th-goto')go(e.data.id);
     });
     try{parent.postMessage({type:'228th-ready'},location.origin);}catch(e){}
   }

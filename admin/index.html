@@ -176,6 +176,16 @@ textarea{resize:vertical;min-height:70px}
       {key:'title', label:'Title', type:'text'},
       {key:'text', label:'Text', type:'textarea'}]}},
     {key:'requirements', title:'Requirements', goto:'c-reqs', list:{label:'Requirement', string:true}},
+    {key:'shop', title:'Shop', goto:'shop', hint:'Your Fourthwall store. Turn the section on once the store is live; products link to their store pages.', fields:[
+      {key:'show', label:'Show the Shop section on the site', type:'checkbox'},
+      {key:'store_url', label:'Store link', type:'url', placeholder:'https://your-store.fourthwall.com'},
+      {key:'heading', label:'Heading', type:'text'},
+      {key:'intro', label:'Intro', type:'textarea'}],
+     list:{key:'products', label:'Product', title:'name', fields:[
+      {key:'name', label:'Product name', type:'text'},
+      {key:'price', label:'Price shown', type:'text', placeholder:'$25'},
+      {key:'image', label:'Photo', type:'image'},
+      {key:'link', label:'Product link (from your store)', type:'url', placeholder:'https://…'}]}},
     {key:'faq', title:'FAQ', goto:'faq', list:{label:'Question', title:'question', fields:[
       {key:'question', label:'Question', type:'text'},
       {key:'answer', label:'Answer', type:'textarea'}]}},
@@ -233,6 +243,11 @@ textarea{resize:vertical;min-height:70px}
     if(f.type==='image') return imageInput(f, get, set, w);
     var v = get(); if(v==null) v='';
     var inp;
+    if(f.type==='checkbox'){
+      w.textContent=''; inp=el('input',{id:id,type:'checkbox',style:'width:20px;height:20px;accent-color:#b3141b;flex:none'}); inp.checked=!!v;
+      inp.addEventListener('change',function(){ set(inp.checked); changed(); });
+      w.style.cssText='display:flex;gap:10px;align-items:center'; w.appendChild(inp); w.appendChild(el('label',{for:id,text:f.label})); return w;
+    }
     if(f.type==='textarea'){ inp=el('textarea',{id:id}); inp.value=v; }
     else if(f.type==='select'){
       inp=el('select',{id:id}); f.options.forEach(function(o){inp.appendChild(el('option',{value:o,text:o}));});
@@ -276,7 +291,7 @@ textarea{resize:vertical;min-height:70px}
     ed.textContent = '';
     SCHEMA.forEach(function(sec){
       var d = el('details',{class:'sec'}); d.dataset.key = sec.key; if(sec.key===openKey) d.open = true;
-      var count = Array.isArray(data[sec.key]) ? data[sec.key].length : null;
+      var count = sec.list ? (listOf(sec)||[]).length : null;
       d.appendChild(el('summary',null,[document.createTextNode(sec.title), count!=null?el('small',{text:'('+count+')'}):null]));
       var body = el('div',{class:'body'});
       if(sec.hint) body.appendChild(el('p',{class:'hint',text:sec.hint}));
@@ -285,7 +300,9 @@ textarea{resize:vertical;min-height:70px}
         sec.fields.forEach(function(f){ body.appendChild(input(f, function(){return data[sec.key][f.key];}, function(v){data[sec.key][f.key]=v;})); });
       } else if(sec.single){
         body.appendChild(input(sec.single, function(){return data[sec.key];}, function(v){data[sec.key]=v;}));
-      } else if(sec.list){
+      }
+      if(sec.list){
+        if(sec.list.key) body.appendChild(el('p',{class:'label',text:sec.list.label+'s',style:'margin:18px 0 8px'}));
         body.appendChild(listEditor(sec));
       }
       d.appendChild(body);
@@ -295,10 +312,13 @@ textarea{resize:vertical;min-height:70px}
     ed.scrollTop = top;
   }
 
+  // A section's list lives at data[key], or at data[key][list.key] when the section also has its own fields.
+  function listOf(sec){ var o = sec.list.key ? (data[sec.key]||{}) : data; var k = sec.list.key || sec.key; return o[k]; }
   function listEditor(sec){
     var L = sec.list, box = el('div');
-    if(!Array.isArray(data[sec.key])) data[sec.key] = [];
-    var arr = data[sec.key];
+    var owner = L.key ? data[sec.key] : data, lk = L.key || sec.key;
+    if(!Array.isArray(owner[lk])) owner[lk] = [];
+    var arr = owner[lk];
     function move(i, by){ var j=i+by; if(j<0||j>=arr.length)return; var t=arr[i]; arr[i]=arr[j]; arr[j]=t; render(); changed(); }
     arr.forEach(function(item, i){
       var tools = [
@@ -330,9 +350,8 @@ textarea{resize:vertical;min-height:70px}
   // ---------- live preview ----------
   var frame = $('frame'), pending;
   function previewData(){
-    var c = JSON.parse(JSON.stringify(data));
-    (c.leadership||[]).forEach(function(x){ if(x.portrait && uploads[x.portrait]) x.portrait = uploads[x.portrait]; });
-    return c;
+    // Photos not yet published only exist in this browser, so swap their paths for the local copies.
+    return JSON.parse(JSON.stringify(data), function(k, v){ return typeof v==='string' && uploads[v] ? uploads[v] : v; });
   }
   function post(msg){ try{ frame.contentWindow.postMessage(msg, location.origin); }catch(e){} }
   function sendPreview(){ if(frameReady && data) post({type:'228th-content', content:previewData()}); }
