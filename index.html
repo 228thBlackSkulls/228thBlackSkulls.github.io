@@ -194,6 +194,7 @@ ol.steps{margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);bor
 /* discord */
 .discord{background:var(--panel)}
 .discord .split{align-items:center}
+.discord-btns{display:flex;flex-wrap:wrap;gap:.6rem}
 .hub{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
 .hub a{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:end;padding:20px;background:var(--bg);text-decoration:none;color:var(--fg);transition:background .2s}
 .hub a .label{grid-column:1/-1}
@@ -591,8 +592,8 @@ html.intro-on,html.intro-on body{overflow:hidden}
       <div class="head reveal" style="margin-bottom:0">
         <p class="label"><b>08</b> &nbsp;/&nbsp; Comms</p>
         <h2>Everything starts here</h2>
-        <p style="color:var(--soft)">This site is the 228th's information hub: who we are, how we're organized, when we deploy, and how to join. Day-to-day conversation and event pings happen on our Discord.</p>
-        <div class="cta"><a class="btn" href="https://discord.com" target="_blank" rel="noopener" data-link="discord_invite">Join the Discord</a> <span class="tbd" id="discord-chip">ADD INVITE LINK</span></div>
+        <p style="color:var(--soft)">This site is the 228th's information hub: who we are, how we're organized, when we deploy, and how to join. Day-to-day conversation and event pings happen on our Discord servers, one for each game we play.</p>
+        <div class="cta discord-btns"><a class="btn" href="https://discord.gg/2bXwURsNsE" target="_blank" rel="noopener" data-link="discord_vrchat">VRChat Discord</a> <a class="btn ghost" href="https://discord.gg/2kR8MPGF4t" target="_blank" rel="noopener" data-link="discord_arma">Arma 3 Discord</a> <a class="btn ghost" href="https://discord.gg/aXgfeUm7pV" target="_blank" rel="noopener" data-link="discord_minecraft">Minecraft Discord</a></div>
       </div>
       <nav class="hub reveal" aria-label="Quick links">
         <a href="#command"><span class="label">Command</span><b>Leadership</b><i>→</i></a>
@@ -677,7 +678,6 @@ html.intro-on,html.intro-on body{overflow:hidden}
   function applyContent(c){
     var L=c.links||{};
     [].forEach.call(document.querySelectorAll('[data-link]'),function(a){var v=L[a.dataset.link];if(v){a.href=v;if(/^https?:/.test(v)){a.target='_blank';a.rel='noopener';}}});
-    if(L.discord_invite&&!/^https?:\/\/(www\.)?discord\.com\/?$/.test(L.discord_invite)){var chip=document.getElementById('discord-chip');if(chip)chip.remove();}
     var h=c.hero||{}; text('c-tagline',h.tagline); text('c-intro',h.intro); text('c-motto',c.motto);
     list('c-stats',c.stats,function(x){var d=el('div','stat');d.appendChild(el('strong',null,x.value));d.appendChild(el('span','label',x.label));return d;});
     list('c-leaders',c.leadership,function(x,i){
