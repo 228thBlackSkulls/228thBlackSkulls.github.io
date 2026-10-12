@@ -520,10 +520,23 @@ html.intro-on,html.intro-on body{overflow:hidden}
     </div>
   </section>
 
+  <section class="block" id="quals">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="label"><b>05</b> &nbsp;/&nbsp; Qualifications</p>
+        <h2>228th Qualifications</h2>
+        <p style="color:var(--soft)" id="quals-intro">Certifications troopers can earn on top of their MOS.</p>
+      </div>
+      <div class="divs" id="c-quals">
+        <article class="div reveal"><span class="label">Qualification</span><h3>Coming soon</h3><p>Add qualifications from the edit page.</p></article>
+      </div>
+    </div>
+  </section>
+
   <section class="block" id="ops">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>05</b> &nbsp;/&nbsp; Operations</p>
+        <p class="label"><b>06</b> &nbsp;/&nbsp; Operations</p>
         <h2>Deployment schedule</h2>
         <p style="color:var(--soft)">All times in Zulu (UTC). The countdown shows your local time. <span class="tbd">CONFIRM DAYS + TIMES</span></p>
       </div>
@@ -554,7 +567,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="join">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>06</b> &nbsp;/&nbsp; Enlistment</p>
+        <p class="label"><b>07</b> &nbsp;/&nbsp; Enlistment</p>
         <h2>Join the Corps</h2>
         <p style="color:var(--soft)">Members, guests, and allies are all welcome. <span class="tbd">CONFIRM STEPS</span></p>
       </div>
@@ -572,7 +585,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block discord" id="discord">
     <div class="wrap split">
       <div class="head reveal" style="margin-bottom:0">
-        <p class="label"><b>07</b> &nbsp;/&nbsp; Comms</p>
+        <p class="label"><b>08</b> &nbsp;/&nbsp; Comms</p>
         <h2>The Discord is home base</h2>
         <p style="color:var(--soft)">Operation announcements, lore, training sign-ups, and everyday conversation all happen here.</p>
         <div class="cta"><a class="btn" href="https://discord.com" target="_blank" rel="noopener" data-link="discord_invite">Join the Discord</a> <span class="tbd" id="discord-chip">ADD INVITE LINK</span></div>
@@ -596,7 +609,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="shop" data-shop hidden>
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>08</b> &nbsp;/&nbsp; Quartermaster</p>
+        <p class="label"><b>09</b> &nbsp;/&nbsp; Quartermaster</p>
         <h2 id="shop-title">Gear up</h2>
         <p style="color:var(--soft)" id="shop-intro">Official 228th merch, printed to order and shipped by our store partner.</p>
       </div>
@@ -607,7 +620,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
 
   <section class="block" id="faq" style="border-bottom:0">
     <div class="wrap split">
-      <div class="head reveal"><p class="label"><b>09</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
+      <div class="head reveal"><p class="label"><b>10</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
       <div class="faq" id="c-faq">
         <details><summary>Do I need a VR headset?</summary><p>No. VRChat runs on desktop too, so you can take part with a keyboard and mouse.</p></details>
         <details><summary>Do I need to know Star Wars lore?</summary><p>No. You'll pick it up as you go, and plenty of members are happy to explain the 228th's own lore.</p></details>
@@ -676,6 +689,8 @@ html.intro-on,html.intro-on body{overflow:hidden}
       a.appendChild(pl);a.appendChild(inf);return a;});
     list('c-founders',c.founders,function(x){var li=el('li',null,x.name);li.appendChild(el('span',null,x.role));return li;});
     list('c-divisions',c.divisions,function(x){var a=el('article','div reveal');a.appendChild(el('span','label','Division'));a.appendChild(el('h3',null,x.name));a.appendChild(el('p',null,x.description));return a;});
+    text('quals-intro',c.qualifications_intro);
+    list('c-quals',c.qualifications,function(x){var a=el('article','div reveal');a.appendChild(el('span','label','Qualification'));a.appendChild(el('h3',null,x.name));a.appendChild(el('p',null,x.description));return a;});
     var n=c.next_op||{};
     if(n.day&&DAYS.indexOf(String(n.day).toLowerCase())>=0){op.day=DAYS.indexOf(String(n.day).toLowerCase());op.label=n.day.charAt(0).toUpperCase()+n.day.slice(1).toLowerCase();}
     var tm=/^(\d{1,2}):?(\d{2})/.exec(n.time_utc||''); if(tm){op.h=+tm[1];op.m=+tm[2];}
