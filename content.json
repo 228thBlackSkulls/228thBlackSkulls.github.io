@@ -127,8 +127,8 @@
     "Minimum age: TBD"
   ],
   "shop": {
-    "show": false,
-    "store_url": "",
+    "show": true,
+    "store_url": "https://228thblackskulls.printful.me/",
     "heading": "Gear up",
     "intro": "Official 228th merch, printed to order and shipped by our store partner.",
     "products": []
