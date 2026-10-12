@@ -31,21 +31,21 @@
       "designation": "CC-5733",
       "name": "Flanker",
       "division": "Echelon",
-      "portrait": ""
+      "portrait": "images/portrait-flanker.jpg"
     },
     {
       "rank": "Senior Commander",
       "designation": "CC-5864",
       "name": "Terminator",
       "division": "Commando",
-      "portrait": ""
+      "portrait": "images/portrait-terminator.jpg"
     },
     {
       "rank": "Senior Commander",
       "designation": "CC-6995",
       "name": "Phoenix",
       "division": "",
-      "portrait": ""
+      "portrait": "images/portrait-phoenix.jpg"
     }
   ],
   "founders": [
