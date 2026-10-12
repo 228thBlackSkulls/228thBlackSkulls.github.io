@@ -624,7 +624,17 @@ footer ul a:hover{color:var(--accent)}
     list('c-reqs',c.requirements,function(x){return el('span',null,x);});
     list('c-faq',c.faq,function(x){var d=el('details');d.appendChild(el('summary',null,x.question));d.appendChild(el('p',null,x.answer));return d;});
   }
-  try{fetch('content.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(c){if(c)applyContent(c);}).catch(function(){});}catch(e){}
+  // Edit page live preview: admin/ shows this page in a frame and sends unsaved content here.
+  var preview=/[?&]preview\b/.test(location.search);
+  if(preview){
+    window.addEventListener('message',function(e){
+      if(e.origin!==location.origin||!e.data)return;
+      if(e.data.type==='228th-content'&&e.data.content)applyContent(e.data.content);
+      if(e.data.type==='228th-goto'){var t=document.getElementById(e.data.id);if(t)window.scrollTo(0,t.getBoundingClientRect().top+scrollY-60);}
+    });
+    try{parent.postMessage({type:'228th-ready'},location.origin);}catch(e){}
+  }
+  if(!preview)try{fetch('content.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(c){if(c)applyContent(c);}).catch(function(){});}catch(e){}
 
   tick(); setInterval(tick,1000);
   // Scroll motion: skipped entirely for reduced-motion viewers
