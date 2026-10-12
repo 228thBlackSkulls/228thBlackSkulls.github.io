@@ -194,10 +194,14 @@ ol.steps{margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);bor
 /* discord */
 .discord{background:var(--panel)}
 .discord .split{align-items:center}
-.channels{font:400 .95rem/1.9 var(--mono);color:var(--soft);border:1px solid var(--line);padding:18px 20px;background:var(--bg)}
-.channels .cat{color:var(--muted);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;margin-top:8px}
-.channels .cat:first-child{margin-top:0}
-.channels span{color:var(--accent)}
+.hub{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+.hub a{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:end;padding:20px;background:var(--bg);text-decoration:none;color:var(--fg);transition:background .2s}
+.hub a .label{grid-column:1/-1}
+.hub a b{font:800 1.35rem/1.1 var(--display);text-transform:uppercase;letter-spacing:.02em}
+.hub a i{font-style:normal;color:var(--accent);font-family:var(--mono);transition:transform .2s}
+.hub a:hover{background:var(--panel)}
+.hub a:hover i{transform:translateX(4px)}
+@media (max-width:520px){.hub{grid-template-columns:1fr}}
 
 /* faq */
 .faq{border-top:1px solid var(--line)}
@@ -586,23 +590,18 @@ html.intro-on,html.intro-on body{overflow:hidden}
     <div class="wrap split">
       <div class="head reveal" style="margin-bottom:0">
         <p class="label"><b>08</b> &nbsp;/&nbsp; Comms</p>
-        <h2>The Discord is home base</h2>
-        <p style="color:var(--soft)">Operation announcements, lore, training sign-ups, and everyday conversation all happen here.</p>
+        <h2>Everything starts here</h2>
+        <p style="color:var(--soft)">This site is the 228th's information hub: who we are, how we're organized, when we deploy, and how to join. Day-to-day conversation and event pings happen on our Discord.</p>
         <div class="cta"><a class="btn" href="https://discord.com" target="_blank" rel="noopener" data-link="discord_invite">Join the Discord</a> <span class="tbd" id="discord-chip">ADD INVITE LINK</span></div>
       </div>
-      <div class="channels reveal" aria-label="Example Discord channels">
-        <div class="cat">Information</div>
-        <div><span>#</span> announcements</div>
-        <div><span>#</span> rules</div>
-        <div><span>#</span> lore-archive</div>
-        <div class="cat">Recruitment</div>
-        <div><span>#</span> enlist-here</div>
-        <div><span>#</span> guest-lounge</div>
-        <div class="cat">Corps</div>
-        <div><span>#</span> operations</div>
-        <div><span>#</span> division-chat</div>
-        <div><span>#</span> screenshots</div>
-      </div>
+      <nav class="hub reveal" aria-label="Quick links">
+        <a href="#command"><span class="label">Command</span><b>Leadership</b><i>→</i></a>
+        <a href="#divisions"><span class="label">Structure</span><b>MOS's &amp; qualifications</b><i>→</i></a>
+        <a href="#ops"><span class="label">Schedule</span><b>Operations &amp; training</b><i>→</i></a>
+        <a href="#join"><span class="label">Enlistment</span><b>How to join</b><i>→</i></a>
+        <a href="#faq"><span class="label">Regulations</span><b>FAQ &amp; rules</b><i>→</i></a>
+        <a href="#shop" data-shop hidden><span class="label">Quartermaster</span><b>Shop</b><i>→</i></a>
+      </nav>
     </div>
   </section>
 
