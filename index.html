@@ -299,7 +299,7 @@ footer ul a:hover{color:var(--accent)}
 
 /* opening intro: plays once per visit, skippable, never for reduced motion */
 #intro{position:fixed;inset:0;z-index:100;background:#000;display:grid;place-items:center;transition:opacity .9s ease}
-#intro::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(150,10,18,.55),rgba(60,0,4,.25) 45%,transparent 75%);opacity:0;animation:introGlow 5s 3.5s ease-in forwards}
+#intro::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(150,10,18,.55),rgba(60,0,4,.25) 45%,transparent 75%);opacity:0;animation:introGlow 3.2s 2.2s ease-in forwards}
 @keyframes introGlow{to{opacity:1}}
 #intro .disc{--s:min(80vw,62vh,460px);width:var(--s);height:var(--s);position:relative;-webkit-mask:radial-gradient(closest-side,#000 95%,transparent 100%);mask:radial-gradient(closest-side,#000 95%,transparent 100%)}
 #intro video{width:100%;height:100%;object-fit:cover;display:block}
@@ -330,7 +330,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   // Low Power Mode and some browsers block autoplay; don't leave people staring at black.
   var p=v.play(); if(p&&p.catch)p.catch(end);
   setTimeout(function(){ if(!done&&(v.paused||v.currentTime<0.1))end(); },2500);
-  setTimeout(end,14000);
+  setTimeout(end,9000);
 })();
 </script>
 
