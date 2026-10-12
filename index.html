@@ -511,10 +511,10 @@ html.intro-on,html.intro-on body{overflow:hidden}
         <p style="color:var(--soft)">The 228th runs multiple divisions, each with its own role and armor. <span class="tbd">CONFIRM DIVISIONS + DESCRIPTIONS</span></p>
       </div>
       <div class="divs" id="c-divisions">
-        <article class="div reveal"><span class="label">Division</span><h3>Commando</h3><p>Description coming soon.</p></article>
-        <article class="div reveal"><span class="label">Division</span><h3>ARF</h3><p>Advanced Recon Force. Description coming soon.</p></article>
-        <article class="div reveal"><span class="label">Division</span><h3>Echelon</h3><p>Description coming soon.</p></article>
-        <article class="div reveal"><span class="label">Division</span><h3>Line troopers</h3><p>Description coming soon.</p></article>
+        <article class="div reveal"><span class="label">Program</span><h3>Commando</h3><p>Description coming soon.</p></article>
+        <article class="div reveal"><span class="label">Program</span><h3>ARF</h3><p>Advanced Recon Force. Description coming soon.</p></article>
+        <article class="div reveal"><span class="label">Program</span><h3>Echelon</h3><p>Description coming soon.</p></article>
+        <article class="div reveal"><span class="label">Program</span><h3>More coming soon</h3><p>New programs are in development. Watch this space.</p></article>
       </div>
     </div>
   </section>
@@ -668,7 +668,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
       var inf=el('div','info');inf.appendChild(el('span','label',x.rank));inf.appendChild(el('span','cc',x.designation));inf.appendChild(el('h3',null,x.name));if(x.division)inf.appendChild(el('span','tag',x.division));
       a.appendChild(pl);a.appendChild(inf);return a;});
     list('c-founders',c.founders,function(x){var li=el('li',null,x.name);li.appendChild(el('span',null,x.role));return li;});
-    list('c-divisions',c.divisions,function(x){var a=el('article','div reveal');a.appendChild(el('span','label','Division'));a.appendChild(el('h3',null,x.name));a.appendChild(el('p',null,x.description));return a;});
+    list('c-divisions',c.divisions,function(x){var a=el('article','div reveal');a.appendChild(el('span','label','Program'));a.appendChild(el('h3',null,x.name));a.appendChild(el('p',null,x.description));return a;});
     text('quals-intro',c.qualifications_intro);
     list('c-quals',c.qualifications,function(x){var a=el('article','div reveal');a.appendChild(el('span','label','Qualification'));a.appendChild(el('h3',null,x.name));a.appendChild(el('p',null,x.description));return a;});
     var n=c.next_op||{};
