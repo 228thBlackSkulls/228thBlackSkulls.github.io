@@ -1,1 +1,14 @@
-# 228th-Black-Skulls-Corps-Website
+# 228th Black Skulls Corps Website
+
+The public website for the 228th Black Skulls Corps.
+
+- **Site:** https://flanker228th.github.io/228th-Black-Skulls-Corps-Website/
+- **Edit page:** https://flanker228th.github.io/228th-Black-Skulls-Corps-Website/admin/
+
+## How editing works
+
+All the text and links on the site (Discord invite, leadership, schedule, FAQ and so on) live in `content.json`.
+The edit page is a form on top of that file: change a box, press Save, and GitHub Pages republishes the site about a minute later.
+
+`index.html` holds the design, animations and logo. Leave it alone unless you are changing the look of the site.
+Uploaded images (like leadership portraits) go in `images/`.

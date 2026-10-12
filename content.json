@@ -1,0 +1,56 @@
+{
+  "links": {
+    "discord_invite": "https://discord.com",
+    "join_button": "#join"
+  },
+  "hero": {
+    "tagline": "Star Wars milsim & roleplay · Now on VRChat",
+    "intro": "A Star Wars milsim and roleplay community built on brotherhood, structure, creativity, and genuine care for its people. Sixteen years on, we are still a community first."
+  },
+  "stats": [
+    { "value": "2010", "label": "Founded 28 February" },
+    { "value": "16 yrs", "label": "And still standing" },
+    { "value": "Corps", "label": "Grown from one squad" },
+    { "value": "VRChat", "label": "Where we operate now" }
+  ],
+  "leadership": [
+    { "rank": "Marshal Commander", "designation": "CC-5733", "name": "Flanker", "division": "Echelon", "portrait": "" },
+    { "rank": "Senior Commander", "designation": "CC-5864", "name": "Terminator", "division": "Commando", "portrait": "" },
+    { "rank": "Senior Commander", "designation": "CC-6995", "name": "Phoenix", "division": "", "portrait": "" }
+  ],
+  "founders": [
+    { "name": "Flanker", "role": "Unit Leader" },
+    { "name": "Black Dragon", "role": "Co-Founder" },
+    { "name": "Delta", "role": "Co-Founder" }
+  ],
+  "divisions": [
+    { "name": "Commando", "description": "Description coming soon." },
+    { "name": "ARF", "description": "Advanced Recon Force. Description coming soon." },
+    { "name": "Echelon", "description": "Description coming soon." },
+    { "name": "Line troopers", "description": "Description coming soon." }
+  ],
+  "next_op": {
+    "name": "Main operation",
+    "day": "Saturday",
+    "time_utc": "19:00",
+    "note": "Muster in the Discord before step-off. The world link is posted in announcements."
+  },
+  "schedule": [
+    { "day": "Wed", "title": "Training", "details": "Division training and new member orientation", "time": "TBD" },
+    { "day": "Fri", "title": "Roleplay night", "details": "Lore events and social hangouts", "time": "TBD" },
+    { "day": "Sat", "title": "Main operation", "details": "Full Corps deployment", "time": "1900Z" }
+  ],
+  "join_steps": [
+    { "title": "Join the Discord", "text": "Say hello, read the rules, and grab the guest role so you can see upcoming events." },
+    { "title": "Meet the Corps", "text": "Come to an event in VRChat as a guest. Get to know the people before you commit." },
+    { "title": "Enlist", "text": "Apply, complete basic training, receive your designation, and pick up your first armor." }
+  ],
+  "requirements": ["VRChat account", "Desktop or VR", "Working microphone", "Minimum age: TBD"],
+  "faq": [
+    { "question": "Do I need a VR headset?", "answer": "No. VRChat runs on desktop too, so you can take part with a keyboard and mouse." },
+    { "question": "Do I need to know Star Wars lore?", "answer": "No. You'll pick it up as you go, and plenty of members are happy to explain the 228th's own lore." },
+    { "question": "What if I can't make an operation?", "answer": "Let your leadership know. Real life always comes first here." },
+    { "question": "Is the 228th only on VRChat?", "answer": "VRChat is our main home today. We have run text roleplay and Arma 3 milsim before, and we stay open to new platforms and allied communities." }
+  ],
+  "motto": "A place you can call home."
+}
