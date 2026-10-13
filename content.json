@@ -112,15 +112,15 @@
   "join_steps": [
     {
       "title": "Join the Discord",
-      "text": "Say hello, read the rules, and grab the guest role so you can see upcoming events."
+      "text": "Join the Discord for the game you play, fill out the Discord application, and read the rules."
     },
     {
-      "title": "Meet the Corps",
-      "text": "Come to an event in VRChat as a guest. Get to know the people before you commit."
+      "title": "Get Your Roles",
+      "text": "Head to #ct-number-nickname-placement and enter your CR-C-#### \"Nickname\" to get your roles. Just here as a guest? Familiarize yourself with #rules-and-regulations."
     },
     {
-      "title": "Enlist",
-      "text": "Apply, complete basic training, receive your designation, and pick up your first armor."
+      "title": "Report for Duty",
+      "text": "Keep an eye out for events and show up. Familiarize yourself with the chain of command."
     }
   ],
   "requirements": [
