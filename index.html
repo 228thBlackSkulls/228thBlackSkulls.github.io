@@ -78,17 +78,38 @@ header.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;backgroun
 .btn.ghost:hover{border-color:var(--fg)}
 .nav .btn{padding:.6em 1em;white-space:nowrap}
 .nav-ctas{display:flex;gap:8px;align-items:center}
-details.menu{display:none}
+.mtog{display:none}
 @media (max-width:1180px){
   .links,.nav .btn{display:none}
   .nav .wrap>.nav-ctas{margin-left:auto}
   .nav .shop-btn{display:inline-flex;padding:.5em .8em;font-size:.8rem}
-  details.menu{display:block}
-  details.menu summary{list-style:none;cursor:pointer;font:500 .8rem var(--mono);letter-spacing:.12em;border:1px solid var(--line);padding:.5em .8em}
-  details.menu summary::-webkit-details-marker{display:none}
-  details.menu nav{position:absolute;left:0;right:0;top:100%;background:var(--panel);border-bottom:1px solid var(--line);display:grid;padding:8px 16px 16px}
-  details.menu nav a{padding:.7em 0;text-decoration:none;font:500 .9rem var(--mono);letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+  .mtog{display:grid;place-items:center;width:42px;height:42px;flex:none;background:transparent;border:1px solid var(--line);border-radius:2px;color:var(--fg);cursor:pointer;padding:0}
 }
+/* mobile menu: black circle grows from the toggle, items wipe in top to bottom */
+.mtog i{display:block;width:18px;height:12px;position:relative}
+.mtog i::before,.mtog i::after,.mtog i b{content:"";position:absolute;left:0;right:0;height:2px;background:currentColor;transition:transform .3s,opacity .2s,top .3s}
+.mtog i::before{top:0}.mtog i b{top:5px}.mtog i::after{top:10px}
+.mnav-open .mtog{border-color:var(--accent)}
+.mnav-open .mtog i::before{top:5px;transform:rotate(45deg)}
+.mnav-open .mtog i::after{top:5px;transform:rotate(-45deg)}
+.mnav-open .mtog i b{opacity:0}
+html.mnav-open,html.mnav-open body{overflow:hidden}
+#mnav{position:fixed;inset:0;z-index:9;background:var(--bg);display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;padding:var(--mtop,100px) 0 calc(28px + env(safe-area-inset-bottom,0px));visibility:hidden;clip-path:circle(0 at var(--mx,90%) var(--my,40px));transition:clip-path .38s cubic-bezier(.6,0,.4,1),visibility 0s .38s}
+#mnav::before{content:"";position:fixed;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;opacity:.35;pointer-events:none}
+.mnav-open #mnav{visibility:visible;clip-path:circle(150vmax at var(--mx,90%) var(--my,40px));transition:clip-path .6s cubic-bezier(.7,0,.25,1),visibility 0s}
+#mnav .wrap{position:relative;width:100%}
+.mnav-list{display:grid;gap:2px;margin:0 0 36px}
+.mnav-list a{position:relative;display:block;padding:2px 0 2px 34px;text-decoration:none;color:var(--fg);font:800 clamp(1.8rem,8.4vw,3rem)/1.04 var(--display);text-transform:uppercase;letter-spacing:.02em;clip-path:inset(0 0 100% 0);transition:clip-path .1s}
+.mnav-list a::before{content:attr(data-n);position:absolute;left:0;top:.5em;font:500 .62rem var(--mono);letter-spacing:.08em;color:var(--accent)}
+.mnav-list a:active,.mnav-list a:hover{color:var(--accent)}
+.mnav-open .mnav-list a{clip-path:inset(0 0 -12% 0);transition:clip-path .32s cubic-bezier(.3,0,.2,1) calc(.3s + var(--i,0)*.055s)}
+.mnav-sub{display:grid;gap:14px;opacity:0;transition:opacity .2s}
+.mnav-open .mnav-sub{opacity:1;transition:opacity .4s .75s}
+.mnav-sub .label{color:var(--accent);opacity:.8;margin-bottom:4px}
+.mnav-sub a{font:500 .78rem var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-decoration:none}
+.mnav-sub a:hover{color:var(--fg)}
+@media (min-width:1181px){#mnav{display:none}}
+@media (prefers-reduced-motion:reduce){#mnav,.mnav-open #mnav,.mnav-list a,.mnav-open .mnav-list a,.mnav-sub,.mnav-open .mnav-sub{transition:none}}
 
 /* hero */
 .hero{position:relative;padding-block:clamp(56px,10vw,112px) 48px;overflow:hidden}
@@ -431,14 +452,23 @@ html.intro-on,html.intro-on body{overflow:hidden}
       <a href="#faq">FAQ</a>
     </nav>
     <span class="nav-ctas"><a class="btn ghost shop-btn" href="#shop" data-shop hidden>Shop</a><a class="btn" href="#join" data-link="join_button">Join the Corps</a></span>
-    <details class="menu">
-      <summary>MENU</summary>
-      <nav aria-label="Mobile">
-        <a href="#about">About</a><a href="#history">History</a><a href="#lore">Lore</a><a href="#command">Command</a><a href="#divisions">Divisions</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
-      </nav>
-    </details>
+    <button class="mtog" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mnav"><i><b></b></i></button>
   </div>
 </header>
+<div id="mnav" aria-hidden="true">
+  <div class="wrap">
+    <nav class="mnav-list" aria-label="Mobile">
+      <a href="#about">About</a><a href="#history">History</a><a href="#lore">Lore</a><a href="#command">Command</a><a href="#divisions">Divisions</a><a href="#quals">Qualifications</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
+    </nav>
+    <div class="mnav-sub">
+      <p class="label">Recruitment</p>
+      <a href="#join" data-link="join_button">Join the Corps</a>
+      <a href="https://discord.gg/2bXwURsNsE" target="_blank" rel="noopener" data-link="discord_vrchat">VRChat Discord</a>
+      <a href="https://discord.gg/2kR8MPGF4t" target="_blank" rel="noopener" data-link="discord_arma">Arma 3 Discord</a>
+      <a href="https://discord.gg/aXgfeUm7pV" target="_blank" rel="noopener" data-link="discord_minecraft">Minecraft Discord</a>
+    </div>
+  </div>
+</div>
 
 <main id="top">
   <section class="hero" id="hero">
@@ -968,7 +998,30 @@ html.intro-on,html.intro-on body{overflow:hidden}
     function req(){if(!queued){queued=true;requestAnimationFrame(frame);}}
     addEventListener('scroll',req,{passive:true}); addEventListener('resize',req); frame();
   }
-  document.querySelectorAll('details.menu nav a').forEach(function(a){a.addEventListener('click',function(){a.closest('details').open=false;});});
+  (function(){
+    var root=document.documentElement,tog=document.querySelector('.mtog'),panel=document.getElementById('mnav'),head=document.querySelector('header.nav');
+    if(!tog||!panel)return;
+    function set(open){
+      if(open){
+        var r=tog.getBoundingClientRect();
+        panel.style.setProperty('--mx',(r.left+r.width/2)+'px');panel.style.setProperty('--my',(r.top+r.height/2)+'px');
+        panel.style.setProperty('--mtop',(head.getBoundingClientRect().bottom+20)+'px');
+        var i=0;[].forEach.call(panel.querySelectorAll('.mnav-list a'),function(a){if(a.hidden)return;i++;a.dataset.n=(i<10?'0':'')+i;a.style.setProperty('--i',i);});
+        panel.scrollTop=0;
+      }
+      root.classList.toggle('mnav-open',open);
+      tog.setAttribute('aria-expanded',open);tog.setAttribute('aria-label',open?'Close menu':'Open menu');
+      panel.setAttribute('aria-hidden',!open);
+    }
+    window.closeMenu=function(){if(root.classList.contains('mnav-open'))set(false);};
+    tog.addEventListener('click',function(){set(!root.classList.contains('mnav-open'));});
+    addEventListener('keydown',function(e){if(e.key==='Escape')closeMenu();});
+    addEventListener('resize',function(){if(innerWidth>1180)closeMenu();});
+    /* in-page links: the pixel wipe closes the menu once the screen is covered; without it, close right away */
+    panel.addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;var h=a.getAttribute('href')||'';
+      if(h.charAt(0)!=='#'||!window.pxOn)setTimeout(closeMenu,0);
+      else setTimeout(closeMenu,1400);});
+  })();
 })();
 </script>
 <div id="px" aria-hidden="true"><canvas></canvas><div class="px-load"><div class="px-label"></div><div class="px-bar"><i></i></div><div class="px-pct">000%</div></div></div>
@@ -977,6 +1030,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
 // drop-down titles decode as they open, and the nav name rolls away on scroll down and back on scroll up.
 (function(){
   if(/[?&]preview\b/.test(location.search)||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))return;
+  window.pxOn=true;
   var GLYPHS='ABCDEFGHJKLMNPRSTUVWXYZ0123456789#/+-';
   function rnd(n){return Math.floor(Math.random()*n);}
   function scramble(el,text,dur,done){
@@ -1056,6 +1110,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
     var x=e.clientX||innerWidth/2,y=e.clientY||innerHeight/2;
     setTimeout(function(){
       wipe(x,y,label,function(){
+        if(window.closeMenu)closeMenu();
         var root=document.documentElement,sb=root.style.scrollBehavior;root.style.scrollBehavior='auto';
         var top=id==='top'?0:target.getBoundingClientRect().top+scrollY-60;scrollTo(0,top);lastY=scrollY;
         root.style.scrollBehavior=sb;
