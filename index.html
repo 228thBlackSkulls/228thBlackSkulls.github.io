@@ -93,12 +93,16 @@ header.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;backgroun
 .mnav-open .mtog i::before{top:5px;transform:rotate(45deg)}
 .mnav-open .mtog i::after{top:5px;transform:rotate(-45deg)}
 .mnav-open .mtog i b{opacity:0}
-html.mnav-open,html.mnav-open body{overflow:hidden}
+html.mnav-open{overflow:hidden}
 #mnav{position:fixed;inset:0;z-index:9;background:var(--bg);display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;padding:var(--mtop,100px) 0 calc(28px + env(safe-area-inset-bottom,0px));visibility:hidden;clip-path:circle(0 at var(--mx,90%) var(--my,40px));transition:clip-path .38s cubic-bezier(.6,0,.4,1),visibility 0s .38s}
 #mnav::before{content:"";position:fixed;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;opacity:.35;pointer-events:none}
 .mnav-open #mnav{visibility:visible;clip-path:circle(150vmax at var(--mx,90%) var(--my,40px));transition:clip-path .6s cubic-bezier(.7,0,.25,1),visibility 0s}
 #mnav .wrap{position:relative;width:100%}
 .mnav-list{display:grid;gap:2px;margin:0 0 36px}
+.mnav-back{display:inline-flex;align-items:center;gap:10px;margin:0 0 18px;padding:10px 14px 10px 0;background:none;border:0;color:var(--muted);font:500 .78rem var(--mono);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;opacity:0;transition:opacity .15s}
+.mnav-back b{color:var(--accent);font-weight:500;font-size:1rem;line-height:1}
+.mnav-back:hover{color:var(--fg)}
+.mnav-open .mnav-back{opacity:1;transition:opacity .3s .3s}
 .mnav-list a{position:relative;display:block;padding:2px 0 2px 34px;text-decoration:none;color:var(--fg);font:800 clamp(1.8rem,8.4vw,3rem)/1.04 var(--display);text-transform:uppercase;letter-spacing:.02em;clip-path:inset(0 0 100% 0);transition:clip-path .1s}
 .mnav-list a::before{content:attr(data-n);position:absolute;left:0;top:.5em;font:500 .62rem var(--mono);letter-spacing:.08em;color:var(--accent)}
 .mnav-list a:active,.mnav-list a:hover{color:var(--accent)}
@@ -457,6 +461,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
 </header>
 <div id="mnav" aria-hidden="true">
   <div class="wrap">
+    <button class="mnav-back" type="button"><b>&larr;</b> Back</button>
     <nav class="mnav-list" aria-label="Mobile">
       <a href="#about">About</a><a href="#history">History</a><a href="#lore">Lore</a><a href="#command">Command</a><a href="#divisions">Divisions</a><a href="#quals">Qualifications</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
     </nav>
@@ -1013,9 +1018,15 @@ html.intro-on,html.intro-on body{overflow:hidden}
       tog.setAttribute('aria-expanded',open);tog.setAttribute('aria-label',open?'Close menu':'Open menu');
       panel.setAttribute('aria-hidden',!open);
     }
-    window.closeMenu=function(){if(root.classList.contains('mnav-open'))set(false);};
-    tog.addEventListener('click',function(){set(!root.classList.contains('mnav-open'));});
-    addEventListener('keydown',function(e){if(e.key==='Escape')closeMenu();});
+    function isOpen(){return root.classList.contains('mnav-open');}
+    window.closeMenu=function(){if(isOpen())set(false);};
+    /* the phone's back gesture/button closes the menu too, leaving you where you were */
+    function open(){set(true);try{history.pushState({mnav:1},'');}catch(e){}}
+    function back(){if(history.state&&history.state.mnav)history.back();else closeMenu();}
+    addEventListener('popstate',function(){closeMenu();});
+    tog.addEventListener('click',function(){isOpen()?back():open();});
+    panel.querySelector('.mnav-back').addEventListener('click',back);
+    addEventListener('keydown',function(e){if(e.key==='Escape'&&isOpen())back();});
     addEventListener('resize',function(){if(innerWidth>1180)closeMenu();});
     /* in-page links: the pixel wipe closes the menu once the screen is covered; without it, close right away */
     panel.addEventListener('click',function(e){var a=e.target.closest('a');if(!a)return;var h=a.getAttribute('href')||'';
