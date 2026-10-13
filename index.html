@@ -113,6 +113,13 @@ html.mnav-open{overflow:hidden}
 .mnav-sub a{font:500 .78rem var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-decoration:none}
 .mnav-sub a:hover{color:var(--fg)}
 @media (min-width:1181px){#mnav{display:none}}
+/* back to top: appears after the first screen */
+.totop{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:8;width:48px;height:48px;display:grid;place-items:center;gap:0;padding:0;background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:2px;color:var(--fg);cursor:pointer;opacity:0;visibility:hidden;transform:translateY(12px);transition:opacity .25s,transform .25s,visibility 0s .25s,border-color .15s}
+.totop.on{opacity:1;visibility:visible;transform:none;transition:opacity .25s,transform .25s,border-color .15s}
+.totop:hover{border-color:var(--accent)}
+.totop svg{width:18px;height:18px;color:var(--accent)}
+.totop span{font:500 .55rem/1 var(--mono);letter-spacing:.14em;margin-top:-8px}
+.mnav-open .totop{opacity:0;visibility:hidden}
 @media (prefers-reduced-motion:reduce){#mnav,.mnav-open #mnav,.mnav-list a,.mnav-open .mnav-list a,.mnav-sub,.mnav-open .mnav-sub{transition:none}}
 
 /* hero */
@@ -459,6 +466,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
     <button class="mtog" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mnav"><i><b></b></i></button>
   </div>
 </header>
+<button class="totop" type="button" aria-label="Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 19V6M5 12l7-7 7 7"/></svg><span aria-hidden="true">TOP</span></button>
 <div id="mnav" aria-hidden="true">
   <div class="wrap">
     <button class="mnav-back" type="button"><b>&larr;</b> Back</button>
@@ -1017,6 +1025,12 @@ html.intro-on,html.intro-on body{overflow:hidden}
       root.classList.toggle('mnav-open',open);
       tog.setAttribute('aria-expanded',open);tog.setAttribute('aria-label',open?'Close menu':'Open menu');
       panel.setAttribute('aria-hidden',!open);
+    }
+    var top=document.querySelector('.totop');
+    if(top){
+      var tq=false;function tchk(){tq=false;top.classList.toggle('on',scrollY>innerHeight*.9);}
+      addEventListener('scroll',function(){if(!tq){tq=true;requestAnimationFrame(tchk);}},{passive:true});tchk();
+      top.addEventListener('click',function(){var rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;scrollTo({top:0,behavior:rm?'auto':'smooth'});if(history.replaceState&&location.hash)history.replaceState(null,'',location.pathname+location.search);});
     }
     function isOpen(){return root.classList.contains('mnav-open');}
     window.closeMenu=function(){if(isOpen())set(false);};
