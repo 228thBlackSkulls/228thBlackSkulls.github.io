@@ -152,6 +152,16 @@ textarea{resize:vertical;min-height:70px}
     {key:'stats', title:'Quick stats', goto:'c-stats', list:{label:'Stat', title:'value', fields:[
       {key:'value', label:'Big text', type:'text'},
       {key:'label', label:'Small text', type:'text'}]}},
+    {key:'lore', id:'lore-books', title:'Lore: drop-downs', goto:'lore', hint:'Each one is a lore page. Pages with the same group share one drop-down (like Personal Lore).', list:{key:'books', label:'Lore page', title:'name', fields:[
+      {key:'name', label:'Page name', type:'text'},
+      {key:'group', label:'Group (top drop-down)', type:'text', hint:'Use the same group on several pages to nest them, e.g. Personal Lore.'},
+      {key:'wiki_url', label:'Wiki link (optional)', type:'url'},
+      {key:'intro', label:'Intro', type:'textarea'}]}},
+    {key:'lore', id:'lore-entries', title:'Lore: entries', goto:'lore', hint:'"Page" must match a lore page name exactly. Entries with the same chapter are grouped into one drop-down. Leave Title empty for text that sits at the top of a chapter. Start a paragraph with ### for a sub-heading, or • for a bullet.', list:{key:'entries', label:'Entry', plural:'Entries', title:'title', fields:[
+      {key:'book', label:'Page', type:'text'},
+      {key:'chapter', label:'Chapter', type:'text', placeholder:'History'},
+      {key:'title', label:'Title', type:'text', placeholder:'Operation: …'},
+      {key:'text', label:'Text', type:'textarea'}]}},
     {key:'leadership', title:'Command', goto:'command', list:{label:'Leader', title:'name', fields:[
       {key:'rank', label:'Rank', type:'text'},
       {key:'designation', label:'Designation', type:'text', placeholder:'CC-0000'},
@@ -295,7 +305,7 @@ textarea{resize:vertical;min-height:70px}
     var ed = $('editor'), open = ed.querySelector('details[open]'), openKey = open && open.dataset.key, top = ed.scrollTop;
     ed.textContent = '';
     SCHEMA.forEach(function(sec){
-      var d = el('details',{class:'sec'}); d.dataset.key = sec.key; if(sec.key===openKey) d.open = true;
+      var sid = sec.id || sec.key, d = el('details',{class:'sec'}); d.dataset.key = sid; if(sid===openKey) d.open = true;
       var count = sec.list ? (listOf(sec)||[]).length : null;
       d.appendChild(el('summary',null,[document.createTextNode(sec.title), count!=null?el('small',{text:'('+count+')'}):null]));
       var body = el('div',{class:'body'});
@@ -307,7 +317,7 @@ textarea{resize:vertical;min-height:70px}
         body.appendChild(input(sec.single, function(){return data[sec.key];}, function(v){data[sec.key]=v;}));
       }
       if(sec.list){
-        if(sec.list.key) body.appendChild(el('p',{class:'label',text:sec.list.label+'s',style:'margin:18px 0 8px'}));
+        if(sec.list.key) body.appendChild(el('p',{class:'label',text:(sec.list.plural||sec.list.label+'s'),style:'margin:18px 0 8px'}));
         body.appendChild(listEditor(sec));
       }
       d.appendChild(body);
@@ -321,6 +331,7 @@ textarea{resize:vertical;min-height:70px}
   function listOf(sec){ var o = sec.list.key ? (data[sec.key]||{}) : data; var k = sec.list.key || sec.key; return o[k]; }
   function listEditor(sec){
     var L = sec.list, box = el('div');
+    if(L.key && (!data[sec.key] || typeof data[sec.key]!=='object')) data[sec.key] = {};
     var owner = L.key ? data[sec.key] : data, lk = L.key || sec.key;
     if(!Array.isArray(owner[lk])) owner[lk] = [];
     var arr = owner[lk];
@@ -336,9 +347,9 @@ textarea{resize:vertical;min-height:70px}
         inp.addEventListener('input',function(){arr[i]=inp.value;changed();});
         box.appendChild(el('div',{class:'item str'},[inp].concat(tools)));
       } else {
-        var title = el('span',{class:'label',text:(item[L.title]||L.label+' '+(i+1))});
+        var fallback = (item.chapter ? item.chapter+' · intro' : L.label+' '+(i+1)), title = el('span',{class:'label',text:(item[L.title]||fallback)});
         var it = el('div',{class:'item'},[el('div',{class:'item-head'},[title].concat(tools))]);
-        L.fields.forEach(function(f){ it.appendChild(input(f, function(){return item[f.key];}, function(v){item[f.key]=v; if(f.key===L.title)title.textContent=v||L.label+' '+(i+1);})); });
+        L.fields.forEach(function(f){ it.appendChild(input(f, function(){return item[f.key];}, function(v){item[f.key]=v; if(f.key===L.title)title.textContent=v||fallback;})); });
         box.appendChild(it);
       }
     });
@@ -365,7 +376,7 @@ textarea{resize:vertical;min-height:70px}
     if(e.origin!==location.origin || !e.data || e.data.type!=='228th-ready') return;
     frameReady = true; sendPreview();
     var o = $('editor').querySelector('details[open]');
-    if(o){ var s = SCHEMA.filter(function(x){return x.key===o.dataset.key;})[0]; if(s) setTimeout(function(){goto(s.goto);},60); }
+    if(o){ var s = SCHEMA.filter(function(x){return (x.id||x.key)===o.dataset.key;})[0]; if(s) setTimeout(function(){goto(s.goto);},60); }
   });
   [].forEach.call(document.querySelectorAll('.seg button'), function(b){ b.onclick = function(){
     [].forEach.call(document.querySelectorAll('.seg button'),function(x){x.classList.toggle('on',x===b);});

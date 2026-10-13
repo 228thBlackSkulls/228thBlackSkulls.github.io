@@ -191,6 +191,43 @@ ol.steps{margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);bor
 .reqs{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
 .reqs span{font:500 .78rem var(--mono);letter-spacing:.06em;border:1px solid var(--line);padding:.45em .75em}
 
+/* lore archive: nested drop-downs */
+.lore-list{border-top:1px solid var(--line)}
+.lore summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:14px}
+.lore summary::-webkit-details-marker{display:none}
+.lore summary::after{content:"+";margin-left:auto;flex:none;font:500 1.2rem var(--mono);color:var(--accent);width:1.2em;text-align:center}
+.lore details[open]>summary::after{content:"–"}
+.lore summary:hover .t{color:var(--accent)}
+.lore .t{transition:color .2s}
+.lore-g{border-bottom:1px solid var(--line)}
+.lore-g>summary{padding:26px 0}
+.lore-g>summary .n{font:500 .8rem var(--mono);color:var(--accent);letter-spacing:.08em;flex:none}
+.lore-g>summary .t{font:800 clamp(1.6rem,3.6vw,2.6rem)/1 var(--display);text-transform:uppercase;letter-spacing:.01em}
+.lore summary small{font:500 .72rem var(--mono);color:var(--muted,#8a8a8f);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.lore-g>.in{padding:0 0 30px}
+.lore-b{border:1px solid var(--line);background:var(--panel);margin:0 0 10px}
+.lore-b>summary{padding:18px 20px}
+.lore-b>summary .t{font:800 1.45rem/1.05 var(--display);text-transform:uppercase}
+.lore-b>.in{padding:0 20px 20px}
+.lore-c{border-top:1px solid var(--line)}
+.lore-c>summary{padding:16px 0}
+.lore-c>summary .t{font:600 .82rem var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.lore-c>.in{padding:0 0 18px 16px;border-left:2px solid var(--accent-2,#b3141b);margin-left:2px}
+.lore-e{border-bottom:1px solid var(--line)}
+.lore-e:last-child{border-bottom:0}
+.lore-e>summary{padding:14px 0}
+.lore-e>summary .t{font:600 1.02rem var(--body)}
+.lore-e>.in{padding:2px 0 18px}
+.lore-text{max-width:72ch;color:var(--soft)}
+.lore-text p{margin:0 0 1em;white-space:pre-line;line-height:1.7}
+.lore-text h4{font:600 .78rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--fg);margin:1.4em 0 .5em}
+.lore-text ul{margin:0 0 1em;padding-left:1.2em}
+.lore-text li{margin:.25em 0}
+.lore-intro{margin:0 0 14px}
+.lore-wiki{display:inline-block;margin:0 0 18px;font:600 .74rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);text-decoration:none}
+.lore-wiki:hover{text-decoration:underline}
+.lore-wait{color:var(--soft);padding:24px 0}
+@media (max-width:620px){.lore-g>summary small{display:none}.lore-b>summary,.lore-b>.in{padding-left:14px;padding-right:14px}.lore-c>.in{padding-left:12px}}
 /* recruitment: discord invites */
 .invites{display:grid;grid-template-columns:1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin:48px 0 0}
 .invite{display:grid;grid-template-columns:200px 1fr auto;gap:8px 32px;align-items:center;padding:24px 28px;background:var(--panel)}
@@ -347,6 +384,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
     <nav class="links" aria-label="Main">
       <a href="#about">About</a>
       <a href="#history">History</a>
+      <a href="#lore">Lore</a>
       <a href="#command">Command</a>
       <a href="#divisions">Divisions</a>
       <a href="#ops">Operations</a>
@@ -356,7 +394,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
     <details class="menu">
       <summary>MENU</summary>
       <nav aria-label="Mobile">
-        <a href="#about">About</a><a href="#history">History</a><a href="#command">Command</a><a href="#divisions">Divisions</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
+        <a href="#about">About</a><a href="#history">History</a><a href="#lore">Lore</a><a href="#command">Command</a><a href="#divisions">Divisions</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
       </nav>
     </details>
   </div>
@@ -469,10 +507,21 @@ html.intro-on,html.intro-on body{overflow:hidden}
     </div>
   </section>
 
+  <section class="block lore" id="lore">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="label"><b>03</b> &nbsp;/&nbsp; Archives</p>
+        <h2>228th Lore</h2>
+        <p style="color:var(--soft)" id="lore-intro">Sixteen years of operations, units and the troopers who made the Corps. Open a file to start reading.</p>
+      </div>
+      <div class="lore-list" id="c-lore"><p class="lore-wait">Opening the archives…</p></div>
+    </div>
+  </section>
+
   <section class="block" id="command">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>03</b> &nbsp;/&nbsp; High Command</p>
+        <p class="label"><b>04</b> &nbsp;/&nbsp; High Command</p>
         <h2>Current leadership</h2>
         <p style="color:var(--soft)">Leadership ranks grew the same way the unit did: Specialist, then Captain, then Senior Commander, and finally <strong>Marshal Commander</strong>. Every step was earned through time, effort, and commitment.</p>
       </div>
@@ -506,7 +555,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="divisions">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>04</b> &nbsp;/&nbsp; Divisions</p>
+        <p class="label"><b>05</b> &nbsp;/&nbsp; Divisions</p>
         <h2>228th MOS's</h2>
         <p style="color:var(--soft)">The 228th runs multiple divisions, each with its own role and armor. <span class="tbd">CONFIRM DIVISIONS + DESCRIPTIONS</span></p>
       </div>
@@ -522,7 +571,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="quals">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>05</b> &nbsp;/&nbsp; Qualifications</p>
+        <p class="label"><b>06</b> &nbsp;/&nbsp; Qualifications</p>
         <h2>228th Qualifications</h2>
         <p style="color:var(--soft)" id="quals-intro">Certifications troopers can earn on top of their MOS.</p>
       </div>
@@ -535,7 +584,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="ops">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>06</b> &nbsp;/&nbsp; Operations</p>
+        <p class="label"><b>07</b> &nbsp;/&nbsp; Operations</p>
         <h2>Deployment schedule</h2>
         <p style="color:var(--soft)">All times in Zulu (UTC). The countdown shows your local time. <span class="tbd">CONFIRM DAYS + TIMES</span></p>
       </div>
@@ -566,7 +615,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="join">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>07</b> &nbsp;/&nbsp; Enlistment</p>
+        <p class="label"><b>08</b> &nbsp;/&nbsp; Enlistment</p>
         <h2>Recruitment Center</h2>
         <p style="color:var(--soft)">Members, guests, and allies are all welcome. Follow the steps below, then pick the Discord for the game you play. <span class="tbd">CONFIRM STEPS</span></p>
       </div>
@@ -590,7 +639,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="shop" data-shop hidden>
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>08</b> &nbsp;/&nbsp; Quartermaster</p>
+        <p class="label"><b>09</b> &nbsp;/&nbsp; Quartermaster</p>
         <h2 id="shop-title">Gear up</h2>
         <p style="color:var(--soft)" id="shop-intro">Official 228th merch, printed to order and shipped by our store partner.</p>
       </div>
@@ -601,7 +650,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
 
   <section class="block" id="faq" style="border-bottom:0">
     <div class="wrap split">
-      <div class="head reveal"><p class="label"><b>09</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
+      <div class="head reveal"><p class="label"><b>10</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
       <div class="faq" id="c-faq">
         <details><summary>Do I need a VR headset?</summary><p>No. VRChat runs on desktop too, so you can take part with a keyboard and mouse.</p></details>
         <details><summary>Do I need to know Star Wars lore?</summary><p>No. You'll pick it up as you go, and plenty of members are happy to explain the 228th's own lore.</p></details>
@@ -656,6 +705,53 @@ html.intro-on,html.intro-on body{overflow:hidden}
   function list(id,items,make){var box=document.getElementById(id);if(!box||!Array.isArray(items)||!items.length)return;box.textContent='';items.forEach(function(it,i){var n=make(it,i);if(n){if(n.classList.contains('reveal')){if(i%3===1)n.classList.add('d2');if(i%3===2)n.classList.add('d3');}box.appendChild(n);}});}
   function text(id,v){var e=document.getElementById(id);if(e&&v)e.textContent=v;}
   var logoSrc=(document.querySelector('.plate img')||{}).src;
+  // Lore archive: groups > pages > chapters > entries, each a drop-down.
+  function loreText(t){
+    var box=el('div','lore-text'),ul=null;
+    String(t||'').split(/\n\s*\n/).forEach(function(p){
+      p=p.trim(); if(!p)return;
+      if(/^###\s/.test(p)){ul=null;var nl=p.indexOf('\n');box.appendChild(el('h4',null,(nl<0?p:p.slice(0,nl)).replace(/^###\s*/,'')));if(nl<0)return;p=p.slice(nl+1).trim();if(!p)return;}
+      var lines=p.split('\n');
+      if(lines.every(function(l){return /^[•*-]\s/.test(l.trim());})){ if(!ul){ul=el('ul');box.appendChild(ul);} lines.forEach(function(l){ul.appendChild(el('li',null,l.trim().replace(/^[•*-]\s*/,'')));}); return; }
+      ul=null; box.appendChild(el('p',null,p));
+    });
+    return box;
+  }
+  function drop(cls,title,kids,extra){
+    var d=el('details',cls),s=el('summary');
+    if(extra&&extra.n)s.appendChild(el('span','n',extra.n));
+    s.appendChild(el('span','t',title));
+    if(extra&&extra.meta)s.appendChild(el('small',null,extra.meta));
+    d.appendChild(s);var inn=el('div','in');kids.forEach(function(k){if(k)inn.appendChild(k);});d.appendChild(inn);return d;
+  }
+  function lore(L){
+    var box=document.getElementById('c-lore');if(!box)return;
+    if(!L||!Array.isArray(L.books)||!L.books.length){box.textContent='';box.appendChild(el('p','lore-wait','Lore files coming soon.'));return;}
+    var entries=Array.isArray(L.entries)?L.entries:[];
+    function bookBody(b){
+      var out=[];
+      if(b.intro){var it=loreText(b.intro);it.classList.add('lore-intro');out.push(it);}
+      if(b.wiki_url){var a=el('a','lore-wiki','Read on the wiki ↗');a.href=b.wiki_url;a.target='_blank';a.rel='noopener';out.push(a);}
+      var chapters=[],byCh={};
+      entries.forEach(function(e){if((e.book||'').trim()!==(b.name||'').trim())return;var ch=(e.chapter||'').trim()||'Entries';if(!byCh[ch]){byCh[ch]=[];chapters.push(ch);}byCh[ch].push(e);});
+      chapters.forEach(function(ch){
+        var kids=byCh[ch].map(function(e){return e.title&&e.title.trim()?drop('lore-e',e.title,[loreText(e.text)]):loreText(e.text);});
+        var titled=byCh[ch].filter(function(e){return e.title&&e.title.trim();}).length;
+        out.push(drop('lore-c',ch,kids,{meta:titled>1?titled+' entries':''}));
+      });
+      return out;
+    }
+    var groups=[],byG={};
+    L.books.forEach(function(b){var g=(b.group||'').trim()||b.name||'Lore';if(!byG[g]){byG[g]=[];groups.push(g);}byG[g].push(b);});
+    box.textContent='';
+    groups.forEach(function(g,i){
+      var bs=byG[g],kids,count=0;
+      bs.forEach(function(b){count+=entries.filter(function(e){return (e.book||'').trim()===(b.name||'').trim();}).length;});
+      if(bs.length===1)kids=bookBody(bs[0]);
+      else kids=bs.map(function(b){return drop('lore-b',b.name,bookBody(b));});
+      box.appendChild(drop('lore-g',g,kids,{n:('0'+(i+1)).slice(-2),meta:bs.length>1?bs.length+' files':count+' entries'}));
+    });
+  }
   function applyContent(c){
     var L=c.links||{};
     [].forEach.call(document.querySelectorAll('[data-link]'),function(a){var v=L[a.dataset.link];if(v){a.href=v;if(/^https?:/.test(v)){a.target='_blank';a.rel='noopener';}}});
@@ -686,6 +782,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
       var a=el('a','product reveal'); a.href=x.link||sh.store_url||'#'; a.target='_blank'; a.rel='noopener';
       var pic=el('div','pic'+(x.image?'':' empty')); if(x.image)pic.style.backgroundImage='url("'+String(x.image).replace(/"/g,'%22')+'")'; a.appendChild(pic);
       var m=el('div','meta'); m.appendChild(el('h3',null,x.name)); if(x.price)m.appendChild(el('span','price',x.price)); a.appendChild(m); pr.appendChild(a);});}
+    lore(c.lore);
     list('c-faq',c.faq,function(x){var d=el('details');d.appendChild(el('summary',null,x.question));d.appendChild(el('p',null,x.answer));return d;});
   }
   // Edit page live preview: admin/ shows this page in a frame and sends unsaved content here.
