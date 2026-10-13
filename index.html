@@ -226,6 +226,13 @@ ol.steps{margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);bor
 .lore-intro{margin:0 0 14px}
 .lore-wiki{display:inline-block;margin:0 0 18px;font:600 .74rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);text-decoration:none}
 .lore-wiki:hover{text-decoration:underline}
+.lore-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin:4px 0 8px}
+.lore-photos figure{margin:0;background:var(--bg);border:1px solid var(--line)}
+.lore-photos a{display:block;aspect-ratio:1;overflow:hidden;background:#000}
+.lore-photos img{width:100%;height:100%;object-fit:contain;display:block;transition:transform .3s}
+.lore-photos a:hover img{transform:scale(1.04)}
+.lore-photos figcaption{font:500 .74rem/1.4 var(--mono);letter-spacing:.04em;color:var(--soft);padding:9px 10px}
+@media (max-width:620px){.lore-photos{grid-template-columns:1fr 1fr;gap:8px}}
 .lore-wait{color:var(--soft);padding:24px 0}
 @media (max-width:620px){.lore-g>summary small{display:none}.lore-b>summary,.lore-b>.in{padding-left:14px;padding-right:14px}.lore-c>.in{padding-left:12px}}
 /* recruitment: discord invites */
@@ -735,9 +742,17 @@ html.intro-on,html.intro-on body{overflow:hidden}
       var chapters=[],byCh={};
       entries.forEach(function(e){if((e.book||'').trim()!==(b.name||'').trim())return;var ch=(e.chapter||'').trim()||'Entries';if(!byCh[ch]){byCh[ch]=[];chapters.push(ch);}byCh[ch].push(e);});
       chapters.forEach(function(ch){
-        var kids=byCh[ch].map(function(e){return e.title&&e.title.trim()?drop('lore-e',e.title,[loreText(e.text)]):loreText(e.text);});
-        var titled=byCh[ch].filter(function(e){return e.title&&e.title.trim();}).length;
-        out.push(drop('lore-c',ch,kids,{meta:titled>1?titled+' entries':''}));
+        var kids=[],grid=null,pics=0;
+        byCh[ch].forEach(function(e){
+          if(e.image){
+            if(!grid){grid=el('div','lore-photos');kids.push(grid);}
+            var f=el('figure'),a=el('a'),im=el('img');a.href=e.image;a.target='_blank';a.rel='noopener';im.src=e.image;im.alt=e.title||'';im.loading='lazy';a.appendChild(im);f.appendChild(a);
+            if(e.title)f.appendChild(el('figcaption',null,e.title));if(e.text)f.appendChild(loreText(e.text));grid.appendChild(f);pics++;return;
+          }
+          grid=null;kids.push(e.title&&e.title.trim()?drop('lore-e',e.title,[loreText(e.text)]):loreText(e.text));
+        });
+        var titled=byCh[ch].filter(function(e){return !e.image&&e.title&&e.title.trim();}).length;
+        out.push(drop('lore-c',ch,kids,{meta:pics?pics+(pics>1?' photos':' photo'):titled>1?titled+' entries':''}));
       });
       return out;
     }
@@ -746,10 +761,10 @@ html.intro-on,html.intro-on body{overflow:hidden}
     box.textContent='';
     groups.forEach(function(g,i){
       var bs=byG[g],kids,count=0;
-      bs.forEach(function(b){count+=entries.filter(function(e){return (e.book||'').trim()===(b.name||'').trim();}).length;});
+      bs.forEach(function(b){count+=entries.filter(function(e){return !e.image&&(e.book||'').trim()===(b.name||'').trim();}).length;});
       if(bs.length===1)kids=bookBody(bs[0]);
       else kids=bs.map(function(b){return drop('lore-b',b.name,bookBody(b));});
-      box.appendChild(drop('lore-g',g,kids,{n:('0'+(i+1)).slice(-2),meta:bs.length>1?bs.length+' files':count+' entries'}));
+      box.appendChild(drop('lore-g',g,kids,{n:('0'+(i+1)).slice(-2),meta:bs.length>1?bs.length+' files':count+(count===1?' entry':' entries')}));
     });
   }
   function applyContent(c){
