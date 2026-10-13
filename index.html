@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>228th Black Skulls Corps</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -960,7 +964,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
 // drop-down titles decode as they open, and the nav name rolls away on scroll down and back on scroll up.
 (function(){
   if(/[?&]preview\b/.test(location.search)||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))return;
-  var GLYPHS='!<>-_\\/[]{}=+*^?#%01ABCDEFX\u2592\u2591\u2588';
+  var GLYPHS='ABCDEFGHJKLMNPRSTUVWXYZ0123456789#/+-';
   function rnd(n){return Math.floor(Math.random()*n);}
   function scramble(el,text,dur,done){
     var start=performance.now(),len=text.length;
@@ -1006,14 +1010,14 @@ html.intro-on,html.intro-on body{overflow:hidden}
     for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){var dx=c*cs+cs/2-x,dy=r*cs+cs/2-y,dd=Math.sqrt(dx*dx+dy*dy);maxD=Math.max(maxD,dd);cells.push({x:c*cs,y:r*cs,d:dd,j:Math.random()});}
     cells.forEach(function(k){k.t=(k.d/maxD)*420+k.j*110;k.o=(1-k.d/maxD)*300+k.j*160;});
     box.classList.add('on');lab.textContent='';bar.style.transform='scaleX(0)';pct.textContent='000%';
-    var t0=performance.now(),IN=420+110+300,LOAD=620,OUT=300+160+120,phase=0,shown=false;
+    var t0=performance.now(),IN=420+110+300,LOAD=900,OUT=300+160+120,phase=0,shown=false;
     (function frame(now){
       var t=now-t0;ctx.clearRect(0,0,W,H);
       if(t<IN){
         cells.forEach(function(k){var a=t-k.t;if(a<0)return;var c=a<90?RED:mix(a<200?RED:DEEP,DARK,Math.min(1,(a-(a<200?90:200))/(a<200?110:180)));ctx.fillStyle='rgb('+c.map(Math.round)+')';ctx.fillRect(k.x,k.y,cs+.5,cs+.5);});
       }else if(t<IN+LOAD){
         ctx.fillStyle='rgb(10,10,11)';ctx.fillRect(0,0,W,H);
-        if(!shown){shown=true;mid();load.classList.add('on');scramble(lab,label,LOAD*.55);}
+        if(!shown){shown=true;mid();load.classList.add('on');scramble(lab,label,LOAD*.4);}
         var p=Math.min(1,(t-IN)/(LOAD*.85));bar.style.transform='scaleX('+p+')';pct.textContent=('00'+Math.round(p*100)).slice(-3)+'%';
       }else if(t<IN+LOAD+OUT){
         load.classList.remove('on');var u=t-IN-LOAD;
@@ -1023,23 +1027,22 @@ html.intro-on,html.intro-on body{overflow:hidden}
     })(t0);
   }
   function labelFor(a,target){
-    var t=(a.textContent||'').replace(/\s+/g,' ').trim();
-    if(a.classList.contains('brand')||!t){var h=target&&target.querySelector('h1,h2');t=h?h.textContent.trim():'228th Black Skulls Corps';}
+    var t=(a._orig||a.textContent||'').replace(/\s+/g,' ').trim();
+    if(a.classList.contains('brand')||!t){var h=target&&target.querySelector('h1,h2');t=h?(h.innerText||h.textContent).replace(/\s+/g,' ').trim():'228th Black Skulls Corps';}
     return t.toUpperCase();
   }
   document.addEventListener('click',function(e){
     if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
     var a=e.target.closest&&e.target.closest('a');if(!a||a.closest('#px'))return;
     var href=a.getAttribute('href')||'';
-    var txtEl=a.classList.contains('btn')?a:null;
-    if(txtEl&&!txtEl.children.length&&!txtEl._busy){var orig=txtEl.textContent;txtEl._busy=true;scramble(txtEl,orig,380,function(){txtEl._busy=false;});}
+    var txtEl=a.classList.contains('btn')?a:null,id=href.slice(1),target=id==='top'?document.body:document.getElementById(id),label=target?labelFor(a,target):'';
+    if(txtEl&&!txtEl.children.length&&!txtEl._busy){var orig=txtEl._orig||(txtEl._orig=txtEl.textContent);txtEl._busy=true;txtEl.style.width=txtEl.getBoundingClientRect().width+'px';txtEl.style.justifyContent='center';scramble(txtEl,orig,380,function(){txtEl._busy=false;txtEl.style.width='';txtEl.style.justifyContent='';});}
     if(href.charAt(0)!=='#'||busy)return;
-    var id=href.slice(1),target=id==='top'?document.body:document.getElementById(id);
     if(!target||target.closest('[hidden]'))return;
     e.preventDefault();
     var x=e.clientX||innerWidth/2,y=e.clientY||innerHeight/2;
     setTimeout(function(){
-      wipe(x,y,labelFor(a,target),function(){
+      wipe(x,y,label,function(){
         var root=document.documentElement,sb=root.style.scrollBehavior;root.style.scrollBehavior='auto';
         var top=id==='top'?0:target.getBoundingClientRect().top+scrollY-60;scrollTo(0,top);lastY=scrollY;
         root.style.scrollBehavior=sb;
