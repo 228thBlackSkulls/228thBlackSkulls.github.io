@@ -375,7 +375,7 @@ footer ul a:hover{color:var(--accent)}
 .pads-count b{color:var(--accent);font-weight:500}
 .pads-copy .pin-bar{width:min(260px,80%)}
 .pads-desk{position:relative;height:100%;min-height:0}
-.pad{position:absolute;left:50%;top:50%;width:min(420px,40vw);aspect-ratio:4/5;margin:calc(min(420px,40vw)*-.625) 0 0 calc(min(420px,40vw)*-.5);padding:14px;border-radius:16px;
+.pad{--pw:420px;position:absolute;left:50%;top:50%;width:var(--pw);aspect-ratio:4/5;margin:calc(var(--pw)*-.625) 0 0 calc(var(--pw)*-.5);padding:14px;border-radius:16px;
   background:linear-gradient(160deg,#4a4d53 0%,#2a2c31 18%,#1b1c20 60%,#2b2d32 100%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -2px 0 rgba(0,0,0,.6),0 30px 60px -20px rgba(0,0,0,.85),0 0 0 1px #0b0b0c;
   will-change:transform;transform:translate3d(0,120vh,0)}
@@ -397,7 +397,7 @@ footer ul a:hover{color:var(--accent)}
 .ps-bars b.full::after{background:rgba(233,238,244,.9);box-shadow:none}
 .ps-bars b:nth-child(2),.ps-bars b:nth-child(3){height:4px}
 .ps-bars b:nth-child(2).full::after{background:rgba(233,238,244,.6)}.ps-bars b:nth-child(3).full::after{background:rgba(233,238,244,.4)}
-.ps-logo{width:clamp(64px,8vw,96px);aspect-ratio:1;border:2px solid rgba(233,238,244,.85);display:grid;place-items:center;padding:4px}
+.ps-logo{width:96px;aspect-ratio:1;border:2px solid rgba(233,238,244,.85);display:grid;place-items:center;padding:4px}
 .ps-logo img{width:100%;height:100%;object-fit:contain;mix-blend-mode:screen;filter:brightness(1.25) contrast(1.15)}
 .ps-main{border:2px solid rgba(233,238,244,.85);padding:12px;display:grid;grid-template-rows:auto auto 1fr auto auto;gap:10px;min-height:0}
 .ps-track{display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:6px}
@@ -406,7 +406,7 @@ footer ul a:hover{color:var(--accent)}
 .ps-track span.done{color:#e9eef4}.ps-track span.done::after{background:#e9eef4}
 .ps-track span.now{color:var(--accent);border-color:var(--accent)}.ps-track span.now::after{background:var(--accent);border-color:var(--accent)}
 .ps-tag{color:var(--accent);font-size:.66rem}
-.ps-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;font:800 clamp(1.3rem,2.4vw,1.9rem)/1 var(--display);letter-spacing:.03em;min-height:1em}
+.ps-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;font:800 1.9rem/1 var(--display);letter-spacing:.03em;min-height:1em}
 .ps-dot{flex:none;width:12px;height:12px;background:var(--accent);box-shadow:0 0 12px rgba(226,51,59,.8);margin-top:4px;opacity:var(--dot,0)}
 .ps-text{font:500 .8rem/1.65 var(--mono);letter-spacing:.06em;text-transform:none;color:#cfd6de;border:1px solid rgba(233,238,244,.35);padding:10px;align-self:start}
 .ps-text .caret{display:inline-block;width:.6em;height:1.05em;vertical-align:-.15em;background:var(--accent);margin-left:2px;animation:blink 1s steps(1) infinite}
@@ -418,12 +418,13 @@ footer ul a:hover{color:var(--accent)}
   .pads-stage{grid-template-columns:1fr;grid-template-rows:auto 1fr;gap:6px;align-items:stretch}
   .pads-copy{padding-top:18px;gap:10px}
   .pads-big{font-size:clamp(2rem,9vw,2.8rem)}
-  .pad{width:min(330px,80vw,46svh);aspect-ratio:4/5.5;margin:calc(min(330px,80vw,46svh)*-.6875) 0 0 calc(min(330px,80vw,46svh)*-.5);padding:11px}
+  .pad{width:330px;aspect-ratio:4/5.5;margin:-227px 0 0 -165px;padding:11px}
   .pad-screen{padding:10px;gap:8px}
   .ps-code{font-size:.66rem;letter-spacing:.1em}
   .ps-main{padding:10px;gap:8px}
   .ps-text{font-size:.7rem;line-height:1.55;padding:8px}
   .ps-title{font-size:1.25rem}
+  .ps-logo{width:68px}
   .ps-off{font-size:5rem}
 }
 
@@ -457,7 +458,7 @@ footer ul a:hover{color:var(--accent)}
 .words-stage::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 60% 50%,transparent 20%,var(--bg) 85%);pointer-events:none}
 .globe{position:absolute;left:-18%;top:8%;width:min(80vw,620px);aspect-ratio:1;max-width:100%;opacity:.9}
 .words-wrap,.words-foot{position:relative;z-index:1;width:100%}
-.creed{font:600 clamp(1.7rem,4.6vw,3.4rem)/1.08 var(--display);text-transform:uppercase;letter-spacing:.01em;max-width:24ch;margin-left:auto}
+.creed{font:600 clamp(1.3rem,min(4.6vw,5.6svh),3.4rem)/1.08 var(--display);text-transform:uppercase;letter-spacing:.01em;max-width:24ch;margin-left:auto}
 .creed em{font-style:normal;color:var(--accent)}
 .creed .w{transition:color .25s}
 .motion .creed .w{color:#303034}
@@ -467,7 +468,7 @@ footer ul a:hover{color:var(--accent)}
 @keyframes blink{50%{opacity:0}}
 .words-foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .motion .words-pin{height:280vh}
-.motion .words-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));height:calc(100svh - 64px);padding-block:24px}
+.motion .words-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));height:calc(100svh - 64px);padding-block:clamp(12px,3vh,24px);gap:clamp(14px,4vh,40px)}
 @media (max-width:700px){.globe{left:-40%;top:4%;width:110vw;max-width:none}.creed{margin-left:0}}
 
 /* reveal on scroll + hero parallax, CSS scroll-driven where supported (content stays visible elsewhere) */
@@ -1200,6 +1201,8 @@ html.intro-on,html.intro-on body{overflow:hidden}
     queued=false;if(!N)return;
     var r=wrap.getBoundingClientRect(),span=wrap.offsetHeight-(innerHeight-64);
     var P=cl((-r.top+0)/(span>1?span:1)),mob=innerWidth<=820,dw=desk.clientWidth,dh=desk.clientHeight;
+    // pads are laid out at a fixed size and scaled to fit, so their text never reflows or spills on short screens
+    var k=mob?Math.min(330,innerWidth*.8,innerHeight*.46)/330:Math.min(420,innerWidth*.4,(innerHeight-130)*.78)/420;
     var cur=Math.min(N-1,Math.floor(P*N*.999));
     if(nEl)nEl.textContent=two(cur+1);if(bar)bar.style.setProperty('--p',P.toFixed(3));
     pads.forEach(function(p,i){
@@ -1208,7 +1211,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
       // enter from below with a slight tilt, then slide to the pile
       var y=(1-a)*(dh*.5+innerHeight*.6),rot=(1-a)*8;
       var px=mob?-dw*.3:-dw*.62,py=mob?dh*.3:dh*.18,pr=-10+i*7,ps=mob?.34:.5;
-      var x=out*(px+i*(mob?10:16)),yy=y+out*(py+i*(mob?6:10)),rr=rot+out*pr,sc=1-out*(1-ps);
+      var x=out*(px+i*(mob?10:16)),yy=y+out*(py+i*(mob?6:10)),rr=rot+out*pr,sc=(1-out*(1-ps))*k;
       p.el.style.transform='translate3d('+x.toFixed(1)+'px,'+yy.toFixed(1)+'px,0) rotate('+rr.toFixed(2)+'deg) scale('+sc.toFixed(3)+')';
       p.el.style.zIndex=out>0?i:20+i;
       p.el.style.visibility=s<-.02?'hidden':'visible';
