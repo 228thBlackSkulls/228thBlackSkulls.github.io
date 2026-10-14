@@ -349,7 +349,7 @@ footer ul a:hover{color:var(--accent)}
 
 /* pinned growth sequence: Squad -> Corps swaps in place while you scroll */
 .pin{display:none}
-.motion .pin{display:block;position:relative;height:420vh}
+.motion .pin{display:block;position:relative;height:580vh}
 .motion .ladder{display:none}
 .pin-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));height:calc(100svh - 64px);display:grid;align-content:center;justify-items:center;gap:22px;text-align:center}
 .pin-count{font:500 .85rem var(--mono);letter-spacing:.2em;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -365,7 +365,7 @@ footer ul a:hover{color:var(--accent)}
 
 /* datapads: join steps play out on Star Wars style datapads, scrubbed by scroll (forward and back) */
 .pads{display:none}
-.motion .pads{display:block;position:relative;height:calc(var(--n,3)*115vh + 50vh);margin-top:8px}
+.motion .pads{display:block;position:relative;height:calc(var(--n,3)*165vh + 60vh);margin-top:8px}
 .motion #c-steps{display:none}
 .pads-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));height:calc(100svh - 64px);display:grid;grid-template-columns:minmax(240px,1fr) minmax(0,1.35fr);align-items:center;gap:24px;overflow:hidden}
 .pads-copy{display:grid;gap:18px;align-self:start;padding-top:clamp(24px,8vh,80px);position:relative;z-index:3}
@@ -446,7 +446,7 @@ footer ul a:hover{color:var(--accent)}
 .emblem-cap{letter-spacing:.4em;text-align:center;display:grid}
 .emblem-cap > span{grid-area:1/1;transition:opacity .4s}
 .cap-a{opacity:0}
-.motion .emblem-pin{height:380vh;padding:0}
+.motion .emblem-pin{height:540vh;padding:0}
 .motion .emblem-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));height:calc(100svh - 64px);align-content:center}
 .motion .cap-a{opacity:1}.motion .cap-b{opacity:0}
 .motion .emblem-stage.done .cap-a{opacity:0}.motion .emblem-stage.done .cap-b{opacity:1}
@@ -467,7 +467,7 @@ footer ul a:hover{color:var(--accent)}
 .creed .caret{display:inline-block;width:.08em;height:.9em;background:var(--live);vertical-align:-.08em;margin-left:.08em;animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 .words-foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.motion .words-pin{height:280vh}
+.motion .words-pin{height:420vh}
 .motion .words-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));height:calc(100svh - 64px);padding-block:clamp(12px,3vh,24px);gap:clamp(14px,4vh,40px)}
 @media (max-width:700px){.globe{left:-40%;top:4%;width:110vw;max-width:none}.creed{margin-left:0}}
 
@@ -1135,6 +1135,34 @@ html.intro-on,html.intro-on body{overflow:hidden}
       if(h.charAt(0)!=='#'||!window.pxOn)setTimeout(closeMenu,0);
       else setTimeout(closeMenu,1400);});
   })();
+})();
+</script>
+<script>
+// Smooth mouse-wheel scrolling: each wheel notch glides instead of jumping, so scroll-driven animations play out
+// instead of skipping ahead. Trackpads, touch, keyboard and scrollbar dragging keep native scrolling.
+(function(){
+  var root=document.documentElement;
+  if(!root.classList.contains('motion')||/[?&]preview\b/.test(location.search))return;
+  var target=scrollY,cur=scrollY,running=false,ours=false;
+  function maxY(){return root.scrollHeight-innerHeight;}
+  function step(){
+    cur+=(target-cur)*.085;
+    if(Math.abs(target-cur)<.6)cur=target;
+    ours=true;scrollTo({top:cur,behavior:'instant'});
+    if(cur!==target)requestAnimationFrame(step);else running=false;
+  }
+  addEventListener('wheel',function(e){
+    if(e.ctrlKey||e.defaultPrevented||root.classList.contains('mnav-open')||root.classList.contains('intro-on'))return;
+    var dy=e.deltaMode===1?e.deltaY*40:e.deltaMode===2?e.deltaY*innerHeight:e.deltaY;
+    if(Math.abs(dy)<40||Math.abs(e.deltaX)>Math.abs(e.deltaY))return; // trackpads send small deltas: leave them native
+    for(var el=e.target;el&&el!==document.body&&el.nodeType===1;el=el.parentElement){var cs=getComputedStyle(el);if(/(auto|scroll)/.test(cs.overflowY)&&el.scrollHeight>el.clientHeight)return;}
+    e.preventDefault();
+    if(!running){cur=scrollY;target=scrollY;}
+    target=Math.max(0,Math.min(maxY(),target+dy));
+    if(!running){running=true;requestAnimationFrame(step);}
+  },{passive:false});
+  // any other scrolling (keys, scrollbar, in-page jumps) resets the glide
+  addEventListener('scroll',function(){if(ours){ours=false;return;}if(!running){cur=target=scrollY;}else if(Math.abs(scrollY-cur)>2){cur=target=scrollY;running=false;}},{passive:true});
 })();
 </script>
 <script>
