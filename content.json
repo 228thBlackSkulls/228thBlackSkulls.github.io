@@ -82,7 +82,64 @@
       "description": "New programs are in development. Watch this space."
     }
   ],
-  "qualifications": [],
+  "qualifications": [
+    {
+      "name": "Anti-Tank",
+      "description": "Trained to take down armor and vehicles with launchers and heavy ordnance."
+    },
+    {
+      "name": "Breacher",
+      "description": "First through the door. Specializes in forced entry and close-quarters assaults."
+    },
+    {
+      "name": "Combat Medic",
+      "description": "Keeps troopers in the fight with field triage, stabilization and revives under fire."
+    },
+    {
+      "name": "Stealth",
+      "description": "Moves unseen. Trained in infiltration, recon and silent takedowns."
+    },
+    {
+      "name": "EOD [Explosive Ordnance Disposal]",
+      "description": "Locates, disarms and clears mines, traps and explosive devices."
+    },
+    {
+      "name": "RTO [Radio Telephone Operator]",
+      "description": "The squad's voice on comms. Calls in support and keeps command connected."
+    },
+    {
+      "name": "Light Weaponry",
+      "description": "Proficient with sidearms, carbines and rifles for fast, mobile engagements."
+    },
+    {
+      "name": "Heavy Weaponry",
+      "description": "Brings sustained firepower with heavy repeaters and support weapons."
+    },
+    {
+      "name": "Jetpack",
+      "description": "Certified for jump-pack operations, vertical insertion and aerial maneuvering."
+    },
+    {
+      "name": "Marksman",
+      "description": "Precision shooting at range. Overwatch, spotting and eliminating priority targets."
+    },
+    {
+      "name": "Piloting / Flight",
+      "description": "Cleared to fly transports and craft for insertions, extractions and air support."
+    },
+    {
+      "name": "Riot",
+      "description": "Crowd and riot control with shields, non-lethal tools and line discipline."
+    },
+    {
+      "name": "SAR [Search & Rescue]",
+      "description": "Finds and recovers downed or missing personnel and gets them home."
+    },
+    {
+      "name": "SERE [Survival, Evasion, Resistance & Escape]",
+      "description": "Trained to survive behind enemy lines, evade capture, resist and escape."
+    }
+  ],
   "next_op": {
     "name": "Main operation",
     "day": "Saturday",
