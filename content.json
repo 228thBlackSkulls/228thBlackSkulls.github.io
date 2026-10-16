@@ -92,7 +92,8 @@
     },
     {
       "name": "Commando",
-      "description": "Small, tight squads for high-risk missions: raids, sabotage and hostage rescue."
+      "description": "Small, tight squads for high-risk missions: raids, sabotage and hostage rescue.",
+      "logo": "images/mos/commando.webp"
     },
     {
       "name": "Engineer",
@@ -118,6 +119,11 @@
     {
       "name": "Spec Ops",
       "description": "Special operations troopers for covert, high-value objectives."
+    },
+    {
+      "name": "Echelon",
+      "description": "Elite two-trooper teams, hand-picked by tryout for the hardest jobs in the Corps.",
+      "logo": "images/mos/echelon.webp"
     }
   ],
   "qualifications": [
