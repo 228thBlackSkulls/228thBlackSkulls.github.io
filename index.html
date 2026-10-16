@@ -210,8 +210,7 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 .mgroup>.label{max-width:none;display:flex;gap:12px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:14px}
 .mgroup>.label span{margin-left:auto}
 .medals{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-.medal{display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start;border:1px solid var(--line);padding:16px 18px;transition:border-color .2s}
-.medal:hover{border-color:var(--accent)}
+.medal{display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start;border:1px solid var(--line);padding:16px 18px}
 .medal h3{font-size:1.02rem;margin-bottom:4px}
 .medal p{color:var(--soft);font-size:.9rem;line-height:1.5}
 .mdl{width:34px;height:auto;display:block}
@@ -221,6 +220,21 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 .mdl .m2{fill:none;stroke:#555;stroke-width:1}
 .mdl .m3{fill:#e8e8e8}
 .medal:hover .m3{fill:var(--accent)}
+
+/* card motion: MOS, qualification and medal boxes */
+.divs .div,.medal{position:relative;overflow:hidden;transition:border-color .25s,translate .3s cubic-bezier(.2,.7,.2,1),background-color .25s}
+.divs .div::before,.medal::before{content:"";position:absolute;left:0;top:0;height:2px;width:100%;background:#3a3a3a;transform-origin:left}
+.divs .div::after,.medal::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.06) 50%,transparent 65%);transform:translateX(-110%);pointer-events:none}
+.motion .divs .div::before,.motion .medal::before{animation:cardBar linear both;animation-timeline:view();animation-range:entry 20% cover 40%}
+@keyframes cardBar{0%{transform:scaleX(0);background:var(--accent)}75%{transform:scaleX(1);background:var(--accent)}100%{transform:scaleX(1);background:#3a3a3a}}
+.divs .div .label,.divs .div h3,.mdl{transition:color .25s,letter-spacing .3s,transform .4s cubic-bezier(.2,.7,.2,1)}
+@media (hover:hover){
+  .divs .div:hover,.medal:hover{border-color:var(--accent);translate:0 -4px;background-color:#0f0f0f}
+  .divs .div:hover::after,.medal:hover::after{transform:translateX(110%);transition:transform .8s ease}
+  .divs .div:hover .label{color:var(--accent)}
+  .divs .div:hover h3{letter-spacing:.03em}
+  .medal:hover .mdl{transform:rotate(-10deg) scale(1.08)}
+}
 
 /* divisions */
 .divs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
