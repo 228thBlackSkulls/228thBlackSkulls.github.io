@@ -1234,5 +1234,223 @@
         "image": "images/lore/dc15228.webp"
       }
     ]
-  }
+  },
+  "medals_intro": "Decorations troopers can earn for valor, campaigns, their MOS and service to the Corps.",
+  "medals": [
+    {
+      "name": "Black Skull Star",
+      "group": "Valor & Honor",
+      "description": "The Corps' highest decoration, for extraordinary heroism and leadership in the field."
+    },
+    {
+      "name": "Order of the Crimson Skull",
+      "group": "Valor & Honor",
+      "description": "For troopers whose service has shaped the 228th and set the standard for others."
+    },
+    {
+      "name": "Medal of the Fallen Fang",
+      "group": "Valor & Honor",
+      "description": "Honors troopers who gave everything to hold the line or bring their squad home."
+    },
+    {
+      "name": "Iron Skull Medal",
+      "group": "Valor & Honor",
+      "description": "For standing firm under overwhelming odds and refusing to break."
+    },
+    {
+      "name": "Shadow Saber Cross",
+      "group": "Valor & Honor",
+      "description": "For exceptional courage in close combat against a superior enemy."
+    },
+    {
+      "name": "Medal of Bravery",
+      "group": "Valor & Honor",
+      "description": "For acts of courage under fire that went beyond what was asked."
+    },
+    {
+      "name": "28th Campaign Medal",
+      "group": "Campaigns & Operations",
+      "description": "Awarded to troopers who served through the 28th campaign."
+    },
+    {
+      "name": "Siege of Umbara Service Medal",
+      "group": "Campaigns & Operations",
+      "description": "For service during the Siege of Umbara."
+    },
+    {
+      "name": "Outer Rim Expedition Medal",
+      "group": "Campaigns & Operations",
+      "description": "For deployments on Outer Rim expeditions."
+    },
+    {
+      "name": "Black Skulls Defense Medal",
+      "group": "Campaigns & Operations",
+      "description": "For defending a Black Skulls position or holding against a major assault."
+    },
+    {
+      "name": "Operation Vanguard Medal",
+      "group": "Campaigns & Operations",
+      "description": "For taking part in Operation Vanguard."
+    },
+    {
+      "name": "228th–238th Joint Campaign Medal",
+      "group": "Campaigns & Operations",
+      "description": "For service in the joint campaign alongside the 238th."
+    },
+    {
+      "name": "Raid Defense Ribbon",
+      "group": "Campaigns & Operations",
+      "description": "For helping defend the unit during a raid."
+    },
+    {
+      "name": "SpecOps Gateway Medal",
+      "group": "MOS & Specialty",
+      "description": "For completing the gateway into special operations."
+    },
+    {
+      "name": "ARF Recon Badge",
+      "group": "MOS & Specialty",
+      "description": "Earned by Advanced Recon Force troopers for recon in the field."
+    },
+    {
+      "name": "ARC Trooper Cross",
+      "group": "MOS & Specialty",
+      "description": "Earned by troopers who make it through ARC training."
+    },
+    {
+      "name": "Commando Dagger",
+      "group": "MOS & Specialty",
+      "description": "Earned by troopers who complete the Commando Program."
+    },
+    {
+      "name": "Echelon Phantom Medal",
+      "group": "MOS & Specialty",
+      "description": "For service within Echelon."
+    },
+    {
+      "name": "Combat Medic Skull",
+      "group": "MOS & Specialty",
+      "description": "For outstanding medical work under fire."
+    },
+    {
+      "name": "Pilot's Talon",
+      "group": "MOS & Specialty",
+      "description": "For skilled flying in support of the Corps."
+    },
+    {
+      "name": "Flame Trooper's Brand",
+      "group": "MOS & Specialty",
+      "description": "For mastery of flame weaponry in the field."
+    },
+    {
+      "name": "Galactic Marine Frost Star",
+      "group": "MOS & Specialty",
+      "description": "For Marines who distinguish themselves in cold-weather or hostile-world operations."
+    },
+    {
+      "name": "Skull Commander's Medal",
+      "group": "Leadership & Service",
+      "description": "For outstanding command of troopers in the field."
+    },
+    {
+      "name": "Iron Mentor Medal",
+      "group": "Leadership & Service",
+      "description": "For troopers who take the time to train and guide others."
+    },
+    {
+      "name": "Black Skull Instructor Ribbon",
+      "group": "Leadership & Service",
+      "description": "For serving as an instructor in a 228th program."
+    },
+    {
+      "name": "HICOM Service Medal",
+      "group": "Leadership & Service",
+      "description": "For service on High Command."
+    },
+    {
+      "name": "S-Staff Achievement Medal",
+      "group": "Leadership & Service",
+      "description": "For outstanding work on the support staff."
+    },
+    {
+      "name": "Loyalty of the 228th Medal",
+      "group": "Leadership & Service",
+      "description": "For steadfast loyalty to the Corps and its troopers."
+    },
+    {
+      "name": "Brotherhood of the Skull Ribbon",
+      "group": "Leadership & Service",
+      "description": "For putting the brotherhood first and looking out for fellow troopers."
+    },
+    {
+      "name": "Black Skull Conduct Medal",
+      "group": "Leadership & Service",
+      "description": "For consistent good conduct and discipline."
+    },
+    {
+      "name": "228th Honorable Service",
+      "group": "Leadership & Service",
+      "description": "For an honorable record of service with the 228th."
+    },
+    {
+      "name": "Medal of Dedicated Service",
+      "group": "Leadership & Service",
+      "description": "For long-standing dedication and steady attendance."
+    },
+    {
+      "name": "228th Veteran",
+      "group": "Leadership & Service",
+      "description": "Recognizes troopers who have served the Corps for the long haul."
+    },
+    {
+      "name": "Builder of the Corps Medal",
+      "group": "Community & Creative",
+      "description": "For helping build the 228th: its servers, tools or systems."
+    },
+    {
+      "name": "Recruiter's Fang",
+      "group": "Community & Creative",
+      "description": "For bringing new troopers into the Corps."
+    },
+    {
+      "name": "Event Guardian Medal",
+      "group": "Community & Creative",
+      "description": "For running or supporting events that keep the unit active."
+    },
+    {
+      "name": "Discord Sentinel Ribbon",
+      "group": "Community & Creative",
+      "description": "For keeping watch over the Discord and helping it run smoothly."
+    },
+    {
+      "name": "Ceremonial Honor Guard Medal",
+      "group": "Community & Creative",
+      "description": "For serving in the honor guard at ceremonies."
+    },
+    {
+      "name": "Lorekeeper's Medal",
+      "group": "Community & Creative",
+      "description": "For writing and keeping the 228th's lore."
+    },
+    {
+      "name": "Avatar Artisan Medal",
+      "group": "Community & Creative",
+      "description": "For creating avatars and armor for the Corps."
+    },
+    {
+      "name": "Worldsmith Medal",
+      "group": "Community & Creative",
+      "description": "For building worlds and maps the unit plays in."
+    },
+    {
+      "name": "Diplomatic Envoy Medal",
+      "group": "Community & Creative",
+      "description": "For representing the 228th to allied units."
+    },
+    {
+      "name": "Medal of Trade",
+      "group": "Community & Creative",
+      "description": "For running trade and supply for the Corps."
+    }
+  ]
 }

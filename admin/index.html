@@ -179,6 +179,11 @@ textarea{resize:vertical;min-height:70px}
     {key:'qualifications', title:'Qualifications', goto:'quals', list:{label:'Qualification', title:'name', fields:[
       {key:'name', label:'Name', type:'text'},
       {key:'description', label:'Description', type:'textarea'}]}},
+    {key:'medals_intro', title:'Medals intro', goto:'medals', single:{label:'Intro text', type:'textarea'}},
+    {key:'medals', title:'Medals', goto:'medals', list:{label:'Medal', title:'name', fields:[
+      {key:'name', label:'Name', type:'text'},
+      {key:'group', label:'Group (medals with the same group are shown together)', type:'text'},
+      {key:'description', label:'Description', type:'textarea'}]}},
     {key:'next_op', title:'Next operation (countdown)', goto:'ops', fields:[
       {key:'name', label:'Operation name', type:'text'},
       {key:'day', label:'Day', type:'select', options:DAYS},

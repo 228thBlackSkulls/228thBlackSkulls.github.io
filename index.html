@@ -205,6 +205,23 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 .founders li span{display:block;font:500 .72rem var(--mono);letter-spacing:.12em;color:var(--muted)}
 @media (max-width:600px){.founders{grid-template-columns:1fr}}
 
+/* medals */
+.mgroups{display:grid;gap:34px}
+.mgroup>.label{max-width:none;display:flex;gap:12px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:14px}
+.mgroup>.label span{margin-left:auto}
+.medals{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.medal{display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start;border:1px solid var(--line);padding:16px 18px;transition:border-color .2s}
+.medal:hover{border-color:var(--accent)}
+.medal h3{font-size:1.02rem;margin-bottom:4px}
+.medal p{color:var(--soft);font-size:.9rem;line-height:1.5}
+.mdl{width:34px;height:auto;display:block}
+.mdl .r1{fill:#161616;stroke:#3a3a3a}
+.mdl .r2{fill:var(--accent)}
+.mdl .m1{fill:#2a2a2a;stroke:#9a9a9a;stroke-width:1.5}
+.mdl .m2{fill:none;stroke:#555;stroke-width:1}
+.mdl .m3{fill:#e8e8e8}
+.medal:hover .m3{fill:var(--accent)}
+
 /* divisions */
 .divs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .div{border:1px solid var(--line);padding:22px;display:grid;gap:10px;align-content:start}
@@ -548,7 +565,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <div class="wrap">
     <button class="mnav-back" type="button"><b>&larr;</b> Back</button>
     <nav class="mnav-list" aria-label="Mobile">
-      <a href="#about">About</a><a href="#history">History</a><a href="#lore">Lore</a><a href="#command">Command</a><a href="#divisions">Programs</a><a href="#quals">Qualifications</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
+      <a href="#about">About</a><a href="#history">History</a><a href="#lore">Lore</a><a href="#command">Command</a><a href="#divisions">Programs</a><a href="#quals">Qualifications</a><a href="#medals">Medals</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
     </nav>
     <div class="mnav-sub">
       <p class="label">Recruitment</p>
@@ -763,10 +780,75 @@ html.intro-on,html.intro-on body{overflow:hidden}
     </div>
   </section>
 
+  <section class="block" id="medals">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="label"><b>07</b> &nbsp;/&nbsp; Medals</p>
+        <h2>228th Medals</h2>
+        <p style="color:var(--soft)" id="medals-intro">Decorations troopers can earn for valor, campaigns, their MOS and service to the Corps.</p>
+      </div>
+      <div class="mgroups" id="c-medals">
+      <div class="mgroup"><p class="label"><b>01</b> Valor &amp; Honor <span>6</span></p><div class="medals">
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Black Skull Star</h3><p>The Corps&#x27; highest decoration, for extraordinary heroism and leadership in the field.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Order of the Crimson Skull</h3><p>For troopers whose service has shaped the 228th and set the standard for others.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Medal of the Fallen Fang</h3><p>Honors troopers who gave everything to hold the line or bring their squad home.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Iron Skull Medal</h3><p>For standing firm under overwhelming odds and refusing to break.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Shadow Saber Cross</h3><p>For exceptional courage in close combat against a superior enemy.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Medal of Bravery</h3><p>For acts of courage under fire that went beyond what was asked.</p></div></article>
+        </div></div>
+      <div class="mgroup"><p class="label"><b>02</b> Campaigns &amp; Operations <span>7</span></p><div class="medals">
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>28th Campaign Medal</h3><p>Awarded to troopers who served through the 28th campaign.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Siege of Umbara Service Medal</h3><p>For service during the Siege of Umbara.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Outer Rim Expedition Medal</h3><p>For deployments on Outer Rim expeditions.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Black Skulls Defense Medal</h3><p>For defending a Black Skulls position or holding against a major assault.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Operation Vanguard Medal</h3><p>For taking part in Operation Vanguard.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>228th–238th Joint Campaign Medal</h3><p>For service in the joint campaign alongside the 238th.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Raid Defense Ribbon</h3><p>For helping defend the unit during a raid.</p></div></article>
+        </div></div>
+      <div class="mgroup"><p class="label"><b>03</b> MOS &amp; Specialty <span>9</span></p><div class="medals">
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>SpecOps Gateway Medal</h3><p>For completing the gateway into special operations.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>ARF Recon Badge</h3><p>Earned by Advanced Recon Force troopers for recon in the field.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>ARC Trooper Cross</h3><p>Earned by troopers who make it through ARC training.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Commando Dagger</h3><p>Earned by troopers who complete the Commando Program.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Echelon Phantom Medal</h3><p>For service within Echelon.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Combat Medic Skull</h3><p>For outstanding medical work under fire.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Pilot&#x27;s Talon</h3><p>For skilled flying in support of the Corps.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Flame Trooper&#x27;s Brand</h3><p>For mastery of flame weaponry in the field.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Galactic Marine Frost Star</h3><p>For Marines who distinguish themselves in cold-weather or hostile-world operations.</p></div></article>
+        </div></div>
+      <div class="mgroup"><p class="label"><b>04</b> Leadership &amp; Service <span>11</span></p><div class="medals">
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Skull Commander&#x27;s Medal</h3><p>For outstanding command of troopers in the field.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Iron Mentor Medal</h3><p>For troopers who take the time to train and guide others.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Black Skull Instructor Ribbon</h3><p>For serving as an instructor in a 228th program.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>HICOM Service Medal</h3><p>For service on High Command.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>S-Staff Achievement Medal</h3><p>For outstanding work on the support staff.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Loyalty of the 228th Medal</h3><p>For steadfast loyalty to the Corps and its troopers.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Brotherhood of the Skull Ribbon</h3><p>For putting the brotherhood first and looking out for fellow troopers.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Black Skull Conduct Medal</h3><p>For consistent good conduct and discipline.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>228th Honorable Service</h3><p>For an honorable record of service with the 228th.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Medal of Dedicated Service</h3><p>For long-standing dedication and steady attendance.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>228th Veteran</h3><p>Recognizes troopers who have served the Corps for the long haul.</p></div></article>
+        </div></div>
+      <div class="mgroup"><p class="label"><b>05</b> Community &amp; Creative <span>10</span></p><div class="medals">
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Builder of the Corps Medal</h3><p>For helping build the 228th: its servers, tools or systems.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Recruiter&#x27;s Fang</h3><p>For bringing new troopers into the Corps.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Event Guardian Medal</h3><p>For running or supporting events that keep the unit active.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Discord Sentinel Ribbon</h3><p>For keeping watch over the Discord and helping it run smoothly.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Ceremonial Honor Guard Medal</h3><p>For serving in the honor guard at ceremonies.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Lorekeeper&#x27;s Medal</h3><p>For writing and keeping the 228th&#x27;s lore.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Avatar Artisan Medal</h3><p>For creating avatars and armor for the Corps.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Worldsmith Medal</h3><p>For building worlds and maps the unit plays in.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Diplomatic Envoy Medal</h3><p>For representing the 228th to allied units.</p></div></article>
+          <article class="medal reveal"><svg class="mdl" viewBox="0 0 40 56" aria-hidden="true"><path class="r1" d="M9 1h22l-5 25h-12z"/><path class="r2" d="M17 1h6l-1.6 25h-2.8z"/><circle class="m1" cx="20" cy="40" r="14"/><circle class="m2" cx="20" cy="40" r="11"/><polygon class="m3" points="20.0,32.0 22.0,37.2 27.6,37.5 23.2,41.1 24.7,46.5 20.0,43.4 15.3,46.5 16.8,41.1 12.4,37.5 18.0,37.2"/></svg><div><h3>Medal of Trade</h3><p>For running trade and supply for the Corps.</p></div></article>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
   <section class="block" id="ops">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>07</b> &nbsp;/&nbsp; Operations</p>
+        <p class="label"><b>08</b> &nbsp;/&nbsp; Operations</p>
         <h2>Deployment schedule</h2>
         <p style="color:var(--soft)">All times in Zulu (UTC). The countdown shows your local time. <span class="tbd">CONFIRM DAYS + TIMES</span></p>
       </div>
@@ -797,7 +879,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="join">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>08</b> &nbsp;/&nbsp; Enlistment</p>
+        <p class="label"><b>09</b> &nbsp;/&nbsp; Enlistment</p>
         <h2>Recruitment Center</h2>
         <p style="color:var(--soft)">Members, guests, and allies are all welcome. Follow the steps below, then pick the Discord for the game you play.</p>
       </div>
@@ -832,7 +914,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="shop" data-shop hidden>
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>09</b> &nbsp;/&nbsp; Quartermaster</p>
+        <p class="label"><b>10</b> &nbsp;/&nbsp; Quartermaster</p>
         <h2 id="shop-title">Gear up</h2>
         <p style="color:var(--soft)" id="shop-intro">Official 228th merch, printed to order and shipped by our store partner.</p>
       </div>
@@ -843,7 +925,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
 
   <section class="block" id="faq" style="border-bottom:0">
     <div class="wrap split">
-      <div class="head reveal"><p class="label"><b>10</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
+      <div class="head reveal"><p class="label"><b>11</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
       <div class="faq" id="c-faq">
         <details><summary>Do I need a VR headset?</summary><p>No. VRChat runs on desktop too, so you can take part with a keyboard and mouse.</p></details>
         <details><summary>Do I need to know Star Wars lore?</summary><p>No. You'll pick it up as you go, and plenty of members are happy to explain the 228th's own lore.</p></details>
@@ -969,6 +1051,12 @@ html.intro-on,html.intro-on body{overflow:hidden}
     list('c-divisions',c.divisions,function(x){var a=el('article','div reveal');a.appendChild(el('span','label','MOS'));a.appendChild(el('h3',null,x.name));a.appendChild(el('p',null,x.description));return a;});
     text('quals-intro',c.qualifications_intro);
     list('c-quals',c.qualifications,function(x){var a=el('article','div reveal');a.appendChild(el('span','label','Qualification'));a.appendChild(el('h3',null,x.name));a.appendChild(el('p',null,x.description));return a;});
+    text('medals-intro',c.medals_intro);
+    (function(){var box=document.getElementById('c-medals'),M=c.medals;if(!box||!Array.isArray(M)||!M.length)return;var tpl=box.querySelector('.mdl'),gs=[],by={};
+      M.forEach(function(m){var g=(m.group||'').trim()||'Medals';if(!by[g]){by[g]=[];gs.push(g);}by[g].push(m);});
+      box.textContent='';gs.forEach(function(g,i){var d=el('div','mgroup'),h=el('p','label');h.appendChild(el('b',null,pad(i+1)));h.appendChild(document.createTextNode(' '+g+' '));h.appendChild(el('span',null,String(by[g].length)));d.appendChild(h);
+        var w=el('div','medals');by[g].forEach(function(m){var a=el('article','medal reveal');if(tpl)a.appendChild(tpl.cloneNode(true));var t=el('div');t.appendChild(el('h3',null,m.name));if(m.description)t.appendChild(el('p',null,m.description));a.appendChild(t);w.appendChild(a);});
+        d.appendChild(w);box.appendChild(d);});})();
     var n=c.next_op||{};
     if(n.day&&DAYS.indexOf(String(n.day).toLowerCase())>=0){op.day=DAYS.indexOf(String(n.day).toLowerCase());op.label=n.day.charAt(0).toUpperCase()+n.day.slice(1).toLowerCase();}
     var tm=/^(\d{1,2}):?(\d{2})/.exec(n.time_utc||''); if(tm){op.h=+tm[1];op.m=+tm[2];}
