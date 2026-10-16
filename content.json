@@ -66,20 +66,56 @@
   ],
   "divisions": [
     {
-      "name": "Commando",
-      "description": "Description coming soon."
+      "name": "Conventional",
+      "description": "The backbone of the Corps. Line troopers who hold ground, push objectives and win the fight."
+    },
+    {
+      "name": "ARC",
+      "description": "Advanced Recon Commandos. Elite troopers trained to lead, adapt and operate on their own behind enemy lines."
     },
     {
       "name": "ARF",
-      "description": "Advanced Recon Force. Description coming soon."
+      "description": "Advanced Recon Force. Scouts who move ahead of the line to find the enemy and report back."
     },
     {
-      "name": "Echelon",
-      "description": "Description coming soon."
+      "name": "Airborne",
+      "description": "Rapid-deployment troopers who drop into the fight from gunships and jump craft."
     },
     {
-      "name": "More coming soon",
-      "description": "New programs are in development. Watch this space."
+      "name": "Armored",
+      "description": "Crews who drive and fight the Corps' tanks and walkers."
+    },
+    {
+      "name": "BARC",
+      "description": "Speeder-mounted recon troopers built for fast movement across the battlefield."
+    },
+    {
+      "name": "Commando",
+      "description": "Small, tight squads for high-risk missions: raids, sabotage and hostage rescue."
+    },
+    {
+      "name": "Engineer",
+      "description": "Builders and breakers: fortifications, repairs, demolitions and field logistics."
+    },
+    {
+      "name": "Marine",
+      "description": "Assault troopers for boarding actions, ship-to-shore landings and close-quarters fights."
+    },
+    {
+      "name": "Medic",
+      "description": "Keeps troopers in the fight with triage, field care and casualty evacuation."
+    },
+    {
+      "name": "Pilot",
+      "description": "Flies the Corps' gunships, fighters and transports."
+    },
+    {
+      "name": "Scuba",
+      "description": "Aquatic troopers trained for underwater insertion and waterborne operations."
+    },
+    {
+      "name": "Spec Ops",
+      "description": "Special operations troopers for covert, high-value objectives."
     }
   ],
   "qualifications": [
