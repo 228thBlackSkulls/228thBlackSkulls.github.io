@@ -75,7 +75,8 @@
     },
     {
       "name": "ARF",
-      "description": "Advanced Recon Force. Scouts who move ahead of the line to find the enemy and report back."
+      "description": "Advanced Recon Force. Scouts who move ahead of the line to find the enemy and report back.",
+      "logo": "images/mos/arf.webp"
     },
     {
       "name": "Airborne",
@@ -107,7 +108,8 @@
     },
     {
       "name": "Pilot",
-      "description": "Flies the Corps' gunships, fighters and transports."
+      "description": "Flies the Corps' gunships, fighters and transports.",
+      "logo": "images/mos/pilot.webp"
     },
     {
       "name": "Scuba",

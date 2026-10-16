@@ -236,6 +236,10 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
   .medal:hover .mdl{transform:rotate(-10deg) scale(1.08)}
 }
 
+.div.has-logo>.label,.div.has-logo>h3{padding-right:78px}
+.mos-logo{position:absolute;top:16px;right:16px;width:68px;height:68px;object-fit:contain;transition:transform .4s cubic-bezier(.2,.7,.2,1),filter .3s;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
+@media (hover:hover){.div.has-logo:hover .mos-logo{transform:rotate(-6deg) scale(1.08);filter:drop-shadow(0 4px 14px rgba(226,51,59,.35))}}
+
 /* divisions */
 .divs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .div{border:1px solid var(--line);padding:22px;display:grid;gap:10px;align-content:start}
@@ -753,7 +757,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
       <div class="divs" id="c-divisions">
         <article class="div reveal"><span class="label">MOS</span><h3>Conventional</h3><p>The backbone of the Corps. Line troopers who hold ground, push objectives and win the fight.</p></article>
         <article class="div reveal"><span class="label">MOS</span><h3>ARC</h3><p>Advanced Recon Commandos. Elite troopers trained to lead, adapt and operate on their own behind enemy lines.</p></article>
-        <article class="div reveal"><span class="label">MOS</span><h3>ARF</h3><p>Advanced Recon Force. Scouts who move ahead of the line to find the enemy and report back.</p></article>
+        <article class="div reveal has-logo"><span class="label">MOS</span><h3>ARF</h3><img class="mos-logo" src="images/mos/arf.webp" alt="ARF logo" loading="lazy"><p>Advanced Recon Force. Scouts who move ahead of the line to find the enemy and report back.</p></article>
         <article class="div reveal"><span class="label">MOS</span><h3>Airborne</h3><p>Rapid-deployment troopers who drop into the fight from gunships and jump craft.</p></article>
         <article class="div reveal"><span class="label">MOS</span><h3>Armored</h3><p>Crews who drive and fight the Corps&#x27; tanks and walkers.</p></article>
         <article class="div reveal"><span class="label">MOS</span><h3>BARC</h3><p>Speeder-mounted recon troopers built for fast movement across the battlefield.</p></article>
@@ -761,7 +765,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
         <article class="div reveal"><span class="label">MOS</span><h3>Engineer</h3><p>Builders and breakers: fortifications, repairs, demolitions and field logistics.</p></article>
         <article class="div reveal"><span class="label">MOS</span><h3>Marine</h3><p>Assault troopers for boarding actions, ship-to-shore landings and close-quarters fights.</p></article>
         <article class="div reveal"><span class="label">MOS</span><h3>Medic</h3><p>Keeps troopers in the fight with triage, field care and casualty evacuation.</p></article>
-        <article class="div reveal"><span class="label">MOS</span><h3>Pilot</h3><p>Flies the Corps&#x27; gunships, fighters and transports.</p></article>
+        <article class="div reveal has-logo"><span class="label">MOS</span><h3>Pilot</h3><img class="mos-logo" src="images/mos/pilot.webp" alt="Pilot logo" loading="lazy"><p>Flies the Corps&#x27; gunships, fighters and transports.</p></article>
         <article class="div reveal"><span class="label">MOS</span><h3>Scuba</h3><p>Aquatic troopers trained for underwater insertion and waterborne operations.</p></article>
         <article class="div reveal"><span class="label">MOS</span><h3>Spec Ops</h3><p>Special operations troopers for covert, high-value objectives.</p></article>
       </div>
@@ -1062,7 +1066,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
       var inf=el('div','info');inf.appendChild(el('span','label',x.rank));inf.appendChild(el('span','cc',x.designation));inf.appendChild(el('h3',null,x.name));if(x.division)inf.appendChild(el('span','tag',x.division));
       a.appendChild(pl);a.appendChild(inf);return a;});
     list('c-founders',c.founders,function(x){var li=el('li',null,x.name);li.appendChild(el('span',null,x.role));return li;});
-    list('c-divisions',c.divisions,function(x){var a=el('article','div reveal');a.appendChild(el('span','label','MOS'));a.appendChild(el('h3',null,x.name));a.appendChild(el('p',null,x.description));return a;});
+    list('c-divisions',c.divisions,function(x){var a=el('article','div reveal'+(x.logo?' has-logo':''));a.appendChild(el('span','label','MOS'));a.appendChild(el('h3',null,x.name));if(x.logo){var im=el('img','mos-logo');im.src=x.logo;im.alt=x.name+' logo';im.loading='lazy';a.appendChild(im);}a.appendChild(el('p',null,x.description));return a;});
     text('quals-intro',c.qualifications_intro);
     list('c-quals',c.qualifications,function(x){var a=el('article','div reveal');a.appendChild(el('span','label','Qualification'));a.appendChild(el('h3',null,x.name));a.appendChild(el('p',null,x.description));return a;});
     text('medals-intro',c.medals_intro);
