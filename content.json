@@ -67,7 +67,8 @@
   "divisions": [
     {
       "name": "Conventional",
-      "description": "The backbone of the Corps. Line troopers who hold ground, push objectives and win the fight."
+      "description": "The backbone of the Corps. Line troopers who hold ground, push objectives and win the fight.",
+      "logo": "images/mos/conventional.webp"
     },
     {
       "name": "ARC",
@@ -88,7 +89,8 @@
     },
     {
       "name": "BARC",
-      "description": "Speeder-mounted recon troopers built for fast movement across the battlefield."
+      "description": "Speeder-mounted recon troopers built for fast movement across the battlefield.",
+      "logo": "images/mos/barc.webp"
     },
     {
       "name": "Commando",
