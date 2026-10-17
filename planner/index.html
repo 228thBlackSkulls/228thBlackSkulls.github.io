@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0a0a0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="228th Ops">
+<title>228th Op Planner</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="../favicon-32.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Big+Shoulders+Stencil+Display:wght@700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0b;--panel:#151517;--panel2:#1c1c1f;--line:#29292d;--fg:#efefed;--soft:#c6c6c8;--muted:#8e8e93;--accent:#e2333b;--deep:#b3141b;--ok:#4cc38a}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 Barlow,system-ui,sans-serif}
+body{padding:calc(env(safe-area-inset-top,0px) + 12px) 16px calc(env(safe-area-inset-bottom,0px) + 32px)}
+.wrap{max-width:560px;margin:0 auto}
+button,input,select,textarea{font:inherit;color:inherit}
+.label{font:500 11px/1.2 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font:800 26px/1 'Big Shoulders Stencil Display',sans-serif;letter-spacing:.04em;margin:0;text-transform:uppercase}
+h1 b{color:var(--accent)}
+h2{font:800 20px/1 'Big Shoulders Stencil Display',sans-serif;letter-spacing:.04em;margin:0 0 12px;text-transform:uppercase}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0 18px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:11px 16px;cursor:pointer;font-weight:600;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--deep);border-color:var(--deep);color:#fff;width:100%;padding:14px}
+.btn.small{padding:6px 10px;font-size:14px}
+.btn.ghost{background:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.field{margin:0 0 14px}
+.field>label{display:block;margin-bottom:6px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input[type=text],input[type=password],input[type=date],input[type=time],select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:11px 12px;outline:none;font-size:16px;-webkit-appearance:none;appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:90px}
+.hint{color:var(--muted);font-size:14px;margin:6px 0 0}
+.preview{font:500 13px/1.4 'IBM Plex Mono',monospace;color:var(--soft);margin:-4px 0 14px}
+.op{display:grid;grid-template-columns:1fr auto;gap:6px 10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.op:last-child{border-bottom:0}
+.op h3{margin:0;font-size:17px;overflow-wrap:anywhere}
+.op .when{color:var(--soft);font-size:14px}
+.op .desc{color:var(--soft);font-size:14px;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+.op .by{color:var(--muted);font-size:13px;margin-top:4px}
+.op .acts{display:flex;flex-direction:column;gap:6px}
+.empty{color:var(--muted)}
+.tag{font:500 10px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line);padding:2px 6px;margin-left:6px;color:var(--soft);vertical-align:2px;white-space:nowrap}
+.tag.live{border-color:var(--deep);color:#fff;background:var(--deep)}
+.count{font:500 13px 'IBM Plex Mono',monospace;color:var(--accent);margin-top:2px}
+a{color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);padding:12px 16px;border-radius:10px;display:none;z-index:9;max-width:92vw;text-align:center}
+[hidden]{display:none!important}
+.copyrow{display:flex;gap:8px}
+.copyrow input{flex:1;min-width:0}
+ol{padding-left:20px;color:var(--soft)}
+ol li{margin-bottom:6px}
+code{font:500 13px 'IBM Plex Mono',monospace;color:var(--fg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><p class="label" style="margin:0 0 6px">228th Black Skulls Corps</p><h1>Op <b>Planner</b></h1></div>
+    <button class="btn small ghost" id="shareBtn" type="button" hidden>Share link</button>
+  </header>
+
+  <!-- no key on this device -->
+  <section id="nokey" hidden>
+    <div class="card">
+      <h2>Planner link needed</h2>
+      <p style="color:var(--soft);margin-top:0">This page only works from the planner link. Ask Flanker or High Command to send it to you, then open it on your phone.</p>
+      <button class="btn ghost" id="setupOpen" type="button" style="width:100%">I'm setting the planner up</button>
+    </div>
+  </section>
+
+  <!-- one-time setup (Flanker) -->
+  <section id="setup" hidden>
+    <div class="card">
+      <h2>Set up the planner</h2>
+      <ol>
+        <li>In the 228thBlackSkulls org on GitHub, create a <b>public</b> repo named <code>228th-ops</code> (tick "Add a README").</li>
+        <li>Make a fine-grained key: Settings → Developer settings → Fine-grained tokens. Resource owner <b>228thBlackSkulls</b>, <b>Only select repositories: 228th-ops</b>, Permissions → Contents: <b>Read and write</b>. Pick the longest expiry offered.</li>
+        <li>Paste it below. Only give it access to <code>228th-ops</code>: everyone with the planner link can use it.</li>
+      </ol>
+      <div class="field"><input type="password" id="token" placeholder="github_pat_…" autocomplete="off"></div>
+      <button class="btn primary" id="setupBtn" type="button">Check key and make the link</button>
+      <p class="hint" id="setupErr"></p>
+    </div>
+  </section>
+
+  <!-- the op form -->
+  <section id="formCard" class="card" hidden>
+    <h2 id="formTitle">Post an op</h2>
+    <div class="field"><label class="label" for="title">Op title</label><input type="text" id="title" maxlength="80" placeholder="Operation: …"></div>
+    <div class="field"><label class="label" for="game">Game</label>
+      <select id="game"><option>VRChat</option><option>Arma 3</option><option>Minecraft</option><option>Other</option></select></div>
+    <div class="row">
+      <div class="field"><label class="label" for="date">Date</label><input type="date" id="date"></div>
+      <div class="field"><label class="label" for="time">Start time</label><input type="time" id="time" step="300"></div>
+    </div>
+    <div class="field"><label class="label" for="tz">Time zone of that time</label><select id="tz"></select></div>
+    <p class="preview" id="when"></p>
+    <div class="field"><label class="label" for="desc">Brief description</label><textarea id="desc" maxlength="600" placeholder="What's the op, what to bring, where to muster…"></textarea></div>
+    <div class="field"><label class="label" for="by">Posted by</label><input type="text" id="by" maxlength="40" placeholder="Your name or callsign"></div>
+    <button class="btn primary" id="saveBtn" type="button">Post op</button>
+    <button class="btn ghost" id="cancelBtn" type="button" style="width:100%;margin-top:8px" hidden>Cancel edit</button>
+  </section>
+
+  <!-- active ops, from everyone -->
+  <section id="listCard" class="card" hidden>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px"><h2 style="margin:0">Active ops</h2><button class="btn small ghost" id="refreshBtn" type="button">Refresh</button></div>
+    <p class="hint" style="margin:0 0 6px">Everything posted from this link, by anyone. The website countdowns show these.</p>
+    <div id="list"></div>
+  </section>
+
+  <!-- share -->
+  <section id="shareCard" class="card" hidden>
+    <h2>Planner link</h2>
+    <p style="color:var(--soft);margin-top:0">Send this to anyone who should be able to post ops. Whoever has it can add, edit and remove ops, so keep it to people you trust.</p>
+    <div class="copyrow"><input type="text" id="shareUrl" readonly><button class="btn" id="copyBtn" type="button">Copy</button></div>
+    <p class="hint">To change who has access, make a new key, run setup again and send the new link. Deleting the old key on GitHub cuts the old link off.</p>
+  </section>
+
+  <p class="hint" style="text-align:center;margin-top:24px" id="tip" hidden>Keep it as an app: on iPhone tap Share → Add to Home Screen; on Android tap ⋮ → Add to Home screen.</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  // Ops live in their own repo so the shared key can never touch the website itself.
+  var REPO='228thBlackSkulls/228th-ops', BRANCH='main', FILE='ops.json';
+  var API='https://api.github.com/repos/'+REPO+'/contents/'+FILE;
+  var KEEP_MS=4*3600e3; // an op stays "active" for 4h after it starts
+  var $=function(id){return document.getElementById(id);};
+  function store(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(e){}}
+  function read(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}
+  function toast(m,ms){var t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){t.style.display='none';},ms||3500);}
+  function b64d(s){var bin=atob(s.replace(/\n/g,''));var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder().decode(u);}
+  function b64e(str){var u=new TextEncoder().encode(str),bin='';for(var i=0;i<u.length;i++)bin+=String.fromCharCode(u[i]);return btoa(bin);}
+  function pad(n){return String(n).padStart(2,'0');}
+  function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
+
+  // ----- the key comes from the link (#k=…) and is remembered on this device -----
+  function hashKey(){var m=/(?:^|[#&])k=([^&]+)/.exec(location.hash);return m?decodeURIComponent(m[1]):'';}
+  var token=hashKey()||read('228th-ops-key');
+  function linkFor(t){return location.origin+location.pathname+'#k='+encodeURIComponent(t);}
+
+  // ----- time zones -----
+  var local=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
+  var ZONES=[['America/New_York','Eastern (ET)'],['America/Chicago','Central (CT)'],['America/Denver','Mountain (MT)'],['America/Phoenix','Arizona'],['America/Los_Angeles','Pacific (PT)'],['America/Anchorage','Alaska'],['Pacific/Honolulu','Hawaii'],['Europe/London','UK'],['Europe/Berlin','Central Europe'],['Australia/Sydney','Sydney'],['UTC','UTC / Zulu']];
+  (function(){var s=$('tz');if(!ZONES.some(function(z){return z[0]===local;}))ZONES.unshift([local,local.replace(/_/g,' ')]);
+    ZONES.forEach(function(z){var o=el('option',null,z[1]+(z[0]===local?' · this device':''));o.value=z[0];s.appendChild(o);});s.value=local;})();
+  // Offset (ms) of a zone at an instant, from Intl.
+  function offset(tz,ms){var p={};new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(new Date(ms)).forEach(function(x){p[x.type]=x.value;});
+    return Date.UTC(+p.year,+p.month-1,+p.day,+p.hour%24,+p.minute,+p.second)-ms;}
+  // Wall-clock date + time in a zone -> UTC ms.
+  function toUtc(date,time,tz){var d=date.split('-').map(Number),t=time.split(':').map(Number);var g=Date.UTC(d[0],d[1]-1,d[2],t[0],t[1]);var u=g-offset(tz,g);return g-offset(tz,u);}
+  function fmt(ms,tz){return new Date(ms).toLocaleString(undefined,{timeZone:tz,weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});}
+  function whenMs(){var d=$('date').value,t=$('time').value;return d&&t?toUtc(d,t,$('tz').value):NaN;}
+  function showWhen(){var ms=whenMs();$('when').textContent=isNaN(ms)?'':'= '+fmt(ms,local)+' on this device';}
+  ['date','time','tz'].forEach(function(id){$(id).addEventListener('input',showWhen);$(id).addEventListener('change',showWhen);});
+  function until(ms){var s=Math.round((ms-Date.now())/60000);if(s<=0)return 'Live now';var d=Math.floor(s/1440),h=Math.floor(s%1440/60),m=s%60;return 'Starts in '+(d?d+'d ':'')+(d||h?h+'h ':'')+m+'m';}
+
+  // ----- GitHub -----
+  var ops=[], sha=null, editing=null;
+  function gh(opts){opts=opts||{};opts.headers=Object.assign({'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'},opts.headers||{});
+    return fetch(API+(opts.method?'':'?ref='+BRANCH+'&t='+Date.now()),opts).then(function(r){return r.json().catch(function(){return {};}).then(function(j){if(!r.ok){var e=new Error(j.message||('GitHub error '+r.status));e.status=r.status;throw e;}return j;});});}
+  function load(){return gh().then(function(j){sha=j.sha;var d=JSON.parse(b64d(j.content)||'{}');ops=Array.isArray(d.ops)?d.ops:[];return ops;})
+    .catch(function(e){if(e.status===404){sha=null;ops=[];return ops;}throw e;});}
+  function active(list){return list.filter(function(o){return Date.parse(o.start)+KEEP_MS>Date.now();}).sort(function(a,b){return Date.parse(a.start)-Date.parse(b.start);});}
+  // Always re-reads ops.json right before writing, so two people posting at once don't wipe each other out.
+  function saveOps(change,msg,retried){return load().then(function(){var next=change(active(ops));
+      var body={message:msg,branch:BRANCH,content:b64e(JSON.stringify({ops:next},null,2)+'\n')};if(sha)body.sha=sha;
+      return gh({method:'PUT',body:JSON.stringify(body)}).then(function(j){sha=j.content&&j.content.sha;ops=next;});})
+    .catch(function(e){if(!retried&&(e.status===409||e.status===422))return saveOps(change,msg,true);throw e;});}
+
+  // ----- form -----
+  function readForm(){var ms=whenMs();if(!$('title').value.trim())throw new Error('Add a title.');if(isNaN(ms))throw new Error('Pick a date and time.');
+    if(!editing&&ms<Date.now()-KEEP_MS)throw new Error('That time has already passed.');
+    var op={id:editing||('op-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),title:$('title').value.trim(),game:$('game').value,start:new Date(ms).toISOString(),description:$('desc').value.trim()};
+    var by=$('by').value.trim();if(by)op.posted_by=by;return op;}
+  function fillForm(op){$('title').value=op.title||'';$('game').value=op.game||'VRChat';$('desc').value=op.description||'';$('by').value=op.posted_by||read('228th-ops-by');
+    var ms=Date.parse(op.start);if(!isNaN(ms)){$('tz').value=local;var d=new Date(ms+offset(local,ms));$('date').value=d.getUTCFullYear()+'-'+pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate());$('time').value=pad(d.getUTCHours())+':'+pad(d.getUTCMinutes());}
+    showWhen();}
+  function resetForm(){editing=null;$('formTitle').textContent='Post an op';$('saveBtn').textContent='Post op';$('cancelBtn').hidden=true;['title','desc','date','time'].forEach(function(id){$(id).value='';});$('by').value=read('228th-ops-by');showWhen();}
+
+  function renderList(){var box=$('list');box.textContent='';var list=active(ops);
+    if(!list.length){box.appendChild(el('p','empty','No active ops yet. Post one above.'));return;}
+    list.forEach(function(op){var ms=Date.parse(op.start),r=el('div','op'),l=el('div');
+      var h=el('h3',null,op.title);var tg=el('span','tag',op.game);h.appendChild(tg);if(ms<=Date.now())h.appendChild(el('span','tag live','Live'));
+      l.appendChild(h);l.appendChild(el('div','when',fmt(ms,local)));l.appendChild(el('div','count',until(ms)));
+      if(op.description)l.appendChild(el('div','desc',op.description));
+      if(op.posted_by)l.appendChild(el('div','by','Posted by '+op.posted_by));
+      var a=el('div','acts'),e=el('button','btn small','Edit'),d=el('button','btn small ghost','Remove');
+      e.type=d.type='button';
+      e.onclick=function(){editing=op.id;$('formTitle').textContent='Edit op';$('saveBtn').textContent='Save changes';$('cancelBtn').hidden=false;fillForm(op);scrollTo({top:0,behavior:'smooth'});};
+      d.onclick=function(){if(!confirm('Remove "'+op.title+'"?'))return;d.disabled=true;
+        saveOps(function(list){return list.filter(function(o){return o.id!==op.id;});},'Remove op: '+op.title).then(function(){if(editing===op.id)resetForm();renderList();toast('Removed. The website catches up within about 5 minutes.');})
+        .catch(function(err){d.disabled=false;toast(problem(err,'remove'),7000);});};
+      a.appendChild(e);a.appendChild(d);r.appendChild(l);r.appendChild(a);box.appendChild(r);});}
+  function problem(e,what){if(e.status===401)return 'The planner link has expired or was turned off. Ask Flanker for a new one.';
+    if(e.status===403||e.status===404)return 'This link can\'t '+what+' ops. Ask Flanker for a new one.';return 'Could not '+what+': '+e.message;}
+  function refresh(){return load().then(renderList).catch(function(e){toast(problem(e,'load'),7000);});}
+
+  function startApp(){
+    store('228th-ops-key',token);
+    // Keep the key in the address so Add to Home Screen (iPhone) carries it into the app.
+    if(hashKey()!==token)history.replaceState(null,'',linkFor(token));
+    $('nokey').hidden=$('setup').hidden=true;$('formCard').hidden=$('listCard').hidden=$('shareBtn').hidden=$('tip').hidden=false;
+    $('shareUrl').value=linkFor(token);resetForm();renderList();refresh();
+    setInterval(function(){if(!document.hidden)renderList();},60000);
+    document.addEventListener('visibilitychange',function(){if(!document.hidden)refresh();});
+  }
+
+  $('saveBtn').onclick=function(){var op;try{op=readForm();}catch(e){toast(e.message);return;}
+    if(op.posted_by)store('228th-ops-by',op.posted_by);
+    var btn=$('saveBtn'),wasEdit=!!editing;btn.disabled=true;btn.textContent='Posting…';
+    saveOps(function(list){var i=list.findIndex(function(o){return o.id===op.id;});if(i>=0)list[i]=op;else list.push(op);return list;},(wasEdit?'Update op: ':'Add op: ')+op.title)
+    .then(function(){toast(wasEdit?'Saved.':'Posted. The website catches up within about 5 minutes.',5000);resetForm();renderList();})
+    .catch(function(e){toast(problem(e,'post'),7000);})
+    .then(function(){btn.disabled=false;btn.textContent=editing?'Save changes':'Post op';});};
+  $('cancelBtn').onclick=resetForm;
+  $('refreshBtn').onclick=function(){refresh().then(function(){toast('Up to date.',1500);});};
+  $('shareBtn').onclick=function(){var c=$('shareCard');c.hidden=!c.hidden;if(!c.hidden)c.scrollIntoView({behavior:'smooth'});};
+  $('copyBtn').onclick=function(){var u=$('shareUrl').value;
+    if(navigator.share){navigator.share({title:'228th Op Planner',url:u}).catch(function(){});return;}
+    (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(function(){toast('Link copied.');},function(){$('shareUrl').select();document.execCommand('copy');toast('Link copied.');});};
+
+  // ----- setup -----
+  $('setupOpen').onclick=function(){$('nokey').hidden=true;$('setup').hidden=false;};
+  $('setupBtn').onclick=function(){var t=$('token').value.trim();if(!t){$('setupErr').textContent='Paste the key first.';return;}
+    token=t;$('setupErr').textContent='Checking…';
+    load().then(function(){return sha?null:saveOps(function(l){return l;},'Start the ops list');})
+    .then(function(){startApp();$('shareCard').hidden=false;$('shareCard').scrollIntoView({behavior:'smooth'});toast('Planner ready. Copy your link below.',5000);})
+    .catch(function(e){$('setupErr').textContent=(e.status===401)?'GitHub didn\'t accept that key.':(e.status===403||e.status===404)?'That key can\'t write to 228thBlackSkulls/228th-ops. Check the repo exists and the key has Contents: Read and write on it.':'Couldn\'t reach GitHub: '+e.message;});};
+
+  if(token)startApp();else $('nokey').hidden=false;
+})();
+</script>
+</body>
+</html>
