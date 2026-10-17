@@ -193,6 +193,10 @@ textarea{resize:vertical;min-height:70px}
       {key:'honor', label:'Honor or medal (optional)', type:'text'},
       {key:'story', label:'Their story (shows in a drop-down)', type:'textarea'},
       {key:'portrait', label:'Portrait', type:'image'}]}},
+    {key:'structure', title:'How the 228th is led', goto:'c-structure', hint:'Top level first.', list:{label:'Level', title:'level', fields:[
+      {key:'level', label:'Level', type:'text', placeholder:'High Command'},
+      {key:'who', label:'Who (small line)', type:'text', placeholder:'Senior Commanders'},
+      {key:'text', label:'What they do', type:'textarea'}]}},
     {key:'ranks', title:'Ranks (chain of command)', goto:'c-ranks', hint:'Highest rank first. Ranks with the same group show on one row.', list:{label:'Rank', title:'name', fields:[
       {key:'group', label:'Group', type:'text', placeholder:'Senior Officers'},
       {key:'abbr', label:'Abbreviation', type:'text', placeholder:'CPT'},

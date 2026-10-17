@@ -253,6 +253,18 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 .honor details[open] summary::after{content:"–"}
 .honor details p{color:var(--soft);white-space:pre-line;padding-top:10px;font-size:.95rem}
 
+/* leadership structure */
+.structure{margin-top:34px;border-top:1px solid var(--line);padding-top:26px;display:grid;grid-template-columns:220px 1fr;gap:20px}
+.st{list-style:none;margin:0;padding:0;display:grid;gap:0;position:relative}
+.st::before{content:"";position:absolute;left:21px;top:22px;bottom:22px;width:1px;background:linear-gradient(var(--accent),var(--line))}
+.st li{display:grid;grid-template-columns:44px 1fr;gap:18px;padding:0 0 26px}
+.st li:last-child{padding-bottom:0}
+.st-n{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--accent);background:var(--bg);font:500 .8rem var(--mono);color:var(--accent);position:relative}
+.st h3{font-size:1.7rem;line-height:1}
+.st .label{display:block;margin:6px 0 8px}
+.st p{color:var(--soft);max-width:62ch}
+@media (max-width:820px){.structure{grid-template-columns:1fr}}
+
 /* rank structure */
 .ranks{margin-top:34px;border-top:1px solid var(--line);padding-top:26px;display:grid;grid-template-columns:220px 1fr;gap:20px}
 .ranks-head p{color:var(--soft);margin-top:8px;font-size:.95rem}
@@ -777,6 +789,10 @@ html.intro-on,html.intro-on body{overflow:hidden}
           <li>Delta<span>Co-Founder</span></li>
         </ul>
       </div>
+      <div class="structure reveal">
+        <div class="ranks-head"><span class="label">How the 228th is led</span><p>From the top of the Corps down to each division.</p></div>
+        <ol class="st" id="c-structure"><li class="reveal"><span class="st-n">01</span><div><h3>Marshal Commander</h3><span class="label">The Unit Leader</span><p>Oversees the 228th as a whole: lore development, armor regulations, infrastructure, creative direction and the merch store. At this level sits the entire Corps: every platform, every game, every division and every trooper operating under the banner.</p></div></li><li class="reveal"><span class="st-n">02</span><div><h3>High Command</h3><span class="label">Senior Commanders</span><p>Handle the operational oversight that keeps the unit running smoothly and aligned with its vision. High Command isn&#x27;t tied to a single game or platform. Its responsibility is the unit in its entirety: its vision, its standards, its long-term direction and its stability.</p></div></li><li class="reveal"><span class="st-n">03</span><div><h3>Divisions</h3><span class="label">Division Leads</span><p>Divisions are the games and communities that make up the 228th, such as VRChat, Rec Room and any future platform. Each is led by a Division Lead who runs day-to-day operations: events, staffing, activity and community management. Division Leads coordinate with one another and report to High Command, keeping every division under one identity.</p></div></li></ol>
+      </div>
       <div class="ranks reveal">
         <div class="ranks-head"><span class="label">Chain of command</span><p>Every rank in the Corps, highest first.</p></div>
         <div class="rk" id="c-ranks">
@@ -1177,6 +1193,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
       R.forEach(function(r){var g=(r.group||'').trim()||'Ranks';if(!by[g]){by[g]=[];gs.push(g);}by[g].push(r);});
       box.textContent='';gs.forEach(function(g){var d=el('div','rk-g'),ol=el('ol');d.appendChild(el('span','label',g));
         by[g].forEach(function(r){var li=el('li');li.appendChild(el('b',null,r.abbr||''));li.appendChild(el('span',null,r.name));ol.appendChild(li);});d.appendChild(ol);box.appendChild(d);});})();
+    list('c-structure',c.structure,function(x,i){var li=el('li','reveal');li.appendChild(el('span','st-n',pad(i+1)));var d=el('div');d.appendChild(el('h3',null,x.level));if(x.who)d.appendChild(el('span','label',x.who));if(x.text)d.appendChild(el('p',null,x.text));li.appendChild(d);return li;});
     var n=c.next_op||{};
     if(n.day&&DAYS.indexOf(String(n.day).toLowerCase())>=0){op.day=DAYS.indexOf(String(n.day).toLowerCase());op.label=n.day.charAt(0).toUpperCase()+n.day.slice(1).toLowerCase();}
     var tm=/^(\d{1,2}):?(\d{2})/.exec(n.time_utc||''); if(tm){op.h=+tm[1];op.m=+tm[2];}

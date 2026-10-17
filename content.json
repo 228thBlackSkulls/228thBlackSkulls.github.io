@@ -1589,5 +1589,22 @@
       "abbr": "",
       "name": "Recruit"
     }
+  ],
+  "structure": [
+    {
+      "level": "Marshal Commander",
+      "who": "The Unit Leader",
+      "text": "Oversees the 228th as a whole: lore development, armor regulations, infrastructure, creative direction and the merch store. At this level sits the entire Corps: every platform, every game, every division and every trooper operating under the banner."
+    },
+    {
+      "level": "High Command",
+      "who": "Senior Commanders",
+      "text": "Handle the operational oversight that keeps the unit running smoothly and aligned with its vision. High Command isn't tied to a single game or platform. Its responsibility is the unit in its entirety: its vision, its standards, its long-term direction and its stability."
+    },
+    {
+      "level": "Divisions",
+      "who": "Division Leads",
+      "text": "Divisions are the games and communities that make up the 228th, such as VRChat, Rec Room and any future platform. Each is led by a Division Lead who runs day-to-day operations: events, staffing, activity and community management. Division Leads coordinate with one another and report to High Command, keeping every division under one identity."
+    }
   ]
 }
