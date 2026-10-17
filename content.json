@@ -87,7 +87,8 @@
     },
     {
       "name": "Armored",
-      "description": "Crews who drive and fight the Corps' tanks and walkers."
+      "description": "Crews who drive and fight the Corps' tanks and walkers.",
+      "logo": "images/mos/armored.webp"
     },
     {
       "name": "BARC",
