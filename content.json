@@ -74,7 +74,8 @@
     {
       "name": "ARC",
       "description": "Advanced Recon Commandos. Elite troopers trained to lead, adapt and operate on their own behind enemy lines.",
-      "logo": "images/mos/arc-2.webp"
+      "logo": "images/mos/arc-2.webp",
+      "callsign": "Revenant"
     },
     {
       "name": "ARF",
