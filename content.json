@@ -108,7 +108,8 @@
     },
     {
       "name": "Medic",
-      "description": "Keeps troopers in the fight with triage, field care and casualty evacuation."
+      "description": "Keeps troopers in the fight with triage, field care and casualty evacuation.",
+      "logo": "images/mos/medic.webp"
     },
     {
       "name": "Pilot",
