@@ -78,17 +78,20 @@
     {
       "name": "ARF",
       "description": "Advanced Recon Force. Scouts who move ahead of the line to find the enemy and report back.",
-      "logo": "images/mos/arf.webp"
+      "logo": "images/mos/arf.webp",
+      "callsign": "Hellhound"
     },
     {
       "name": "Airborne",
       "description": "Rapid-deployment troopers who drop into the fight from gunships and jump craft.",
-      "logo": "images/mos/airborne.webp"
+      "logo": "images/mos/airborne.webp",
+      "callsign": "Death Angels"
     },
     {
       "name": "Armored",
       "description": "Crews who drive and fight the Corps' tanks and walkers.",
-      "logo": "images/mos/armored-2.webp"
+      "logo": "images/mos/armored-2.webp",
+      "callsign": "Dreadnaught"
     },
     {
       "name": "BARC",
@@ -98,12 +101,14 @@
     {
       "name": "Commando",
       "description": "Small, tight squads for high-risk missions: raids, sabotage and hostage rescue.",
-      "logo": "images/mos/commando.webp"
+      "logo": "images/mos/commando.webp",
+      "callsign": "Demon"
     },
     {
       "name": "Engineer",
       "description": "Combat engineers who work under fire: breaching obstacles, clearing mines, setting demolitions and building or tearing down fortifications.",
-      "logo": "images/mos/engineer.webp"
+      "logo": "images/mos/engineer.webp",
+      "callsign": "Shatterfield"
     },
     {
       "name": "Marine",
@@ -112,22 +117,26 @@
     {
       "name": "Medic",
       "description": "Keeps troopers in the fight with triage, field care and casualty evacuation.",
-      "logo": "images/mos/medic.webp"
+      "logo": "images/mos/medic.webp",
+      "callsign": "Death Surgeon"
     },
     {
       "name": "Pilot",
       "description": "Flies the Corps' gunships, fighters and transports.",
-      "logo": "images/mos/pilot.webp"
+      "logo": "images/mos/pilot.webp",
+      "callsign": "Banshee"
     },
     {
       "name": "Scuba",
       "description": "Aquatic troopers trained for underwater insertion and waterborne operations.",
-      "logo": "images/mos/scuba-2.webp"
+      "logo": "images/mos/scuba-2.webp",
+      "callsign": "The Drowned"
     },
     {
       "name": "Spec Ops",
       "description": "Special operations troopers for covert, high-value objectives.",
-      "logo": "images/mos/spec-ops-2.webp"
+      "logo": "images/mos/spec-ops-2.webp",
+      "callsign": "Phantom"
     },
     {
       "name": "Echelon",
