@@ -1605,6 +1605,11 @@
       "level": "Divisions",
       "who": "Division Leads",
       "text": "Divisions are the games and communities that make up the 228th, such as VRChat, Rec Room and any future platform. Each is led by a Division Lead who runs day-to-day operations: events, staffing, activity and community management. Division Leads coordinate with one another and report to High Command, keeping every division under one identity."
+    },
+    {
+      "level": "Battalion Command",
+      "who": "The Division Lead's command staff",
+      "text": "Each division has its own Battalion Command. Working directly under the Division Lead, they help run the platform day to day: events, staffing, training and keeping troopers on track. Think of it as a division's own High Command. What High Command is to the Marshal Commander across the whole Corps, Battalion Command is to the Division Lead within a single platform."
     }
   ]
 }
