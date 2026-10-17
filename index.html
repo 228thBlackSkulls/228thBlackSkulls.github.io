@@ -431,7 +431,7 @@ footer ul a:hover{color:var(--accent)}
 
 /* pinned growth sequence: Squad -> Corps swaps in place while you scroll */
 .pin{display:none}
-.motion .pin{display:block;position:relative;height:580vh}
+.motion .pin{display:block;position:relative;height:580vh;height:580lvh}
 .motion .ladder{display:none}
 .pin-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));height:calc(100svh - 64px);display:grid;align-content:center;justify-items:center;gap:22px;text-align:center}
 .pin-count{font:500 .85rem var(--mono);letter-spacing:.2em;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -447,7 +447,7 @@ footer ul a:hover{color:var(--accent)}
 
 /* datapads: join steps play out on Star Wars style datapads, scrubbed by scroll (forward and back) */
 .pads{display:none}
-.motion .pads{display:block;position:relative;height:calc(var(--n,3)*165vh + 60vh);margin-top:8px}
+.motion .pads{display:block;position:relative;height:calc(var(--n,3)*165vh + 60vh);height:calc(var(--n,3)*165lvh + 60lvh);margin-top:8px}
 .motion #c-steps{display:none}
 .pads-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));height:calc(100svh - 64px);display:grid;grid-template-columns:minmax(240px,1fr) minmax(0,1.35fr);align-items:center;gap:24px;overflow:hidden}
 .pads-copy{display:grid;gap:18px;align-self:start;padding-top:clamp(24px,8vh,80px);position:relative;z-index:3}
@@ -528,7 +528,7 @@ footer ul a:hover{color:var(--accent)}
 .emblem-cap{letter-spacing:.4em;text-align:center;display:grid}
 .emblem-cap > span{grid-area:1/1;transition:opacity .4s}
 .cap-a{opacity:0}
-.motion .emblem-pin{height:540vh;padding:0}
+.motion .emblem-pin{height:540vh;height:540lvh;padding:0}
 .motion .emblem-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));height:calc(100svh - 64px);align-content:center}
 .motion .cap-a{opacity:1}.motion .cap-b{opacity:0}
 .motion .emblem-stage.done .cap-a{opacity:0}.motion .emblem-stage.done .cap-b{opacity:1}
@@ -549,7 +549,7 @@ footer ul a:hover{color:var(--accent)}
 .creed .caret{display:inline-block;width:.08em;height:.9em;background:var(--live);vertical-align:-.08em;margin-left:.08em;animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 .words-foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.motion .words-pin{height:420vh}
+.motion .words-pin{height:420vh;height:420lvh}
 .motion .words-stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));height:calc(100svh - 64px);padding-block:clamp(12px,3vh,24px);gap:clamp(14px,4vh,40px)}
 @media (max-width:700px){.globe{left:-40%;top:4%;width:110vw;max-width:none}.creed{margin-left:0}}
 
