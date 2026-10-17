@@ -68,7 +68,8 @@
     {
       "name": "Conventional",
       "description": "The backbone of the Corps. Line troopers who hold ground, push objectives and win the fight.",
-      "logo": "images/mos/conventional.webp"
+      "logo": "images/mos/conventional.webp",
+      "callsign": "Skull"
     },
     {
       "name": "ARC",
@@ -96,7 +97,8 @@
     {
       "name": "BARC",
       "description": "Biker Advanced Recon Commandos. Run-and-gun riders who hit at full throttle: first in to scout, fast strikes, escorts and pursuits, and gone before the enemy can turn its guns.",
-      "logo": "images/mos/barc-2.webp"
+      "logo": "images/mos/barc-2.webp",
+      "callsign": "Hellrider"
     },
     {
       "name": "Commando",
@@ -141,7 +143,8 @@
     {
       "name": "Echelon",
       "description": "Elite two-trooper teams, hand-picked by tryout for the hardest jobs in the Corps.",
-      "logo": "images/mos/echelon.webp"
+      "logo": "images/mos/echelon.webp",
+      "callsign": "Night-Stalker"
     }
   ],
   "qualifications": [
