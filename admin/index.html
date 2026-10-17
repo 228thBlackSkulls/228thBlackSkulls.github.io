@@ -185,6 +185,18 @@ textarea{resize:vertical;min-height:70px}
       {key:'name', label:'Name', type:'text'},
       {key:'group', label:'Group (medals with the same group are shown together)', type:'text'},
       {key:'description', label:'Description', type:'textarea'}]}},
+    {key:'honor_intro', title:'Hall of Honor intro', goto:'honor', single:{label:'Intro text', type:'textarea'}},
+    {key:'honors', title:'Hall of Honor', goto:'honor', hint:'Leave empty to show the Coming soon card.', list:{label:'Honoree', title:'name', fields:[
+      {key:'rank', label:'Rank', type:'text'},
+      {key:'designation', label:'Designation', type:'text', placeholder:'CT-0000'},
+      {key:'name', label:'Name', type:'text'},
+      {key:'honor', label:'Honor or medal (optional)', type:'text'},
+      {key:'story', label:'Their story (shows in a drop-down)', type:'textarea'},
+      {key:'portrait', label:'Portrait', type:'image'}]}},
+    {key:'ranks', title:'Ranks (chain of command)', goto:'c-ranks', hint:'Highest rank first. Ranks with the same group show on one row.', list:{label:'Rank', title:'name', fields:[
+      {key:'group', label:'Group', type:'text', placeholder:'Senior Officers'},
+      {key:'abbr', label:'Abbreviation', type:'text', placeholder:'CPT'},
+      {key:'name', label:'Rank', type:'text'}]}},
     {key:'next_op', title:'Next operation (countdown)', goto:'ops', fields:[
       {key:'name', label:'Operation name', type:'text'},
       {key:'day', label:'Day', type:'select', options:DAYS},

@@ -242,6 +242,32 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 .mos-logo{position:absolute;top:16px;right:16px;width:68px;height:68px;object-fit:contain;transition:transform .4s cubic-bezier(.2,.7,.2,1),filter .3s;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
 @media (hover:hover){.div.has-logo:hover .mos-logo{transform:rotate(-6deg) scale(1.08);filter:drop-shadow(0 4px 14px rgba(226,51,59,.35))}}
 
+/* hall of honor */
+.honor .honor-medal{justify-self:start;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.honor .soon .plate img{height:56%;opacity:.55}
+.honor-soon{color:var(--muted)}
+.honor details{border-top:1px solid var(--line);margin-top:8px}
+.honor summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;padding:12px 0 0;font:500 .75rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--soft)}
+.honor summary::-webkit-details-marker{display:none}
+.honor summary::after{content:"+";color:var(--accent)}
+.honor details[open] summary::after{content:"–"}
+.honor details p{color:var(--soft);white-space:pre-line;padding-top:10px;font-size:.95rem}
+
+/* rank structure */
+.ranks{margin-top:34px;border-top:1px solid var(--line);padding-top:26px;display:grid;grid-template-columns:220px 1fr;gap:20px}
+.ranks-head p{color:var(--soft);margin-top:8px;font-size:.95rem}
+.rk{display:grid;gap:0}
+.rk-g{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid var(--line);align-items:start}
+.rk-g:first-child{padding-top:0}
+.rk-g>.label{color:var(--accent);padding-top:6px}
+.rk-g ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.rk-g li{display:flex;gap:8px;align-items:baseline;border:1px solid var(--line);padding:6px 10px;background:var(--panel);transition:border-color .2s}
+.rk-g li:hover{border-color:var(--accent)}
+.rk-g li b{font:500 .72rem var(--mono);letter-spacing:.08em;color:var(--muted)}
+.rk-g li b:empty{display:none}
+.rk-g li span{font-weight:500}
+@media (max-width:820px){.ranks{grid-template-columns:1fr}.rk-g{grid-template-columns:1fr;gap:8px}}
+
 /* divisions */
 .divs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .div{border:1px solid var(--line);padding:22px;display:grid;gap:10px;align-content:start}
@@ -263,10 +289,17 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 .live{display:inline-flex;align-items:center;gap:.5em;font:500 .75rem var(--mono);letter-spacing:.14em;color:var(--live)}
 .live::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--live);animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.25}}
+.opstack{display:grid;gap:14px;align-content:start}
+.next .op-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.next .game{font:500 .7rem var(--mono);letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line);padding:.25em .6em;color:var(--soft)}
+.next.is-live{border-color:var(--accent)}
+.next.small{gap:14px}
+.next.small .clock strong{font-size:clamp(1.5rem,4vw,2rem)}
+.next .op-desc{color:var(--soft);white-space:pre-line}
 .clock{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .clock div{border:1px solid var(--line);padding:12px 8px;text-align:center}
 .clock strong{display:block;font:800 clamp(2rem,6vw,3rem)/1 var(--display);font-variant-numeric:tabular-nums}
-.sched{display:grid;border-top:1px solid var(--line)}
+.sched{display:grid;border-top:1px solid var(--line);align-content:start;align-self:start}
 .sched div{display:grid;grid-template-columns:5.5rem 1fr auto;gap:12px;padding:16px 0;border-bottom:1px solid var(--line);align-items:baseline}
 .sched .day{font:800 1.5rem/1 var(--display);text-transform:uppercase}
 .sched .time{font:500 .85rem var(--mono);color:var(--accent);font-variant-numeric:tabular-nums}
@@ -585,7 +618,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <div class="wrap">
     <button class="mnav-back" type="button"><b>&larr;</b> Back</button>
     <nav class="mnav-list" aria-label="Mobile">
-      <a href="#about">About</a><a href="#history">History</a><a href="#lore">Lore</a><a href="#command">Command</a><a href="#divisions">Programs</a><a href="#quals">Qualifications</a><a href="#medals">Medals</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
+      <a href="#about">About</a><a href="#history">History</a><a href="#lore">Lore</a><a href="#command">Command</a><a href="#divisions">Programs</a><a href="#quals">Qualifications</a><a href="#medals">Medals</a><a href="#honor">Hall of Honor</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
     </nav>
     <div class="mnav-sub">
       <p class="label">Recruitment</p>
@@ -744,6 +777,17 @@ html.intro-on,html.intro-on body{overflow:hidden}
           <li>Delta<span>Co-Founder</span></li>
         </ul>
       </div>
+      <div class="ranks reveal">
+        <div class="ranks-head"><span class="label">Chain of command</span><p>Every rank in the Corps, highest first.</p></div>
+        <div class="rk" id="c-ranks">
+          <div class="rk-g"><span class="label">High Command</span><ol><li><b></b><span>Marshal Commander</span></li></ol></div>
+          <div class="rk-g"><span class="label">Senior Officers</span><ol><li><b>CC</b><span>Senior Commander</span></li><li><b>CC</b><span>Battalion Commander</span></li><li><b>CC</b><span>Commander</span></li><li><b>CM</b><span>Major</span></li></ol></div>
+          <div class="rk-g"><span class="label">Junior Officers</span><ol><li><b>CPT</b><span>Captain</span></li><li><b>C1L</b><span>First Lieutenant</span></li><li><b>C2L</b><span>Second Lieutenant</span></li></ol></div>
+          <div class="rk-g"><span class="label">SNCO</span><ol><li><b>CCM</b><span>Command Sergeant Major</span></li><li><b>CSM</b><span>Sergeant Major</span></li><li><b>CMS</b><span>Master Sergeant</span></li><li><b>CFC</b><span>Sergeant First Class</span></li></ol></div>
+          <div class="rk-g"><span class="label">NCO</span><ol><li><b>CSS</b><span>Staff Sergeant</span></li><li><b>CS</b><span>Sergeant</span></li><li><b>SCP</b><span>Senior Corporal</span></li><li><b>CP</b><span>Corporal</span></li></ol></div>
+          <div class="rk-g"><span class="label">Junior Enlisted</span><ol><li><b>CLC</b><span>Lance Corporal</span></li><li><b>SPC</b><span>Specialist</span></li><li><b>T1C</b><span>Trooper 1st Class</span></li><li><b>T2C</b><span>Trooper 2nd Class</span></li><li><b>T3C</b><span>Trooper 3rd Class</span></li><li><b>CT</b><span>Shiny</span></li><li><b>CR-C</b><span>Cadet</span></li><li><b></b><span>Recruit</span></li></ol></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -866,27 +910,45 @@ html.intro-on,html.intro-on body{overflow:hidden}
     </div>
   </section>
 
+  <section class="block" id="honor">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="label"><b>08</b> &nbsp;/&nbsp; Hall of Honor</p>
+        <h2>Hall of Honor</h2>
+        <p style="color:var(--soft)" id="honor-intro">Troopers whose service, sacrifice and leadership earned them a permanent place in the Corps' memory.</p>
+      </div>
+      <div class="command honor" id="c-honor">
+        <article class="officer reveal soon">
+          <div class="plate"><img src="logo.webp" alt=""></div>
+          <div class="info"><span class="label">Hall of Honor</span><h3>Coming soon</h3><p class="honor-soon">The first names are being chosen. Their stories will be told here.</p></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
   <section class="block" id="ops">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>08</b> &nbsp;/&nbsp; Operations</p>
+        <p class="label"><b>09</b> &nbsp;/&nbsp; Operations</p>
         <h2>Deployment schedule</h2>
-        <p style="color:var(--soft)">All times in Zulu (UTC). The countdown shows your local time. <span class="tbd">CONFIRM DAYS + TIMES</span></p>
+        <p style="color:var(--soft)">Every countdown shows the time in your own time zone. <span class="tbd">OFFICIAL TIMES COMING SOON</span></p>
       </div>
       <div class="ops">
-        <div class="next reveal">
+        <div class="opstack" id="c-ops">
+        <div class="next reveal" id="op-weekly">
           <span class="live">NEXT OPERATION</span>
           <div>
             <h3 id="op-name">Main operation</h3>
             <p class="label" id="op-when" style="margin-top:6px">Saturday 1900Z</p>
           </div>
           <div class="clock">
-            <div><strong id="cd-d">0</strong><span class="label">Days</span></div>
-            <div><strong id="cd-h">00</strong><span class="label">Hrs</span></div>
-            <div><strong id="cd-m">00</strong><span class="label">Min</span></div>
-            <div><strong id="cd-s">00</strong><span class="label">Sec</span></div>
+            <div><strong class="cd-d">0</strong><span class="label">Days</span></div>
+            <div><strong class="cd-h">00</strong><span class="label">Hrs</span></div>
+            <div><strong class="cd-m">00</strong><span class="label">Min</span></div>
+            <div><strong class="cd-s">00</strong><span class="label">Sec</span></div>
           </div>
           <p style="color:var(--soft)" id="op-note">Muster in the Discord before step-off. The world link is posted in announcements.</p>
+        </div>
         </div>
         <div class="sched" id="c-schedule">
           <div><span class="day">Wed</span><span>Training<small>Division training and new member orientation</small></span><span class="time">TBD</span></div>
@@ -900,7 +962,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="join">
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>09</b> &nbsp;/&nbsp; Enlistment</p>
+        <p class="label"><b>10</b> &nbsp;/&nbsp; Enlistment</p>
         <h2>Recruitment Center</h2>
         <p style="color:var(--soft)">Members, guests, and allies are all welcome. Follow the steps below, then pick the Discord for the game you play.</p>
       </div>
@@ -935,7 +997,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
   <section class="block" id="shop" data-shop hidden>
     <div class="wrap">
       <div class="head reveal">
-        <p class="label"><b>10</b> &nbsp;/&nbsp; Quartermaster</p>
+        <p class="label"><b>11</b> &nbsp;/&nbsp; Quartermaster</p>
         <h2 id="shop-title">Gear up</h2>
         <p style="color:var(--soft)" id="shop-intro">Official 228th merch, printed to order and shipped by our store partner.</p>
       </div>
@@ -946,7 +1008,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
 
   <section class="block" id="faq" style="border-bottom:0">
     <div class="wrap split">
-      <div class="head reveal"><p class="label"><b>11</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
+      <div class="head reveal"><p class="label"><b>12</b> &nbsp;/&nbsp; FAQ</p><h2>Questions</h2></div>
       <div class="faq" id="c-faq">
         <details><summary>Do I need a VR headset?</summary><p>No. VRChat runs on desktop too, so you can take part with a keyboard and mouse.</p></details>
         <details><summary>Do I need to know Star Wars lore?</summary><p>No. You'll pick it up as you go, and plenty of members are happy to explain the 228th's own lore.</p></details>
@@ -988,13 +1050,38 @@ html.intro-on,html.intro-on body{overflow:hidden}
   }
   function pad(n){return String(n).padStart(2,'0')}
   setWhen();
+  function fill(card,ms){
+    var s=Math.max(0,Math.floor(ms/1000)),q=function(c){return card.querySelector(c);};
+    q('.cd-d').textContent=Math.floor(s/86400); q('.cd-h').textContent=pad(Math.floor(s%86400/3600));
+    q('.cd-m').textContent=pad(Math.floor(s%3600/60)); q('.cd-s').textContent=pad(s%60);
+  }
   function tick(){
-    var ms=target-new Date(); if(ms<0){target=nextOp();ms=target-new Date();}
-    var s=Math.floor(ms/1000);
-    document.getElementById('cd-d').textContent=Math.floor(s/86400);
-    document.getElementById('cd-h').textContent=pad(Math.floor(s%86400/3600));
-    document.getElementById('cd-m').textContent=pad(Math.floor(s%3600/60));
-    document.getElementById('cd-s').textContent=pad(s%60);
+    var w=document.getElementById('op-weekly'); if(w){var ms=target-new Date(); if(ms<0){target=nextOp();ms=target-new Date();} fill(w,ms);}
+    [].forEach.call(document.querySelectorAll('#c-ops .next[data-t]'),function(card){
+      var ms=+card.dataset.t-Date.now(), live=card.querySelector('.live');
+      if(ms<=0){ if(!card.classList.contains('is-live')){card.classList.add('is-live');live.textContent='LIVE NOW';} ms=0; }
+      fill(card,ms);
+    });
+  }
+  // Scheduled ops (ops.json in the 228th-ops repo, set from the op planner). Each gets its own countdown in the visitor's time zone.
+  // An op stays up, marked live, for 4 hours after it starts. With none upcoming, the weekly countdown shows instead.
+  function renderOps(ops){
+    var box=document.getElementById('c-ops'); if(!box||!Array.isArray(ops))return;
+    var now=Date.now(), up=ops.map(function(o){return {o:o,t:Date.parse(o.start)};})
+      .filter(function(x){return x.t&&x.t+4*3600e3>now;}).sort(function(a,b){return a.t-b.t;});
+    [].forEach.call(box.querySelectorAll('.next[data-t]'),function(n){n.remove();});
+    var w=document.getElementById('op-weekly'); if(w)w.hidden=up.length>0;
+    up.forEach(function(x,i){
+      var o=x.o, d=new Date(x.t), card=el('div','next'+(i?' small':'')); card.dataset.t=x.t;
+      var top=el('div','op-top'); top.appendChild(el('span','live',i?'UPCOMING':'NEXT OPERATION')); if(o.game)top.appendChild(el('span','game',o.game)); card.appendChild(top);
+      var hd=el('div'); hd.appendChild(el('h3',null,o.title||'Operation'));
+      var when=''; try{when=d.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});}catch(e){when=d.toString();}
+      var p=el('p','label',when+'  ·  your time'); p.style.marginTop='6px'; hd.appendChild(p); card.appendChild(hd);
+      var clk=el('div','clock'); [['d','Days'],['h','Hrs'],['m','Min'],['s','Sec']].forEach(function(u){var c=el('div');c.appendChild(el('strong','cd-'+u[0],'00'));c.appendChild(el('span','label',u[1]));clk.appendChild(c);}); card.appendChild(clk);
+      if(o.description)card.appendChild(el('p','op-desc',o.description));
+      box.appendChild(card);
+    });
+    tick();
   }
 
   // ---- Editable content: everything below reads content.json (edit that file, not this code) ----
@@ -1078,10 +1165,26 @@ html.intro-on,html.intro-on body{overflow:hidden}
       box.textContent='';gs.forEach(function(g,i){var d=el('div','mgroup'),h=el('p','label');h.appendChild(el('b',null,pad(i+1)));h.appendChild(document.createTextNode(' '+g+' '));h.appendChild(el('span',null,String(by[g].length)));d.appendChild(h);
         var w=el('div','medals');by[g].forEach(function(m){var a=el('article','medal reveal');if(tpl)a.appendChild(tpl.cloneNode(true));var t=el('div');t.appendChild(el('h3',null,m.name));if(m.description)t.appendChild(el('p',null,m.description));a.appendChild(t);w.appendChild(a);});
         d.appendChild(w);box.appendChild(d);});})();
+    text('honor-intro',c.honor_intro);
+    list('c-honor',c.honors,function(x){
+      var a=el('article','officer reveal'), pl=el('div','plate'), im=el('img');
+      im.alt=x.portrait?x.name:''; im.src=x.portrait||logoSrc; if(x.portrait){im.className='portrait';im.style.cssText='width:100%;height:100%;object-fit:cover;object-position:50% 22%;opacity:1';} pl.appendChild(im);
+      var inf=el('div','info'); if(x.rank)inf.appendChild(el('span','label',x.rank)); if(x.designation)inf.appendChild(el('span','cc',x.designation)); inf.appendChild(el('h3',null,x.name));
+      if(x.honor)inf.appendChild(el('span','honor-medal',x.honor));
+      if(x.story){var d=el('details');d.appendChild(el('summary',null,'Their story'));d.appendChild(el('p',null,x.story));inf.appendChild(d);}
+      a.appendChild(pl);a.appendChild(inf);return a;});
+    (function(){var box=document.getElementById('c-ranks'),R=c.ranks;if(!box||!Array.isArray(R)||!R.length)return;var gs=[],by={};
+      R.forEach(function(r){var g=(r.group||'').trim()||'Ranks';if(!by[g]){by[g]=[];gs.push(g);}by[g].push(r);});
+      box.textContent='';gs.forEach(function(g){var d=el('div','rk-g'),ol=el('ol');d.appendChild(el('span','label',g));
+        by[g].forEach(function(r){var li=el('li');li.appendChild(el('b',null,r.abbr||''));li.appendChild(el('span',null,r.name));ol.appendChild(li);});d.appendChild(ol);box.appendChild(d);});})();
     var n=c.next_op||{};
     if(n.day&&DAYS.indexOf(String(n.day).toLowerCase())>=0){op.day=DAYS.indexOf(String(n.day).toLowerCase());op.label=n.day.charAt(0).toUpperCase()+n.day.slice(1).toLowerCase();}
     var tm=/^(\d{1,2}):?(\d{2})/.exec(n.time_utc||''); if(tm){op.h=+tm[1];op.m=+tm[2];}
     text('op-name',n.name); text('op-note',n.note); setWhen(); tick();
+    // Scheduled ops come from the op planner's own repo. If that can't be reached or is empty, the weekly countdown stays.
+    if(!applyContent.ops){applyContent.ops=1;
+      fetch('https://raw.githubusercontent.com/228thBlackSkulls/228th-ops/main/ops.json?v='+Math.floor(Date.now()/300000))
+        .then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&Array.isArray(j.ops))renderOps(j.ops);}).catch(function(){});}
     list('c-schedule',c.schedule,function(x){var d=el('div');d.appendChild(el('span','day',x.day));var t=el('span',null,x.title);t.appendChild(el('small',null,x.details));d.appendChild(t);d.appendChild(el('span','time',x.time));return d;});
     list('c-steps',c.join_steps,function(x,i){var li=el('li','reveal');li.appendChild(el('span','n',pad(i+1)));li.appendChild(el('h3',null,x.title));li.appendChild(el('p',null,x.text));return li;});
     list('c-reqs',c.requirements,function(x){return el('span',null,x);});

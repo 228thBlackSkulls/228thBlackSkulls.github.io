@@ -1465,5 +1465,129 @@
       "group": "Community & Creative",
       "description": "For running trade and supply for the Corps."
     }
+  ],
+  "honors": [],
+  "honor_intro": "Troopers whose service, sacrifice and leadership earned them a permanent place in the Corps' memory.",
+  "ranks": [
+    {
+      "group": "High Command",
+      "abbr": "",
+      "name": "Marshal Commander"
+    },
+    {
+      "group": "Senior Officers",
+      "abbr": "CC",
+      "name": "Senior Commander"
+    },
+    {
+      "group": "Senior Officers",
+      "abbr": "CC",
+      "name": "Battalion Commander"
+    },
+    {
+      "group": "Senior Officers",
+      "abbr": "CC",
+      "name": "Commander"
+    },
+    {
+      "group": "Senior Officers",
+      "abbr": "CM",
+      "name": "Major"
+    },
+    {
+      "group": "Junior Officers",
+      "abbr": "CPT",
+      "name": "Captain"
+    },
+    {
+      "group": "Junior Officers",
+      "abbr": "C1L",
+      "name": "First Lieutenant"
+    },
+    {
+      "group": "Junior Officers",
+      "abbr": "C2L",
+      "name": "Second Lieutenant"
+    },
+    {
+      "group": "SNCO",
+      "abbr": "CCM",
+      "name": "Command Sergeant Major"
+    },
+    {
+      "group": "SNCO",
+      "abbr": "CSM",
+      "name": "Sergeant Major"
+    },
+    {
+      "group": "SNCO",
+      "abbr": "CMS",
+      "name": "Master Sergeant"
+    },
+    {
+      "group": "SNCO",
+      "abbr": "CFC",
+      "name": "Sergeant First Class"
+    },
+    {
+      "group": "NCO",
+      "abbr": "CSS",
+      "name": "Staff Sergeant"
+    },
+    {
+      "group": "NCO",
+      "abbr": "CS",
+      "name": "Sergeant"
+    },
+    {
+      "group": "NCO",
+      "abbr": "SCP",
+      "name": "Senior Corporal"
+    },
+    {
+      "group": "NCO",
+      "abbr": "CP",
+      "name": "Corporal"
+    },
+    {
+      "group": "Junior Enlisted",
+      "abbr": "CLC",
+      "name": "Lance Corporal"
+    },
+    {
+      "group": "Junior Enlisted",
+      "abbr": "SPC",
+      "name": "Specialist"
+    },
+    {
+      "group": "Junior Enlisted",
+      "abbr": "T1C",
+      "name": "Trooper 1st Class"
+    },
+    {
+      "group": "Junior Enlisted",
+      "abbr": "T2C",
+      "name": "Trooper 2nd Class"
+    },
+    {
+      "group": "Junior Enlisted",
+      "abbr": "T3C",
+      "name": "Trooper 3rd Class"
+    },
+    {
+      "group": "Junior Enlisted",
+      "abbr": "CT",
+      "name": "Shiny"
+    },
+    {
+      "group": "Junior Enlisted",
+      "abbr": "CR-C",
+      "name": "Cadet"
+    },
+    {
+      "group": "Junior Enlisted",
+      "abbr": "",
+      "name": "Recruit"
+    }
   ]
 }
