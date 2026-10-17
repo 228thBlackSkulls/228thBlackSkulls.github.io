@@ -82,7 +82,8 @@
     },
     {
       "name": "Airborne",
-      "description": "Rapid-deployment troopers who drop into the fight from gunships and jump craft."
+      "description": "Rapid-deployment troopers who drop into the fight from gunships and jump craft.",
+      "logo": "images/mos/airborne.webp"
     },
     {
       "name": "Armored",
