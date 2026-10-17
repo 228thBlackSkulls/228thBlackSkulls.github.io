@@ -73,7 +73,7 @@
     {
       "name": "ARC",
       "description": "Advanced Recon Commandos. Elite troopers trained to lead, adapt and operate on their own behind enemy lines.",
-      "logo": "images/mos/arc.webp"
+      "logo": "images/mos/arc-2.webp"
     },
     {
       "name": "ARF",
@@ -102,7 +102,8 @@
     },
     {
       "name": "Engineer",
-      "description": "Combat engineers who work under fire: breaching obstacles, clearing mines, setting demolitions and building or tearing down fortifications."
+      "description": "Combat engineers who work under fire: breaching obstacles, clearing mines, setting demolitions and building or tearing down fortifications.",
+      "logo": "images/mos/engineer.webp"
     },
     {
       "name": "Marine",
@@ -121,12 +122,12 @@
     {
       "name": "Scuba",
       "description": "Aquatic troopers trained for underwater insertion and waterborne operations.",
-      "logo": "images/mos/scuba.webp"
+      "logo": "images/mos/scuba-2.webp"
     },
     {
       "name": "Spec Ops",
       "description": "Special operations troopers for covert, high-value objectives.",
-      "logo": "images/mos/spec-ops.webp"
+      "logo": "images/mos/spec-ops-2.webp"
     },
     {
       "name": "Echelon",
