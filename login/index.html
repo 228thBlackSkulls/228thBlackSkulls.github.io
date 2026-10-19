@@ -48,9 +48,11 @@
           <button type="button" role="tab" aria-selected="false" data-mode="up">Create account</button>
         </div>
         <label class="f" id="name-f" hidden>228th name<input name="name" autocomplete="nickname" autocapitalize="off" spellcheck="false" placeholder="CT-1234 &quot;Nickname&quot;"><span class="hint">The same name you go by in the 228th, like CC-5733 "Flanker".</span></label>
+        <p class="msg ok" id="confirm-note" hidden>After you tap Request account, check your email (and spam folder) for a confirmation link. <b>You can't log in until you confirm it.</b></p>
         <label class="f">Email<input name="email" type="email" autocomplete="email" required></label>
         <label class="f">Password<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
         <button class="btn" type="submit" id="go">Log in</button>
+        <button class="btn ghost small" type="button" id="resend" hidden>Send the confirmation email again</button>
         <button class="btn ghost small" type="button" id="forgot">Forgot password?</button>
       </form>
     </div>
@@ -87,6 +89,8 @@
       mode = b.dataset.mode;
       form.querySelectorAll('[data-mode]').forEach(function (x) { x.setAttribute('aria-selected', x === b); });
       document.getElementById('name-f').hidden = mode !== 'up';
+      document.getElementById('confirm-note').hidden = mode !== 'up';
+      document.getElementById('resend').hidden = true;
       document.getElementById('go').textContent = mode === 'up' ? 'Request account' : 'Log in';
       form.password.autocomplete = mode === 'up' ? 'new-password' : 'current-password';
       msg.textContent = '';
@@ -106,13 +110,29 @@
       go.disabled = false;
       if (r.error) return A.fail(msg, r.error);
       if (r.data.session) return location.replace(back);
-      msg.className = 'msg ok'; msg.textContent = 'Check your email and tap the link to confirm your account. Then Command will review your request.';
+      msg.className = 'msg ok'; msg.innerHTML = '';
+      msg.append('Almost done. We sent a confirmation link to ' + email + '. ');
+      msg.appendChild(A.el('b', null, 'Open that email and tap the link before you try to log in.'));
+      msg.append(' Check your spam folder if you don\'t see it. Command will see your request and approve it.');
     } else {
       r = await A.sb.auth.signInWithPassword({ email: email, password: pw });
       go.disabled = false;
-      if (r.error) return A.fail(msg, r.error);
+      if (r.error) {
+        if (/not confirmed/i.test(r.error.message || '')) {
+          A.fail(msg, { message: 'You need to confirm your email first. Open the confirmation email we sent you and tap the link, then log in. Check your spam folder too.' });
+          document.getElementById('resend').hidden = false;
+          return;
+        }
+        return A.fail(msg, r.error);
+      }
       location.replace(back);
     }
+  };
+
+  document.getElementById('resend').onclick = async function () {
+    var r = await A.sb.auth.resend({ type: 'signup', email: form.email.value.trim(), options: { emailRedirectTo: back } });
+    if (r.error) return A.fail(msg, r.error);
+    msg.className = 'msg ok'; msg.textContent = 'Sent. Check your email (and spam folder) for the new link.';
   };
 
   document.getElementById('forgot').onclick = async function () {
