@@ -138,3 +138,5 @@ legend{font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 #hook-now,.panel .hint{overflow-wrap:anywhere}
 label.f{min-width:0}
+/* Manager on phones: unit buttons go on their own line under the name instead of squeezing it. */
+@media (max-width:720px){.u-row{grid-template-columns:auto 36px 1fr!important}.u-row>.edit-acts{grid-column:1/-1;justify-content:flex-start}}
