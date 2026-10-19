@@ -37,7 +37,7 @@
         <h1>Org manager</h1>
         <p class="muted" id="scope-line"></p>
       </div>
-      <a class="btn ghost small" href="../">View the org chart</a>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="chip ok" id="saved">✓ All changes saved</span><a class="btn ghost small" href="../">View the org chart</a></div>
     </div>
     <div class="msg" id="msg" role="status" aria-live="polite" style="margin-bottom:16px"></div>
 
@@ -167,9 +167,12 @@
       dl.addEventListener('close', function h() { dl.removeEventListener('close', h); res(dl.returnValue === 'yes'); });
     });
   }
+  // Every change saves the moment it's made; the tag by the header shows that.
+  function saved(state) { var t = $('saved'); t.className = 'chip ' + (state === 'ok' ? 'ok' : state === 'bad' ? 'warn' : ''); t.textContent = state === 'ok' ? '✓ All changes saved' : state === 'bad' ? 'Last change not saved' : 'Saving…'; }
   async function act(fn, done) {
-    try { var r = await fn(); if (done) ok(typeof done === 'function' ? done(r) : done); await reload(); return r; }
-    catch (e) { bad(e); }
+    saved('busy');
+    try { var r = await fn(); saved('ok'); if (done) ok(typeof done === 'function' ? done(r) : done); await reload(); return r; }
+    catch (e) { saved('bad'); bad(e); }
   }
   function btn(text, fn, cls) { var b = A.el('button', cls || 'icon-btn', text); b.type = 'button'; b.onclick = fn; return b; }
   function option(sel, value, text) { var o = A.el('option', null, text); o.value = value; sel.appendChild(o); return o; }
@@ -495,11 +498,11 @@
     var g2 = A.el('optgroup'); g2.label = 'One member';
     d.people.forEach(function (p) { var o = A.el('option', null, p.display_name || 'Unnamed'); o.value = 'member:' + p.id; g2.appendChild(o); });
     who.appendChild(g2); who.appendChild(g1); if (keepW) who.value = keepW;
-    var perm = $('g-perm'); if (!perm.options.length) O.PERMS.forEach(function (p) { option(perm, p.perm, p.label); });
+    var perm = $('g-perm'); if (!perm.options.length) { O.PERMS.forEach(function (p) { option(perm, p.perm, p.label); }); option(perm, 'all', 'All of the above'); }
     var unit = $('g-unit'), keepU = unit.value;
     unitOptions(unit, keepU || '', [], true); unit.options[0].textContent = 'Everywhere';
     [].forEach.call(unit.options, function (o) { o.disabled = false; });
-    perm.onchange = function () { var sc = O.PERMS.find(function (p) { return p.perm === perm.value; }).scoped; unit.disabled = !sc; if (!sc) unit.value = ''; };
+    perm.onchange = function () { var sc = perm.value === 'all' || O.PERMS.find(function (p) { return p.perm === perm.value; }).scoped; unit.disabled = !sc; if (!sc) unit.value = ''; };
     perm.onchange();
 
     var list; try { list = await O.rpc('org_grants_list'); } catch (e) { return bad(e); }
@@ -528,8 +531,11 @@
   }
   $('grant-form').onsubmit = async function (e) {
     e.preventDefault(); var f = this, who = f.who.value.split(':');
-    await act(function () {
-      return O.rpc('org_grant_add', { p_member: who[0] === 'member' ? who[1] : null, p_role: who[0] === 'role' ? who[1] : null, p_perm: f.perm.value, p_unit: f.unit.value ? +f.unit.value : null });
+    // "All of the above" gives each kind of access in turn.
+    var perms = f.perm.value === 'all' ? O.PERMS.map(function (p) { return p.perm; }) : [f.perm.value];
+    await act(async function () {
+      for (var i = 0; i < perms.length; i++)
+        await O.rpc('org_grant_add', { p_member: who[0] === 'member' ? who[1] : null, p_role: who[0] === 'role' ? who[1] : null, p_perm: perms[i], p_unit: f.unit.value ? +f.unit.value : null });
     }, 'Access given.');
   };
 
