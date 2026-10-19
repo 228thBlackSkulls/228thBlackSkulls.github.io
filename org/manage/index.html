@@ -432,28 +432,31 @@
     ctl.appendChild(line);
 
     var canQ = O.canMember(d, 'quals.set', p.id) && (owner || !self);
-    var ql = A.el('div', 'line'); ql.appendChild(A.el('span', 'label', 'Quals'));
-    var chips = A.el('div', 'chips');
-    (p.quals || []).map(function (id) { return d.qual[id]; }).filter(Boolean).forEach(function (q) {
-      var c = A.el('span', 'chip ' + q.kind, q.name);
-      if (canQ) { var x = A.el('button', null, '×'); x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + q.name);
-        x.onclick = function () { act(function () { return O.rpc('org_qual', { p_member: p.id, p_qual: q.id, p_on: false }); }, q.name + ' removed.'); }; c.appendChild(x); }
-      chips.appendChild(c);
-    });
-    if (!(p.quals || []).length) chips.appendChild(A.el('span', 'muted', 'None'));
-    ql.appendChild(chips);
-    if (canQ) {
-      var add = A.el('select'); add.setAttribute('aria-label', 'Give ' + p.display_name + ' a qualification');
-      option(add, '', '+ Add');
-      ['mos', 'qual', 'medal'].forEach(function (k) {
-        var g = A.el('optgroup'); g.label = k === 'mos' ? 'MOS' : k === 'qual' ? 'Qualifications' : 'Medals';
-        d.quals.filter(function (q) { return q.kind === k && (p.quals || []).indexOf(q.id) < 0; }).forEach(function (q) { var o = A.el('option', null, q.name); o.value = q.id; g.appendChild(o); });
-        if (g.children.length) add.appendChild(g);
+    // One row each for MOS, qualifications and medals; a member can hold any number of each.
+    var held = (p.quals || []).map(function (id) { return d.qual[id]; }).filter(Boolean);
+    [['mos', 'MOS', 'an MOS'], ['qual', 'Quals', 'a qualification'], ['medal', 'Medals', 'a medal']].forEach(function (k) {
+      var ql = A.el('div', 'line'); ql.appendChild(A.el('span', 'label', k[1]));
+      var chips = A.el('div', 'chips'), mine = held.filter(function (q) { return q.kind === k[0]; });
+      mine.forEach(function (q) {
+        var c = A.el('span', 'chip ' + q.kind, q.name);
+        if (canQ) { var x = A.el('button', null, '×'); x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + q.name);
+          x.onclick = function () { act(function () { return O.rpc('org_qual', { p_member: p.id, p_qual: q.id, p_on: false }); }, q.name + ' removed.'); }; c.appendChild(x); }
+        chips.appendChild(c);
       });
-      add.onchange = function () { var q = d.qual[add.value]; if (q) act(function () { return O.rpc('org_qual', { p_member: p.id, p_qual: q.id, p_on: true }); }, p.display_name + ': ' + q.name + ' added.'); };
-      ql.appendChild(add);
-    }
-    ctl.appendChild(ql);
+      if (!mine.length) chips.appendChild(A.el('span', 'muted', 'None'));
+      ql.appendChild(chips);
+      if (canQ) {
+        var left = d.quals.filter(function (q) { return q.kind === k[0] && (p.quals || []).indexOf(q.id) < 0; });
+        if (left.length) {
+          var add = A.el('select'); add.setAttribute('aria-label', 'Give ' + p.display_name + ' ' + k[2]);
+          option(add, '', '+ Add ' + (k[0] === 'mos' ? 'MOS' : k[0] === 'qual' ? 'qual' : 'medal'));
+          left.forEach(function (q) { option(add, q.id, q.name); });
+          add.onchange = function () { var q = d.qual[add.value]; if (q) act(function () { return O.rpc('org_qual', { p_member: p.id, p_qual: q.id, p_on: true }); }, p.display_name + ': ' + q.name + ' added.'); };
+          ql.appendChild(add);
+        }
+      }
+      ctl.appendChild(ql);
+    });
     row.appendChild(ctl);
     return row;
   }
