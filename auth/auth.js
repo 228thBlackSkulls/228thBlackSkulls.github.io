@@ -95,7 +95,9 @@
       var c = A.checkCallsign(input.value);
       input.classList.toggle('good', c.ok); input.classList.toggle('bad', !c.ok);
       hint.className = 'hint ' + (c.ok ? 'good' : 'bad');
-      hint.textContent = c.ok ? 'Looks good.' : c.problems.join('\n');
+      // Say when tapping off will fix it, so people know they don't have to retype it.
+      var fixable = !c.ok && document.activeElement === input && A.checkCallsign(A.fixCallsign(input.value)).ok;
+      hint.textContent = c.ok ? 'Looks good.' : c.problems.join('\n') + (fixable ? '\nTap off this box and the website will format it correctly for you.' : '');
     }
     input.addEventListener('input', show);
     input.addEventListener('blur', function () { if (input.value.trim()) input.value = A.fixCallsign(input.value); show(); });
