@@ -1,17 +1,40 @@
 -- 228th Black Skulls Corps: member accounts, approval and roles.
--- Paste this whole file into Supabase > SQL Editor > New query, then press Run. Safe to run once on a new project.
+-- Paste this whole file into Supabase > SQL Editor > New query, then press Run. Safe to run again after updates.
 
--- Roles. "rank" decides what a role can see: a higher rank sees everything a lower rank can.
+-- Roles: Admin, High-Com, then the 228th rank list. "rank" only keeps them in order (higher = listed first); it isn't shown.
+-- Admin runs the dashboard. Every briefing picks which roles can see it.
 create table if not exists public.roles (
   name  text primary key,
   label text not null,
   rank  int  not null default 10
 );
 insert into public.roles (name, label, rank) values
-  ('admin',   'Admin',   100),
-  ('officer', 'Officer',  50),
-  ('nco',     'NCO',      30),
-  ('member',  'Member',   10)
+  ('admin', 'Admin', 100),
+  ('high-com', 'High-Com', 90),
+  ('marshal-commander', 'Marshal Commander', 80),
+  ('senior-commander', 'Senior Commander', 77),
+  ('battalion-commander', 'Battalion Commander', 74),
+  ('commander', 'Commander', 71),
+  ('major', 'Major', 68),
+  ('captain', 'Captain', 65),
+  ('first-lieutenant', 'First Lieutenant', 62),
+  ('second-lieutenant', 'Second Lieutenant', 59),
+  ('command-sergeant-major', 'Command Sergeant Major', 56),
+  ('sergeant-major', 'Sergeant Major', 53),
+  ('master-sergeant', 'Master Sergeant', 50),
+  ('sergeant-first-class', 'Sergeant First Class', 47),
+  ('staff-sergeant', 'Staff Sergeant', 44),
+  ('sergeant', 'Sergeant', 41),
+  ('senior-corporal', 'Senior Corporal', 38),
+  ('corporal', 'Corporal', 35),
+  ('lance-corporal', 'Lance Corporal', 32),
+  ('specialist', 'Specialist', 29),
+  ('trooper-1st-class', 'Trooper 1st Class', 26),
+  ('trooper-2nd-class', 'Trooper 2nd Class', 23),
+  ('trooper-3rd-class', 'Trooper 3rd Class', 20),
+  ('shiny', 'Shiny', 17),
+  ('cadet', 'Cadet', 14),
+  ('member', 'Recruit', 10)
 on conflict (name) do nothing;
 
 -- One profile per account. Everyone starts as pending until an admin approves them.
@@ -29,16 +52,27 @@ create table if not exists public.profiles (
   approved_by  uuid
 );
 
--- Members-page posts. min_role is the lowest role that can read the post.
+-- Members-page posts. visible_to lists the roles that can read it; empty means every approved member.
 create table if not exists public.posts (
   id         bigint generated always as identity primary key,
   title      text not null,
   body       text,
-  min_role   text not null default 'member' references public.roles(name) on update cascade,
+  visible_to text[] not null default '{}',
   pinned     boolean not null default false,
   author     uuid default auth.uid(),
   created_at timestamptz not null default now()
 );
+alter table public.posts add column if not exists visible_to text[] not null default '{}';
+-- Older installs stored a "lowest rank" instead; turn it into a role list once.
+do $$ begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'posts' and column_name = 'min_role') then
+    update public.posts p set visible_to = coalesce((select array_agg(r.name) from public.roles r
+      where r.rank >= (select x.rank from public.roles x where x.name = p.min_role)), '{}')
+    where p.min_role <> 'member';
+    drop policy if exists posts_read on public.posts;
+    alter table public.posts drop column min_role;
+  end if;
+end $$;
 
 -- Helpers (run with owner rights so policies can call them without recursion).
 create or replace function public.is_admin() returns boolean
@@ -52,12 +86,21 @@ language sql stable security definer set search_path = public as $$
                    where p.id = auth.uid() and p.status = 'approved'), 0);
 $$;
 
+create or replace function public.my_role() returns text
+language sql stable security definer set search_path = public as $$
+  select role from profiles where id = auth.uid() and status = 'approved';
+$$;
+
 -- Create a profile whenever someone signs up (Discord or email).
 -- Names must be the 228th callsign: two to four letters, a dash, four numbers, then the nickname in quotes,
 -- like CC-5733 "Flanker". Curly quotes from phone keyboards are straightened. Each number can only be used once.
 create or replace function public.check_callsign() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
+  -- Once approved, only Admin can change someone's name.
+  if tg_op = 'UPDATE' and new.display_name is distinct from old.display_name and old.status = 'approved' and not is_admin() then
+    raise exception 'Only Command can change your name';
+  end if;
   if new.display_name is null then return new; end if;
   new.display_name := regexp_replace(btrim(translate(new.display_name, '“”„‟″', '"""""')), '\s+', ' ', 'g');
   new.display_name := regexp_replace(new.display_name, '^([A-Za-z]{2,4})\s*-\s*([0-9]{4})\s*"\s*(.*?)\s*"$', '\1-\2 "\3"');
@@ -93,7 +136,7 @@ begin
     new.email,
     nullif(m->>'display_name', ''),
     case when new.raw_app_meta_data->>'provider' = 'discord' then coalesce(m->>'full_name', m->>'name') end,
-    m->>'avatar_url'
+    null
   )
   on conflict (id) do nothing;
   return new;
@@ -131,6 +174,8 @@ $$;
 
 revoke execute on function public.set_member(uuid, text, text) from public, anon;
 revoke execute on function public.member_roster() from public, anon;
+revoke execute on function public.my_role() from public, anon;
+grant  execute on function public.my_role() to authenticated;
 grant  execute on function public.set_member(uuid, text, text) to authenticated;
 grant  execute on function public.member_roster() to authenticated;
 
@@ -150,7 +195,7 @@ revoke all on public.roles, public.profiles, public.posts from anon, authenticat
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on public.roles, public.posts to authenticated;
 grant select, delete on public.profiles to authenticated;
-grant  update (display_name, note) on public.profiles to authenticated;
+grant  update (display_name, note, avatar_url) on public.profiles to authenticated;
 drop policy if exists profiles_read   on public.profiles;
 drop policy if exists profiles_update on public.profiles;
 drop policy if exists profiles_delete on public.profiles;
@@ -158,13 +203,36 @@ create policy profiles_read   on public.profiles for select to authenticated usi
 create policy profiles_update on public.profiles for update to authenticated using (id = auth.uid() or is_admin()) with check (id = auth.uid() or is_admin());
 create policy profiles_delete on public.profiles for delete to authenticated using (is_admin());
 
--- Posts: approved members read posts at or below their rank; admins manage them.
+-- Posts: approved members read posts meant for everyone or for their role; admins see and manage all of them.
 drop policy if exists posts_read  on public.posts;
 drop policy if exists posts_admin on public.posts;
 create policy posts_read  on public.posts for select to authenticated
-  using (my_rank() > 0 and my_rank() >= coalesce((select r.rank from roles r where r.name = posts.min_role), 0));
+  using (my_role() is not null and (cardinality(visible_to) = 0 or my_role() = any(visible_to) or is_admin()));
 create policy posts_admin on public.posts for all to authenticated using (is_admin()) with check (is_admin());
 
+
+-- Profile pictures must be uploaded through the site (stored in the avatars bucket below).
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_avatar_url_check') then
+    update public.profiles set avatar_url = null where avatar_url !~ '^https://[a-z0-9]+\.supabase\.co/storage/v1/object/public/avatars/';
+    alter table public.profiles add constraint profiles_avatar_url_check
+      check (avatar_url is null or avatar_url ~ '^https://[a-z0-9]+\.supabase\.co/storage/v1/object/public/avatars/');
+  end if;
+end $$;
+
+-- Profile picture storage: anyone can view, each member can only add or remove files in their own folder.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 1048576, array['image/webp', 'image/jpeg', 'image/png'])
+on conflict (id) do nothing;
+drop policy if exists avatars_select on storage.objects;
+drop policy if exists avatars_insert on storage.objects;
+drop policy if exists avatars_delete on storage.objects;
+create policy avatars_select on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy avatars_insert on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy avatars_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)
 -- to make yourself the first admin. Everything after that is done from the dashboard.

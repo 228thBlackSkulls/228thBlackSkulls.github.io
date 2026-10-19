@@ -20,7 +20,7 @@
   A.me = async function () {
     var s = await A.session();
     if (!s) return null;
-    var r = await A.sb.from('profiles').select('*, roles(label, rank)').eq('id', s.user.id).maybeSingle();
+    var r = await A.sb.from('profiles').select('*, roles(*)').eq('id', s.user.id).maybeSingle();
     if (r.error) throw r.error;
     return r.data ? Object.assign(r.data, { user: s.user }) : { status: 'pending', user: s.user, missing: true };
   };
@@ -56,7 +56,7 @@
   };
   A.date = function (d) { return d ? new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; };
 
-  // Fill the page header's nav for this person. `current` is 'members' | 'dashboard' | 'login'.
+  // Fill the page header's nav for this person. `current` is 'members' | 'dashboard' | 'login' | 'account'.
   A.header = function (p, current) {
     var nav = document.getElementById('acct-nav');
     if (!nav) return;
@@ -68,8 +68,8 @@
     }
     link('', 'Home');
     if (p) {
-      link('members/', 'Members', 'members');
       if (A.isAdmin(p)) link('dashboard/', 'Dashboard', 'dashboard');
+      link('members/', 'Members', 'members');
       var out = A.el('button', null, 'Log out'); out.type = 'button'; out.onclick = A.signOut; nav.appendChild(out);
     } else {
       link('login/', 'Log in', 'login');

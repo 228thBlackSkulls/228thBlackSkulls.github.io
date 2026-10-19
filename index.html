@@ -622,7 +622,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
       <a href="#ops">Operations</a>
       <a href="#faq">FAQ</a>
     </nav>
-    <span class="nav-ctas"><a class="btn ghost acct-btn" href="login/" data-acct hidden>Log in</a><a class="btn ghost acct-btn" href="dashboard/" data-acct-admin hidden>Dashboard</a><a class="btn ghost shop-btn" href="#shop" data-shop hidden>Shop</a><a class="btn" href="#join" data-link="join_button">Join the Corps</a></span>
+    <span class="nav-ctas"><a class="btn ghost acct-btn" href="dashboard/" data-acct-admin hidden>Dashboard</a><a class="btn ghost acct-btn" href="login/" data-acct hidden>Log in</a><a class="btn ghost shop-btn" href="#shop" data-shop hidden>Shop</a><a class="btn" href="#join" data-link="join_button">Join the Corps</a></span>
     <button class="mtog" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mnav"><i><b></b></i></button>
   </div>
 </header>
@@ -634,8 +634,8 @@ html.intro-on,html.intro-on body{overflow:hidden}
       <a href="#about">About</a><a href="#history">History</a><a href="#lore">Lore</a><a href="#command">Command</a><a href="#divisions">Programs</a><a href="#quals">Qualifications</a><a href="#medals">Medals</a><a href="#honor">Hall of Honor</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
     </nav>
     <div class="mnav-sub">
-      <a href="login/" data-acct hidden>Log in</a>
       <a href="dashboard/" data-acct-admin hidden>Dashboard</a>
+      <a href="login/" data-acct hidden>Log in</a>
       <p class="label">Recruitment</p>
       <a href="#join" data-link="join_button">Join the Corps</a>
       <a href="https://discord.gg/2bXwURsNsE" target="_blank" rel="noopener" data-link="discord_vrchat">VRChat Discord</a>
@@ -1653,7 +1653,7 @@ He left behind a holotape warning that the op had been a setup, with final order
   });
 })();
 </script>
-<script src="auth/config.js?v=2"></script>
+<script src="auth/config.js?v=3"></script>
 <script>
 // Member accounts: show Log in, or Members (and Dashboard for admins) once signed in. Does nothing until auth/config.js is filled in.
 (function(){
@@ -1664,7 +1664,7 @@ He left behind a holotape warning that the op had been a setup, with final order
   try{has=!!localStorage.getItem('sb-'+ref+'-auth-token');}catch(e){}
   if(!has)return;
   function load(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s);}
-  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js',function(){load('auth/auth.js?v=2',async function(){
+  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js',function(){load('auth/auth.js?v=3',async function(){
     try{var me=await window.Auth.me();if(!me)return;
       links.forEach(function(a){a.textContent='Members';a.href='members/';});
       if(window.Auth.isAdmin(me))admin.forEach(function(a){a.hidden=false;});

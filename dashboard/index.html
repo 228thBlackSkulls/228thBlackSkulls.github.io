@@ -12,8 +12,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../auth/auth.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
-<script src="../auth/config.js?v=2"></script>
-<script src="../auth/auth.js?v=2"></script>
+<script src="../auth/config.js?v=3"></script>
+<script src="../auth/auth.js?v=3"></script>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -61,7 +61,8 @@
         <label class="f">Title<input name="title" maxlength="120" required></label>
         <label class="f">Message<textarea name="body" maxlength="5000"></textarea></label>
         <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:end">
-          <label class="f">Who can see it<select name="min_role" id="post-role"></select></label>
+          <label class="f">Who can see it<select name="see" id="post-role"></select></label>
+          <label class="check"><input type="checkbox" name="andup" id="post-up" disabled> This role and up</label>
           <label class="check"><input type="checkbox" name="pinned"> Pin to top</label>
           <button class="btn" type="submit">Post</button>
         </div>
@@ -70,11 +71,11 @@
     </section>
 
     <section data-pane="roles" class="stack" hidden>
-      <p class="muted">Higher rank sees everything a lower rank can. Admin manages this dashboard.</p>
+      <p class="muted">Roles are listed from highest to lowest. Give each member the role that matches their rank, and each briefing chooses which roles can see it. Admin runs this dashboard.</p>
       <div class="rows" id="roles"></div>
       <form class="panel" id="role-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
         <label class="f" style="flex:1 1 180px">New role name<input name="label" maxlength="40" required placeholder="e.g. Recruiter"></label>
-        <label class="f" style="width:120px">Rank<input name="rank" type="number" min="1" max="99" value="20" required></label>
+        <label class="f">Place it below<select name="below" id="role-below"></select></label>
         <button class="btn" type="submit">Add role</button>
       </form>
     </section>
@@ -127,36 +128,71 @@
     };
   });
 
+  function labelOf(name) { var r = roles.find(function (x) { return x.name === name; }); return r ? r.label : name; }
+  // Who a briefing is for, in words.
+  function seenBy(list) {
+    if (!list || !list.length) return 'Everyone';
+    return list.map(labelOf).join(', ');
+  }
+  // Save the on-screen order as hidden ranks (Admin stays on top at 100).
+  async function saveOrder(list) {
+    for (var i = 0; i < list.length; i++) {
+      var want = list[i].name === 'admin' ? 100 : 99 - i;
+      if (list[i].rank !== want) {
+        var u = await sb.from('roles').update({ rank: want }).eq('name', list[i].name);
+        if (u.error) return A.fail(msg, u.error);
+      }
+    }
+  }
+
   async function loadRoles() {
     var r = await sb.from('roles').select('*').order('rank', { ascending: false });
     if (r.error) return A.fail(msg, r.error);
     roles = r.data;
     var box = $('roles'); box.textContent = '';
-    roles.forEach(function (role) {
+    roles.forEach(function (role, i) {
       var row = A.el('div', 'row'); row.style.gridTemplateColumns = '1fr auto';
       var w = A.el('div', 'who');
       var name = A.el('input'); name.value = role.label; name.maxLength = 40; name.setAttribute('aria-label', 'Role name');
       w.appendChild(name);
       var acts = A.el('div', 'acts');
-      var rank = A.el('input'); rank.type = 'number'; rank.min = 1; rank.max = role.name === 'admin' ? 100 : 99; rank.value = role.rank; rank.style.width = '84px'; rank.setAttribute('aria-label', 'Rank');
-      acts.appendChild(A.el('span', 'label', 'Rank')); acts.appendChild(rank);
       acts.appendChild(btn('Save', 'ghost', async function () {
-        var u = await sb.from('roles').update({ label: name.value.trim() || role.label, rank: role.name === 'admin' ? 100 : +rank.value }).eq('name', role.name);
+        var u = await sb.from('roles').update({ label: name.value.trim() || role.label }).eq('name', role.name);
         if (u.error) return A.fail(msg, u.error);
         ok('Role saved.'); await loadRoles(); await loadPeople();
       }));
+      if (role.name !== 'admin') {
+        var up = btn('↑', 'ghost', async function () { await move(i, -1); }), down = btn('↓', 'ghost', async function () { await move(i, 1); });
+        up.setAttribute('aria-label', 'Move ' + role.label + ' up'); down.setAttribute('aria-label', 'Move ' + role.label + ' down');
+        up.disabled = i <= 1; down.disabled = i === roles.length - 1;
+        acts.appendChild(up); acts.appendChild(down);
+      }
       if (['admin', 'member'].indexOf(role.name) < 0) acts.appendChild(btn('Delete', 'ghost', async function () {
         if (!confirm('Delete the ' + role.label + ' role?')) return;
         var d = await sb.from('roles').delete().eq('name', role.name);
-        if (d.error) return A.fail(msg, { message: 'Can\'t delete a role while members or briefings still use it.' });
+        if (d.error) return A.fail(msg, { message: 'Can\'t delete a role while members still have it. Change their role first.' });
         ok('Role deleted.'); await loadRoles();
       }));
       row.appendChild(w); row.appendChild(acts); box.appendChild(row);
     });
+
     var ps = $('post-role'), keep = ps.value; ps.textContent = '';
-    roles.slice().reverse().forEach(function (r) { var o = A.el('option', null, r.label + (r.name === 'admin' ? ' only' : ' and up')); o.value = r.name; ps.appendChild(o); });
-    ps.value = keep || 'member';
+    var all = A.el('option', null, 'Everyone'); all.value = ''; ps.appendChild(all);
+    roles.forEach(function (r) { var o = A.el('option', null, r.label); o.value = r.name; ps.appendChild(o); });
+    ps.value = keep || '';
+    $('post-up').disabled = !ps.value;
+
+    var bs = $('role-below'), keepB = bs.value; bs.textContent = '';
+    roles.forEach(function (r) { if (r.name !== 'member') { var o = A.el('option', null, r.label); o.value = r.name; bs.appendChild(o); } });
+    bs.value = keepB || 'high-com';
   }
+  async function move(i, dir) {
+    var list = roles.slice(), j = i + dir;
+    if (j < 1 || j >= list.length) return;
+    var t = list[i]; list[i] = list[j]; list[j] = t;
+    await saveOrder(list); await loadRoles();
+  }
+  $('post-role').onchange = function () { $('post-up').disabled = !this.value; if (!this.value) $('post-up').checked = false; };
 
   async function loadPeople() {
     var r = await sb.from('profiles').select('*').order('created_at', { ascending: true });
@@ -204,7 +240,7 @@
   $('find').oninput = renderMembers;
 
   async function loadPosts() {
-    var r = await sb.from('posts').select('*, roles(label)').order('pinned', { ascending: false }).order('created_at', { ascending: false });
+    var r = await sb.from('posts').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: false });
     if (r.error) return A.fail(msg, r.error);
     var box = $('posts'); box.textContent = '';
     if (!r.data.length) box.appendChild(A.el('p', 'empty', 'No briefings yet.'));
@@ -212,7 +248,7 @@
       var row = A.el('div', 'row'); row.style.gridTemplateColumns = '1fr auto';
       var w = A.el('div', 'who');
       w.appendChild(A.el('b', null, (p.pinned ? '📌 ' : '') + p.title));
-      w.appendChild(A.el('small', null, A.date(p.created_at) + ' · ' + ((p.roles && p.roles.label) || p.min_role) + ' and up'));
+      w.appendChild(A.el('small', null, A.date(p.created_at) + ' · Seen by: ' + seenBy(p.visible_to)));
       if (p.body) w.appendChild(A.el('span', 'note', p.body.length > 240 ? p.body.slice(0, 240) + '…' : p.body));
       var acts = A.el('div', 'acts');
       acts.appendChild(btn(p.pinned ? 'Unpin' : 'Pin', 'ghost', async function () {
@@ -230,18 +266,26 @@
 
   $('post-form').onsubmit = async function (e) {
     e.preventDefault();
-    var f = this, r = await sb.from('posts').insert({ title: f.title.value.trim(), body: f.body.value.trim(), min_role: f.min_role.value, pinned: f.pinned.checked });
+    var f = this, see = [];
+    if (f.see.value) {
+      var at = roles.findIndex(function (r) { return r.name === f.see.value; });
+      see = f.andup.checked ? roles.slice(0, at + 1).map(function (r) { return r.name; }) : [f.see.value];
+    }
+    var r = await sb.from('posts').insert({ title: f.title.value.trim(), body: f.body.value.trim(), visible_to: see, pinned: f.pinned.checked });
     if (r.error) return A.fail(msg, r.error);
-    f.reset(); f.min_role.value = 'member'; ok('Briefing posted.'); loadPosts();
+    f.reset(); $('post-up').disabled = true; ok('Briefing posted.'); loadPosts();
   };
 
   $('role-form').onsubmit = async function (e) {
     e.preventDefault();
     var f = this, label = f.label.value.trim(), name = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     if (!name) return;
-    var r = await sb.from('roles').insert({ name: name, label: label, rank: Math.min(99, Math.max(1, +f.rank.value || 20)) });
+    var below = f.below.value, r = await sb.from('roles').insert({ name: name, label: label, rank: 1 });
     if (r.error) return A.fail(msg, r.error.code === '23505' ? { message: 'That role already exists.' } : r.error);
-    f.reset(); f.rank.value = 20; ok('Role added.'); loadRoles();
+    var list = roles.slice(), at = list.findIndex(function (x) { return x.name === below; });
+    list.splice(at + 1, 0, { name: name, rank: 1 });
+    await saveOrder(list);
+    f.reset(); ok('Role added.'); loadRoles();
   };
 
   await loadRoles();

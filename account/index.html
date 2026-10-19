@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My account · 228th Black Skulls Corps</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../auth/auth.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
+<script src="../auth/config.js?v=3"></script>
+<script src="../auth/auth.js?v=3"></script>
+<style>
+.me{display:grid;grid-template-columns:120px 1fr;gap:24px;align-items:center}
+.me .av{width:120px;height:120px;font-size:2.6rem}
+@media (max-width:520px){.me{grid-template-columns:1fr;justify-items:start}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../"><img src="../images/logo-nav.webp" alt="">228th <span>Black Skulls</span></a>
+  <nav id="acct-nav" aria-label="Account"></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="center stack" style="max-width:640px">
+    <div class="head">
+      <p class="label"><b>//</b> Members</p>
+      <h1>My account</h1>
+    </div>
+    <div class="msg" id="msg" role="status"></div>
+
+    <div class="panel stack" id="out" hidden>
+      <p class="muted">Log in to manage your account.</p>
+      <a class="btn" href="../login/">Log in</a>
+    </div>
+
+    <div class="stack" id="in" hidden>
+      <section class="panel me" aria-label="Profile">
+        <div id="pic"></div>
+        <div class="stack" style="gap:10px">
+          <h2 id="name" style="font-size:1.8rem"></h2>
+          <p><span class="chip red" id="role"></span></p>
+          <p class="muted" style="font-size:.9rem">Only Command can change your name or rank.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <label class="btn small" for="file">Change picture</label>
+            <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
+            <button class="btn ghost small" type="button" id="remove" hidden>Remove picture</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel stack" aria-labelledby="email-h">
+        <h3 id="email-h">Email</h3>
+        <p class="muted" id="email"></p>
+      </section>
+
+      <form class="panel stack" id="pw" aria-labelledby="pw-h">
+        <h3 id="pw-h">Change password</h3>
+        <label class="f">New password<input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label class="f">Type it again<input name="again" type="password" autocomplete="new-password" minlength="8" required></label>
+        <button class="btn" type="submit">Save password</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script>
+(async function () {
+  var A = window.Auth, sb = A.sb, msg = document.getElementById('msg'), $ = function (id) { return document.getElementById(id); };
+  function ok(text) { msg.className = 'msg ok'; msg.textContent = text; }
+  if (!sb) { A.header(null, 'account'); $('out').hidden = false; return; }
+  var me;
+  try { me = await A.me(); } catch (e) { A.header(null, 'account'); $('out').hidden = false; return A.fail(msg, e); }
+  A.header(me, 'account');
+  if (!me || me.missing) { $('out').hidden = false; return; }
+  $('in').hidden = false;
+
+  function show() {
+    $('pic').textContent = ''; $('pic').appendChild(A.avatar(me));
+    $('name').textContent = me.display_name || 'Unnamed';
+    $('role').textContent = me.status === 'approved' ? ((me.roles && me.roles.label) || me.role) : 'Pending approval';
+    $('remove').hidden = !me.avatar_url;
+  }
+  $('email').textContent = me.email || (me.user && me.user.email) || '';
+  show();
+
+  // Where a stored picture lives inside the avatars bucket, from its public URL.
+  function pathOf(url) { var m = url && url.match(/\/object\/public\/avatars\/(.+)$/); return m ? decodeURIComponent(m[1]) : null; }
+
+  // Crop to a square and shrink to 256px before uploading.
+  function squareWebp(file) {
+    return new Promise(function (done, fail) {
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        var side = Math.min(img.naturalWidth, img.naturalHeight), c = document.createElement('canvas');
+        c.width = c.height = 256;
+        c.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
+        URL.revokeObjectURL(url);
+        c.toBlob(function (b) { b ? done(b) : fail(new Error('Could not read that picture.')); }, 'image/webp', 0.85);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); fail(new Error('That file isn\'t a picture we can use.')); };
+      img.src = url;
+    });
+  }
+
+  $('file').onchange = async function () {
+    var f = this.files[0]; this.value = '';
+    if (!f) return;
+    msg.className = 'msg ok'; msg.textContent = 'Uploading…';
+    try {
+      var blob = await squareWebp(f), path = me.id + '/' + Date.now() + '.webp';
+      var up = await sb.storage.from('avatars').upload(path, blob, { contentType: 'image/webp' });
+      if (up.error) throw up.error;
+      var url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl, old = pathOf(me.avatar_url);
+      var r = await sb.from('profiles').update({ avatar_url: url }).eq('id', me.id);
+      if (r.error) throw r.error;
+      if (old) await sb.storage.from('avatars').remove([old]);
+      me.avatar_url = url; show(); ok('Picture updated.');
+    } catch (e) { A.fail(msg, e); }
+  };
+
+  $('remove').onclick = async function () {
+    var old = pathOf(me.avatar_url);
+    var r = await sb.from('profiles').update({ avatar_url: null }).eq('id', me.id);
+    if (r.error) return A.fail(msg, r.error);
+    if (old) await sb.storage.from('avatars').remove([old]);
+    me.avatar_url = null; show(); ok('Picture removed.');
+  };
+
+  $('pw').onsubmit = async function (e) {
+    e.preventDefault();
+    if (this.password.value !== this.again.value) return A.fail(msg, { message: 'The two passwords don\'t match.' });
+    var r = await sb.auth.updateUser({ password: this.password.value });
+    if (r.error) return A.fail(msg, r.error);
+    this.reset(); ok('Password saved.');
+  };
+})();
+</script>
+</body>
+</html>
