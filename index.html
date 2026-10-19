@@ -636,6 +636,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
     <div class="mnav-sub">
       <a href="dashboard/" data-acct-admin hidden>Dashboard</a>
       <a href="login/" data-acct hidden>Log in</a>
+      <a href="org/" data-acct hidden data-org>Org</a>
       <p class="label">Recruitment</p>
       <a href="#join" data-link="join_button">Join the Corps</a>
       <a href="https://discord.gg/2bXwURsNsE" target="_blank" rel="noopener" data-link="discord_vrchat">VRChat Discord</a>
@@ -1655,11 +1656,11 @@ He left behind a holotape warning that the op had been a setup, with final order
 </script>
 <script src="auth/config.js?v=3"></script>
 <script>
-// Member accounts: show Log in, or Members (and Dashboard for admins) once signed in. Does nothing until auth/config.js is filled in.
+// Member accounts: show Org and Log in, or Members (and Dashboard for admins) once signed in. Does nothing until auth/config.js is filled in.
 (function(){
   var C=window.SB_CONFIG||{};if(!C.url||!C.anonKey||/[?&]preview=1/.test(location.search))return;
-  var links=document.querySelectorAll('[data-acct]'),admin=document.querySelectorAll('[data-acct-admin]');
-  links.forEach(function(a){a.hidden=false;});
+  var links=document.querySelectorAll('[data-acct]:not([data-org])'),org=document.querySelectorAll('[data-org]'),admin=document.querySelectorAll('[data-acct-admin]');
+  links.forEach(function(a){a.hidden=false;});org.forEach(function(a){a.hidden=false;});
   var ref=(C.url.match(/https:\/\/([^.]+)\./)||[])[1],has=false;
   try{has=!!localStorage.getItem('sb-'+ref+'-auth-token');}catch(e){}
   if(!has)return;
