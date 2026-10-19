@@ -48,6 +48,7 @@ main{padding-block:clamp(32px,6vw,64px)}
 
 label.f{display:grid;gap:6px;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 input,select,textarea{font:400 1rem var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:.7em .8em;width:100%}
+label.f .hint{font:400 .85rem/1.4 var(--body);letter-spacing:0;text-transform:none;color:var(--muted)}
 textarea{min-height:110px;resize:vertical}
 select{width:auto}
 .check{display:flex;gap:8px;align-items:center;font-size:.95rem;color:var(--soft)}

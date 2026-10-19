@@ -47,7 +47,7 @@
           <button type="button" role="tab" aria-selected="true" data-mode="in">Log in</button>
           <button type="button" role="tab" aria-selected="false" data-mode="up">Create account</button>
         </div>
-        <label class="f" id="name-f" hidden>Name or callsign<input name="name" autocomplete="nickname" placeholder="CT-1234 &quot;Nickname&quot;"></label>
+        <label class="f" id="name-f" hidden>228th name<input name="name" autocomplete="nickname" autocapitalize="off" spellcheck="false" placeholder="CT-1234 &quot;Nickname&quot;"><span class="hint">The same name you go by in the 228th, like CC-5733 "Flanker".</span></label>
         <label class="f">Email<input name="email" type="email" autocomplete="email" required></label>
         <label class="f">Password<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
         <button class="btn" type="submit" id="go">Log in</button>
@@ -98,7 +98,11 @@
     var go = document.getElementById('go'); go.disabled = true; msg.textContent = '';
     var email = form.email.value.trim(), pw = form.password.value, r;
     if (mode === 'up') {
-      r = await A.sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: back, data: { display_name: form.name.value.trim() } } });
+      var name = A.callsign(form.name.value);
+      if (!name) { go.disabled = false; A.fail(msg, { message: A.callsignHelp }); form.name.focus(); return; }
+      form.name.value = name;
+      if (await A.numberTaken(name)) { go.disabled = false; A.fail(msg, { message: 'The number ' + name.match(/-(\d{4})/)[1] + ' is already used by another account. If it\'s yours, reach out to Command on Discord.' }); return; }
+      r = await A.sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: back, data: { display_name: name } } });
       go.disabled = false;
       if (r.error) return A.fail(msg, r.error);
       if (r.data.session) return location.replace(back);

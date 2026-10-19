@@ -53,6 +53,36 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- Create a profile whenever someone signs up (Discord or email).
+-- Names must be the 228th callsign: two to four letters, a dash, four numbers, then the nickname in quotes,
+-- like CC-5733 "Flanker". Curly quotes from phone keyboards are straightened. Each number can only be used once.
+create or replace function public.check_callsign() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.display_name is null then return new; end if;
+  new.display_name := regexp_replace(btrim(translate(new.display_name, '“”„‟″', '"""""')), '\s+', ' ', 'g');
+  new.display_name := regexp_replace(new.display_name, '^([A-Za-z]{2,4})\s*-\s*([0-9]{4})\s*"\s*(.*?)\s*"$', '\1-\2 "\3"');
+  new.display_name := upper(split_part(new.display_name, '-', 1)) || substr(new.display_name, length(split_part(new.display_name, '-', 1)) + 1);
+  if new.display_name !~ '^[A-Z]{2,4}-[0-9]{4} "[A-Za-z0-9][A-Za-z0-9 .''-]{0,23}"$' then
+    raise exception 'Name must look like CT-1234 "Nickname"' using errcode = 'check_violation';
+  end if;
+  if exists (select 1 from profiles p where p.id <> new.id and substring(p.display_name from '-([0-9]{4}) ') = substring(new.display_name from '-([0-9]{4}) ')) then
+    raise exception 'The number % is already taken by another account', substring(new.display_name from '-([0-9]{4}) ') using errcode = 'unique_violation';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists profiles_callsign on public.profiles;
+create trigger profiles_callsign before insert or update of display_name on public.profiles
+  for each row execute function public.check_callsign();
+create unique index if not exists profiles_number_key on public.profiles ((substring(display_name from '-([0-9]{4}) ')));
+
+-- Lets the sign-up form say up front when a number is already used.
+create or replace function public.number_taken(num text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from profiles where substring(display_name from '-([0-9]{4}) ') = num);
+$$;
+grant execute on function public.number_taken(text) to anon, authenticated;
+
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare m jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
@@ -61,7 +91,7 @@ begin
   values (
     new.id,
     new.email,
-    coalesce(nullif(m->>'display_name',''), m->'custom_claims'->>'global_name', m->>'full_name', m->>'name', split_part(new.email, '@', 1)),
+    nullif(m->>'display_name', ''),
     case when new.raw_app_meta_data->>'provider' = 'discord' then coalesce(m->>'full_name', m->>'name') end,
     m->>'avatar_url'
   )

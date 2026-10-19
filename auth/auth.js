@@ -43,6 +43,17 @@
     if (p && p.avatar_url) { var i = A.el('img', 'av'); i.src = p.avatar_url; i.alt = ''; i.referrerPolicy = 'no-referrer'; return i; }
     return A.el('span', 'av', ((p && p.display_name) || '?').trim().charAt(0).toUpperCase());
   };
+  // 228th callsign: CT-1234 "Nickname". Returns the tidied name, or null if it doesn't fit.
+  A.callsign = function (v) {
+    v = String(v || '').replace(/[\u201c\u201d\u201e\u201f\u2033]/g, '"').replace(/\s+/g, ' ').trim();
+    var m = v.match(/^([A-Za-z]{2,4})\s*-\s*(\d{4})\s*"\s*([A-Za-z0-9][A-Za-z0-9 .'-]{0,23}?)\s*"$/);
+    return m ? m[1].toUpperCase() + '-' + m[2] + ' "' + m[3] + '"' : null;
+  };
+  A.callsignHelp = 'Use your 228th name, like CT-1234 "Nickname": your letters, a dash, your four numbers, then your nickname in quotes.';
+  A.numberTaken = async function (name) {
+    var r = await A.sb.rpc('number_taken', { num: name.match(/-(\d{4}) /)[1] });
+    return !r.error && r.data === true;
+  };
   A.date = function (d) { return d ? new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; };
 
   // Fill the page header's nav for this person. `current` is 'members' | 'dashboard' | 'login'.
