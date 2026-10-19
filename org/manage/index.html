@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Org Manager · 228th Black Skulls Corps</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="../../favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../auth/auth.css">
+<link rel="stylesheet" href="../org.css?v=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
+<script src="../../auth/config.js?v=3"></script>
+<script src="../../auth/auth.js?v=4"></script>
+<script src="../org.js?v=1"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../../"><img src="../../images/logo-nav.webp" alt="">228th <span>Black Skulls</span></a>
+  <nav id="acct-nav" aria-label="Account"></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="center panel stack" id="no" hidden>
+    <h2>No access yet</h2>
+    <p class="muted" id="no-text">This page is for members Command has given org access to.</p>
+    <a class="btn ghost" href="../">View the org chart</a>
+  </div>
+
+  <div id="app" hidden>
+    <div class="org-head">
+      <div class="head">
+        <p class="label"><b>//</b> Command</p>
+        <h1>Org manager</h1>
+        <p class="muted" id="scope-line"></p>
+      </div>
+      <a class="btn ghost small" href="../">View the org chart</a>
+    </div>
+    <div class="msg" id="msg" role="status" aria-live="polite" style="margin-bottom:16px"></div>
+
+    <div class="tabs" role="tablist" id="tabs">
+      <button type="button" role="tab" aria-selected="true" data-tab="structure">Structure</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="members">Members</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="quals" hidden>Qualifications</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="access" hidden>Access</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="log">Change log</button>
+    </div>
+
+    <section data-pane="structure" class="stack">
+      <div class="toolbar" style="margin:0">
+        <input type="search" id="find" placeholder="Find a unit or position" aria-label="Find a unit or position">
+        <span class="spacer"></span>
+        <button class="btn small" type="button" id="add-root" hidden>Add top-level unit</button>
+      </div>
+      <div class="tree" id="tree"></div>
+    </section>
+
+    <section data-pane="members" class="stack" hidden>
+      <div class="toolbar" style="margin:0">
+        <input type="search" id="mfind" placeholder="Search members" aria-label="Search members">
+        <label class="check"><input type="checkbox" id="mine-only" checked> Only members I can manage</label>
+      </div>
+      <p class="muted" style="font-size:.92rem">Fill positions from the Structure tab. Ranks you can give stop one below your own.</p>
+      <div class="rows" id="members"></div>
+    </section>
+
+    <section data-pane="quals" class="stack" hidden>
+      <form class="panel" id="qual-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
+        <label class="f" style="flex:2 1 200px">Name<input name="name" maxlength="60" required placeholder="e.g. Jump Master"></label>
+        <label class="f">Type<select name="kind"><option value="qual">Qualification</option><option value="mos">MOS</option><option value="medal">Medal</option></select></label>
+        <label class="f" style="flex:1 1 160px">Group or callsign<input name="grp" maxlength="40" placeholder="Optional"></label>
+        <button class="btn" type="submit">Add</button>
+      </form>
+      <div class="stack" id="quals"></div>
+    </section>
+
+    <section data-pane="access" class="stack" hidden>
+      <p class="muted">Admin and High-Com can do everything here. Give other members access to parts of this page without making them High-Com. Access can cover everything, or one unit and everything under it. Positions can also come with access (set it when editing a position) so whoever fills Demon 1 can run the Demons.</p>
+      <form class="panel stack" id="grant-form">
+        <h3>Give access</h3>
+        <div class="f-row">
+          <label class="f">Who<select name="who" id="g-who" required></select></label>
+          <label class="f">Can<select name="perm" id="g-perm" required></select></label>
+          <label class="f">Where<select name="unit" id="g-unit"></select></label>
+        </div>
+        <div><button class="btn" type="submit">Give access</button></div>
+      </form>
+      <h3>Current access</h3>
+      <div class="rows" id="grants"></div>
+      <h3>Positions with built-in access</h3>
+      <div class="rows" id="pos-grants"></div>
+    </section>
+
+    <section data-pane="log" class="stack" hidden>
+      <div class="log" id="log"></div>
+    </section>
+  </div>
+</main>
+
+<!-- Unit form -->
+<dialog class="form" id="unit-dlg" aria-labelledby="unit-h">
+  <form id="unit-form" method="dialog">
+    <h2 id="unit-h">Unit</h2>
+    <label class="f">Name<input name="name" maxlength="60" required></label>
+    <div class="f-row">
+      <label class="f">Type<select name="kind" id="u-kind"></select></label>
+      <label class="f">Callsign<input name="callsign" maxlength="40" placeholder="e.g. Demon Alpha"></label>
+      <label class="f">Tier<input name="tier" maxlength="20" placeholder="e.g. Tier 1"></label>
+    </div>
+    <label class="f">Sits under<select name="parent" id="u-parent"></select></label>
+    <label class="f">Badge<select name="badge" id="u-badge"></select><span class="hint">Images from the site's MOS folder. Ask your web admin to add new ones.</span></label>
+    <label class="f">About<textarea name="about" maxlength="400" style="min-height:80px"></textarea></label>
+    <div class="f-acts"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit">Save</button></div>
+  </form>
+</dialog>
+
+<!-- Position form -->
+<dialog class="form" id="pos-dlg" aria-labelledby="pos-h">
+  <form id="pos-form" method="dialog">
+    <h2 id="pos-h">Position</h2>
+    <div class="f-row">
+      <label class="f">Title<input name="title" maxlength="60" required placeholder="e.g. Team Leader"></label>
+      <label class="f">Callsign<input name="callsign" maxlength="40" placeholder="e.g. Alpha 1-1"></label>
+    </div>
+    <div class="f-row">
+      <label class="f">Rank it calls for<select name="min_rank" id="p-rank"></select><span class="hint">Shown as a warning only.</span></label>
+      <label class="f">In unit<select name="unit" id="p-unit"></select></label>
+    </div>
+    <fieldset id="p-grants"><legend>Built-in access (Admin and High-Com only)</legend><p class="hint muted" style="font-size:.85rem;margin-bottom:8px">Whoever fills this position gets this access inside its unit.</p><div class="perm-list" id="p-grant-list"></div></fieldset>
+    <div class="f-acts"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit">Save</button></div>
+  </form>
+</dialog>
+
+<!-- Confirm -->
+<dialog class="form" id="ask-dlg" aria-labelledby="ask-h">
+  <form method="dialog" class="stack">
+    <h3 id="ask-h">Are you sure?</h3>
+    <p class="muted" id="ask-text"></p>
+    <div class="f-acts"><button class="btn ghost" value="no">Cancel</button><button class="btn" value="yes" id="ask-yes">Confirm</button></div>
+  </form>
+</dialog>
+
+<script>
+(async function () {
+  var A = window.Auth, O = window.Org, $ = function (id) { return document.getElementById(id); }, msg = $('msg');
+  var d, me, openUnits = null, editing = null;
+  var CHEV = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+  var BADGES = ['', 'images/logo-pad.webp', 'images/mos/conventional.webp', 'images/mos/arc-2.webp', 'images/mos/arc.webp', 'images/mos/arf.webp',
+    'images/mos/airborne.webp', 'images/mos/armored-2.webp', 'images/mos/armored.webp', 'images/mos/barc-3.webp', 'images/mos/barc-2.webp',
+    'images/mos/commando.webp', 'images/mos/engineer.webp', 'images/mos/medic.webp', 'images/mos/pilot.webp', 'images/mos/scuba-2.webp',
+    'images/mos/scuba.webp', 'images/mos/spec-ops-2.webp', 'images/mos/spec-ops.webp', 'images/mos/echelon.webp'];
+
+  if (!A.sb) { A.header(null, 'org'); $('no-text').textContent = 'Member logins are being set up.'; $('no').hidden = false; return; }
+  try { me = await A.me(); } catch (e) { A.header(null, 'org'); $('no').hidden = false; return A.fail($('no-text'), e); }
+  A.header(me, 'org');
+  if (!me) { location.replace(A.url('login/')); return; }
+
+  function ok(t) { O.say(msg, t, true); }
+  function bad(e) { console.error(e); O.say(msg, (e && (e.message || e.error_description)) || 'Something went wrong. Try again.'); msg.scrollIntoView({ block: 'nearest' }); }
+  function ask(text, yes) {
+    return new Promise(function (res) {
+      var dl = $('ask-dlg'); $('ask-text').textContent = text; $('ask-yes').textContent = yes || 'Confirm';
+      dl.returnValue = ''; dl.showModal();
+      dl.addEventListener('close', function h() { dl.removeEventListener('close', h); res(dl.returnValue === 'yes'); });
+    });
+  }
+  async function act(fn, done) {
+    try { var r = await fn(); if (done) ok(typeof done === 'function' ? done(r) : done); await reload(); return r; }
+    catch (e) { bad(e); }
+  }
+  function btn(text, fn, cls) { var b = A.el('button', cls || 'icon-btn', text); b.type = 'button'; b.onclick = fn; return b; }
+  function option(sel, value, text) { var o = A.el('option', null, text); o.value = value; sel.appendChild(o); return o; }
+  document.querySelectorAll('dialog [data-close]').forEach(function (b) { b.onclick = function () { b.closest('dialog').close(); }; });
+
+  // Tabs
+  document.querySelectorAll('[data-tab]').forEach(function (b) {
+    b.onclick = function () {
+      document.querySelectorAll('[data-tab]').forEach(function (x) { x.setAttribute('aria-selected', x === b); });
+      document.querySelectorAll('[data-pane]').forEach(function (p) { p.hidden = p.dataset.pane !== b.dataset.tab; });
+      if (b.dataset.tab === 'log') loadLog();
+    };
+  });
+
+  async function reload() {
+    d = await O.load();
+    if (!O.canAnything(d)) { $('app').hidden = true; $('no').hidden = false; return; }
+    $('app').hidden = false;
+    var a = d.access;
+    $('scope-line').textContent = a.admin ? 'You have full access as Admin or High-Com.' :
+      'You can: ' + O.PERMS.filter(function (p) { return a.grants.some(function (g) { return g.perm === p.perm; }); }).map(function (p) {
+        var where = a.grants.filter(function (g) { return g.perm === p.perm; }).map(function (g) { return g.unit_id == null ? 'everywhere' : (d.unit[g.unit_id] || {}).name; });
+        return p.label.toLowerCase() + ' (' + where.join(', ') + ')';
+      }).join('; ') + '.';
+    document.querySelector('[data-tab=quals]').hidden = !O.can(d, 'org.edit', null);
+    document.querySelector('[data-tab=access]').hidden = !a.admin;
+    $('add-root').hidden = !a.admin;
+    renderTree(); renderMembers();
+    if (O.can(d, 'org.edit', null)) renderQuals();
+    if (a.admin) loadGrants();
+  }
+
+  // ---------- Structure ----------
+  function renderTree() {
+    var tree = $('tree'); tree.textContent = '';
+    if (!openUnits) {
+      // First load: open the way down to the units this member looks after (the top two levels for Admin).
+      openUnits = new Set();
+      var tops = d.access.admin ? [] : (d.access.grants || []).map(function (g) { return g.unit_id; }).filter(function (x) { return x != null; });
+      if (!tops.length) d.units.forEach(function (u) { if (O.path(d, u.id).length <= 2) openUnits.add(u.id); });
+      tops.forEach(function (id) { O.path(d, id).forEach(function (u) { openUnits.add(u.id); }); });
+    }
+    d.roots.forEach(function (u) { tree.appendChild(unitBlock(u)); });
+    if (!d.roots.length) tree.appendChild(A.el('p', 'empty', 'No units yet. Add the first one with "Add top-level unit".'));
+  }
+  function memberSelect(p) {
+    var s = A.el('select'); s.setAttribute('aria-label', 'Who fills ' + O.posLabel(p));
+    option(s, '', '— Open —');
+    var minRank = p.min_rank && d.rank[p.min_rank] ? d.rank[p.min_rank].rank : 0;
+    d.people.forEach(function (m) {
+      var r = O.rankOf(d, m), o = option(s, m.id, (m.display_name || 'Unnamed') + (r ? ' \u00b7 ' + r.label : ''));
+      if (minRank && (!r || r.rank < minRank)) o.textContent += '  (below rank)';
+    });
+    s.value = p.holder || '';
+    s.onchange = async function () {
+      var to = s.value || null;
+      await act(function () { return O.rpc('org_assign', { p_position: p.id, p_member: to }); }, function (warn) {
+        return to ? O.nameOf(d, to) + ' now fills ' + O.posLabel(p) + '.' + (warn ? ' Heads up: this position calls for ' + warn + '.' : '') : O.posLabel(p) + ' is now open.';
+      });
+    };
+    return s;
+  }
+  function unitBlock(u) {
+    var sec = A.el('section', 'unit'), kids = d.kids[u.id], slots = d.posOf[u.id];
+    var canEdit = O.can(d, 'org.edit', u.id), canFill = O.can(d, 'positions.assign', u.id);
+    var canRemove = u.parent_id ? O.can(d, 'org.edit', u.parent_id) : d.access.admin;
+    sec.dataset.unit = u.id; sec.dataset.open = openUnits.has(u.id) ? 'true' : 'false';
+    var row = A.el('div', 'u-row'); row.style.gridTemplateColumns = 'auto 44px 1fr auto';
+    var tog = A.el('button', 'u-tog'); tog.type = 'button'; tog.innerHTML = CHEV; tog.setAttribute('aria-label', 'Show or hide ' + u.name);
+    tog.setAttribute('aria-expanded', sec.dataset.open);
+    tog.onclick = function () { var o = sec.dataset.open !== 'true'; sec.dataset.open = String(o); tog.setAttribute('aria-expanded', String(o)); if (o) openUnits.add(u.id); else openUnits.delete(u.id); };
+    row.appendChild(tog); row.appendChild(O.badge(u));
+    var nm = A.el('div', 'u-name'); nm.appendChild(A.el('h3', null, u.name));
+    var meta = A.el('div', 'u-meta'); meta.appendChild(A.el('span', 'label', O.KIND_LABEL[u.kind] || u.kind));
+    if (u.callsign && u.callsign !== u.name) meta.appendChild(A.el('span', 'chip red', u.callsign));
+    if (u.tier) meta.appendChild(A.el('span', 'chip', u.tier));
+    var f = O.filled(d, u.id, false); if (f.all) meta.appendChild(A.el('span', 'u-fill', f.full + ' / ' + f.all + ' filled'));
+    nm.appendChild(meta); row.appendChild(nm);
+    var acts = A.el('div', 'edit-acts');
+    if (canEdit) {
+      acts.appendChild(btn('+ Unit', function () { openUnit(null, u.id); }));
+      acts.appendChild(btn('+ Position', function () { openPos(null, u.id); }));
+      acts.appendChild(btn('Edit', function () { openUnit(u); }));
+    }
+    if (canRemove) {
+      var sib = u.parent_id ? d.kids[u.parent_id] : d.roots, at = sib.indexOf(u);
+      var up = btn('↑', function () { move('units', sib, at, -1); }); up.disabled = at === 0; up.setAttribute('aria-label', 'Move ' + u.name + ' up');
+      var dn = btn('↓', function () { move('units', sib, at, 1); }); dn.disabled = at === sib.length - 1; dn.setAttribute('aria-label', 'Move ' + u.name + ' down');
+      acts.appendChild(up); acts.appendChild(dn);
+      acts.appendChild(btn('Remove', async function () {
+        if (kids.length) return bad({ message: u.name + ' still has units under it. Move or remove those first.' });
+        if (await ask('Remove ' + u.name + ' and its ' + slots.length + ' position' + (slots.length === 1 ? '' : 's') + '? Anyone in them is unassigned.', 'Remove unit'))
+          act(function () { return O.rpc('org_unit_delete', { p_id: u.id }); }, u.name + ' removed.');
+      }));
+    }
+    row.appendChild(acts);
+    sec.appendChild(row);
+
+    var body = A.el('div', 'u-body');
+    if (slots.length) {
+      var list = A.el('div', 'slots');
+      slots.forEach(function (p, i) {
+        var s = A.el('div', 'slot edit'); s.dataset.pos = p.id;
+        s.appendChild(A.el('span', 'cs', p.callsign || ''));
+        var t = A.el('span', 'ttl', p.title);
+        if (p.grants && p.grants.length) { t.appendChild(document.createElement('br')); t.appendChild(A.el('small', 'label', 'Access: ' + p.grants.map(O.permLabel).join(', '))); }
+        s.appendChild(t);
+        var h = A.el('span', 'holder');
+        if (canFill) h.appendChild(memberSelect(p));
+        else if (p.holder) h.appendChild(O.personChip(d, p.holder));
+        else h.appendChild(A.el('span', 'open', 'Open'));
+        if (p.holder && p.min_rank && d.rank[p.min_rank]) {
+          var r = O.rankOf(d, d.person[p.holder]);
+          if (!r || r.rank < d.rank[p.min_rank].rank) h.appendChild(A.el('span', 'warn-line', 'Calls for ' + d.rank[p.min_rank].label));
+        }
+        s.appendChild(h);
+        var pa = A.el('div', 'edit-acts');
+        if (canEdit) {
+          pa.appendChild(btn('Edit', function () { openPos(p); }));
+          var up = btn('↑', function () { move('positions', slots, i, -1); }); up.disabled = i === 0; up.setAttribute('aria-label', 'Move up');
+          var dn = btn('↓', function () { move('positions', slots, i, 1); }); dn.disabled = i === slots.length - 1; dn.setAttribute('aria-label', 'Move down');
+          pa.appendChild(up); pa.appendChild(dn);
+          pa.appendChild(btn('Remove', async function () {
+            if (await ask('Remove the position ' + O.posLabel(p) + '?' + (p.holder ? ' ' + O.nameOf(d, p.holder) + ' will be unassigned.' : ''), 'Remove position'))
+              act(function () { return O.rpc('org_position_delete', { p_id: p.id }); }, 'Position removed.');
+          }));
+        }
+        s.appendChild(pa);
+        list.appendChild(s);
+      });
+      body.appendChild(list);
+    }
+    if (kids.length) { var k = A.el('div', 'kids'); kids.forEach(function (c) { k.appendChild(unitBlock(c)); }); body.appendChild(k); }
+    sec.appendChild(body);
+    return sec;
+  }
+  async function move(what, list, at, dir) {
+    var ids = list.map(function (x) { return x.id; }), to = at + dir;
+    if (to < 0 || to >= ids.length) return;
+    ids.splice(to, 0, ids.splice(at, 1)[0]);
+    await act(function () { return O.rpc('org_order', { p_what: what, p_ids: ids }); });
+  }
+  $('add-root').onclick = function () { openUnit(null, null); };
+  $('find').oninput = function () {
+    var q = this.value.trim().toLowerCase(), tree = $('tree');
+    tree.querySelectorAll('.hit').forEach(function (x) { x.classList.remove('hit'); });
+    if (q.length < 2) return;
+    var first = null;
+    function openUp(el) { var s = el.closest('.unit'); while (s) { s.dataset.open = 'true'; openUnits.add(+s.dataset.unit); s = s.parentNode.closest('.unit'); } }
+    d.units.forEach(function (u) { if ([u.name, u.callsign].join(' ').toLowerCase().indexOf(q) >= 0) { var s = tree.querySelector('[data-unit="' + u.id + '"]'); s.classList.add('hit'); openUp(s.parentNode); first = first || s; } });
+    d.positions.forEach(function (p) {
+      var who = p.holder && d.person[p.holder] ? d.person[p.holder].display_name : '';
+      if ([p.title, p.callsign, who].join(' ').toLowerCase().indexOf(q) >= 0) { var s = tree.querySelector('[data-pos="' + p.id + '"]'); s.classList.add('hit'); openUp(s); first = first || s; }
+    });
+    if (first) first.scrollIntoView({ block: 'center' });
+  };
+
+  // Unit form
+  function unitOptions(sel, current, exclude, allowTop) {
+    sel.textContent = '';
+    if (allowTop) option(sel, '', '— Top level —');
+    var skip = new Set(exclude || []);
+    (function walk(list, depth) {
+      list.forEach(function (u) {
+        if (skip.has(u.id)) return;
+        var o = option(sel, u.id, ' '.repeat(depth) + u.name);
+        if (!O.can(d, 'org.edit', u.id)) o.disabled = true;
+        walk(d.kids[u.id], depth + 1);
+      });
+    })(d.roots, 0);
+    sel.value = current == null ? '' : String(current);
+  }
+  function openUnit(u, parentId) {
+    var f = $('unit-form'); editing = u ? u.id : null;
+    $('unit-h').textContent = u ? 'Edit ' + u.name : 'New unit';
+    var k = $('u-kind'); k.textContent = ''; O.KINDS.forEach(function (x) { option(k, x, O.KIND_LABEL[x]); });
+    var b = $('u-badge'); b.textContent = '';
+    BADGES.concat(u && u.badge && BADGES.indexOf(u.badge) < 0 ? [u.badge] : []).forEach(function (x) { option(b, x, x ? x.replace(/^images\/(mos\/)?/, '') : 'No badge'); });
+    unitOptions($('u-parent'), u ? u.parent_id : parentId, u ? [u.id].concat(O.descendants(d, u.id).map(function (x) { return x.id; })) : [], d.access.admin);
+    f.name.value = u ? u.name : ''; k.value = u ? u.kind : (parentId && d.unit[parentId] ? childKind(d.unit[parentId].kind) : 'unit');
+    f.callsign.value = u ? u.callsign || '' : ''; f.tier.value = u ? u.tier || '' : '';
+    b.value = u ? u.badge || '' : ''; f.about.value = u ? u.about || '' : '';
+    $('unit-dlg').showModal(); f.name.focus();
+  }
+  function childKind(k) { return { corps: 'command', command: 'division', division: 'battalion', battalion: 'company', company: 'platoon', platoon: 'squad', squad: 'team', smu: 'troop', troop: 'team', socom: 'smu' }[k] || 'unit'; }
+  $('unit-form').onsubmit = async function (e) {
+    e.preventDefault(); var f = this, parent = f.parent.value ? +f.parent.value : null;
+    $('unit-dlg').close();
+    var id = await act(function () {
+      return O.rpc('org_unit_save', { p_id: editing, p_parent: parent, p_name: f.name.value, p_kind: f.kind.value, p_callsign: f.callsign.value,
+        p_tier: f.tier.value, p_badge: f.badge.value, p_about: f.about.value });
+    }, editing ? 'Unit saved.' : f.name.value.trim() + ' added.');
+    if (id && parent) { openUnits.add(parent); renderTree(); }
+  };
+
+  // Position form
+  function openPos(p, unitId) {
+    var f = $('pos-form'); editing = p ? p.id : null;
+    var uid = p ? p.unit_id : unitId;
+    $('pos-h').textContent = p ? 'Edit ' + O.posLabel(p) : 'New position in ' + d.unit[uid].name;
+    var r = $('p-rank'); r.textContent = ''; option(r, '', 'Any rank');
+    d.ladder.forEach(function (x) { option(r, x.name, x.label); });
+    unitOptions($('p-unit'), uid, [], false);
+    f.title.value = p ? p.title : ''; f.callsign.value = p ? p.callsign || '' : ''; r.value = p ? p.min_rank || '' : '';
+    var gl = $('p-grant-list'); gl.textContent = '';
+    O.PERMS.filter(function (x) { return x.scoped; }).forEach(function (x) {
+      var l = A.el('label', 'check'), c = A.el('input'); c.type = 'checkbox'; c.name = 'grant'; c.value = x.perm; c.id = 'pg-' + x.perm;
+      c.checked = !!(p && p.grants.indexOf(x.perm) >= 0); c.disabled = !d.access.admin;
+      l.appendChild(c); l.appendChild(document.createTextNode(' ' + x.label)); gl.appendChild(l);
+    });
+    $('pos-dlg').showModal(); f.title.focus();
+  }
+  $('pos-form').onsubmit = async function (e) {
+    e.preventDefault(); var f = this;
+    var grants = [].slice.call(f.querySelectorAll('[name=grant]:checked')).map(function (c) { return c.value; });
+    var old = editing ? d.positions.find(function (x) { return x.id === editing; }) : null;
+    if (!d.access.admin) grants = old ? old.grants : [];
+    $('pos-dlg').close();
+    await act(function () {
+      return O.rpc('org_position_save', { p_id: editing, p_unit: +f.unit.value, p_title: f.title.value, p_callsign: f.callsign.value, p_min_rank: f.min_rank.value, p_grants: grants });
+    }, editing ? 'Position saved.' : 'Position added.');
+  };
+
+  // ---------- Members ----------
+  function renderMembers() {
+    var q = $('mfind').value.trim().toLowerCase(), onlyMine = $('mine-only').checked, box = $('members'); box.textContent = '';
+    var list = d.people.filter(function (p) {
+      if (q && (p.display_name || '').toLowerCase().indexOf(q) < 0) return false;
+      if (onlyMine && !(O.canMember(d, 'ranks.set', p.id) || O.canMember(d, 'quals.set', p.id))) return false;
+      return true;
+    });
+    if (!list.length) box.appendChild(A.el('p', 'empty', q ? 'No matches.' : onlyMine ? 'No members you can manage yet. Members show here once they fill a position in a unit you look after.' : 'No members yet.'));
+    list.forEach(function (p) { box.appendChild(memberRow(p)); });
+  }
+  $('mfind').oninput = renderMembers; $('mine-only').onchange = renderMembers;
+  function memberRow(p) {
+    var row = A.el('div', 'mem-row'), w = A.el('div', 'who'), r = O.rankOf(d, p);
+    row.appendChild(O.avatar(p));
+    w.appendChild(A.el('b', null, p.display_name || 'Unnamed'));
+    var pos = (d.heldBy[p.id] || []).map(function (x) { return O.posLabel(x) + ' (' + d.unit[x.unit_id].name + ')'; });
+    w.appendChild(A.el('small', null, [r ? r.label : 'No rank'].concat(O.otherRoles(d, p).map(function (x) { return x.label; })).concat(pos.length ? pos : ['No position']).join(' · ')));
+    row.appendChild(w);
+    var ctl = A.el('div', 'mem-ctl'), self = p.id === d.access.id;
+    // Only Admin can change their own or an Admin's rank and qualifications (the database checks this too).
+    var owner = d.access.owner, targetAdmin = (p.all_roles || []).indexOf('admin') >= 0;
+    var canRank = O.canMember(d, 'ranks.set', p.id) && (owner || (!self && !targetAdmin && (d.access.admin || !r || r.rank < O.myRank(d))));
+    var line = A.el('div', 'line'); line.appendChild(A.el('span', 'label', 'Rank'));
+    if (canRank) {
+      var s = A.el('select'); s.setAttribute('aria-label', 'Rank for ' + p.display_name);
+      d.ladder.forEach(function (x) { var o = option(s, x.name, x.label); if (!d.access.admin && x.rank >= O.myRank(d)) o.disabled = true; });
+      s.value = p.rank || '';
+      s.onchange = function () { act(function () { return O.rpc('org_set_rank', { p_member: p.id, p_rank: s.value }); }, p.display_name + ' is now ' + d.rank[s.value].label + '.'); };
+      line.appendChild(s);
+      var at = d.ladder.findIndex(function (x) { return x.name === p.rank; });
+      var upTo = at > 0 ? d.ladder[at - 1] : null, downTo = at >= 0 && at < d.ladder.length - 1 ? d.ladder[at + 1] : null;
+      var pb = btn('Promote', function () { s.value = upTo.name; s.onchange(); }); pb.disabled = !upTo || (!d.access.admin && upTo.rank >= O.myRank(d));
+      var db = btn('Demote', function () { s.value = downTo.name; s.onchange(); }); db.disabled = !downTo;
+      line.appendChild(pb); line.appendChild(db);
+    } else line.appendChild(A.el('span', 'chip red', r ? r.label : 'No rank'));
+    ctl.appendChild(line);
+
+    var canQ = O.canMember(d, 'quals.set', p.id) && (owner || !self);
+    var ql = A.el('div', 'line'); ql.appendChild(A.el('span', 'label', 'Quals'));
+    var chips = A.el('div', 'chips');
+    (p.quals || []).map(function (id) { return d.qual[id]; }).filter(Boolean).forEach(function (q) {
+      var c = A.el('span', 'chip ' + q.kind, q.name);
+      if (canQ) { var x = A.el('button', null, '×'); x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + q.name);
+        x.onclick = function () { act(function () { return O.rpc('org_qual', { p_member: p.id, p_qual: q.id, p_on: false }); }, q.name + ' removed.'); }; c.appendChild(x); }
+      chips.appendChild(c);
+    });
+    if (!(p.quals || []).length) chips.appendChild(A.el('span', 'muted', 'None'));
+    ql.appendChild(chips);
+    if (canQ) {
+      var add = A.el('select'); add.setAttribute('aria-label', 'Give ' + p.display_name + ' a qualification');
+      option(add, '', '+ Add');
+      ['mos', 'qual', 'medal'].forEach(function (k) {
+        var g = A.el('optgroup'); g.label = k === 'mos' ? 'MOS' : k === 'qual' ? 'Qualifications' : 'Medals';
+        d.quals.filter(function (q) { return q.kind === k && (p.quals || []).indexOf(q.id) < 0; }).forEach(function (q) { var o = A.el('option', null, q.name); o.value = q.id; g.appendChild(o); });
+        if (g.children.length) add.appendChild(g);
+      });
+      add.onchange = function () { var q = d.qual[add.value]; if (q) act(function () { return O.rpc('org_qual', { p_member: p.id, p_qual: q.id, p_on: true }); }, p.display_name + ': ' + q.name + ' added.'); };
+      ql.appendChild(add);
+    }
+    ctl.appendChild(ql);
+    row.appendChild(ctl);
+    return row;
+  }
+
+  // ---------- Qualifications ----------
+  function renderQuals() {
+    var box = $('quals'); box.textContent = '';
+    [['mos', 'MOS'], ['qual', 'Qualifications'], ['medal', 'Medals']].forEach(function (k) {
+      var list = d.quals.filter(function (q) { return q.kind === k[0]; });
+      var det = A.el('details'); det.open = k[0] !== 'medal';
+      var sum = A.el('summary', 'label', k[1] + ' · ' + list.length); sum.style.cursor = 'pointer'; sum.style.padding = '8px 0'; det.appendChild(sum);
+      var rows = A.el('div', 'rows');
+      list.forEach(function (q) {
+        var r = A.el('div', 'row'); r.style.gridTemplateColumns = '1fr 1fr auto';
+        var n = A.el('input'); n.value = q.name; n.maxLength = 60; n.setAttribute('aria-label', 'Name');
+        var g = A.el('input'); g.value = q.grp || ''; g.maxLength = 40; g.placeholder = 'Group or callsign'; g.setAttribute('aria-label', 'Group or callsign');
+        var a = A.el('div', 'acts');
+        a.appendChild(btn('Save', function () { act(function () { return O.rpc('org_qual_save', { p_id: q.id, p_name: n.value, p_kind: q.kind, p_grp: g.value, p_about: q.about }); }, 'Saved.'); }));
+        a.appendChild(btn('Delete', async function () { if (await ask('Delete ' + q.name + '? Members who hold it lose it.', 'Delete')) act(function () { return O.rpc('org_qual_delete', { p_id: q.id }); }, q.name + ' deleted.'); }));
+        r.appendChild(n); r.appendChild(g); r.appendChild(a); rows.appendChild(r);
+      });
+      det.appendChild(rows); box.appendChild(det);
+    });
+  }
+  $('qual-form').onsubmit = async function (e) {
+    e.preventDefault(); var f = this;
+    await act(function () { return O.rpc('org_qual_save', { p_id: null, p_name: f.name.value, p_kind: f.kind.value, p_grp: f.grp.value, p_about: null }); }, f.name.value.trim() + ' added.');
+    f.reset();
+  };
+
+  // ---------- Access ----------
+  async function loadGrants() {
+    var who = $('g-who'), keepW = who.value; who.textContent = '';
+    var g1 = A.el('optgroup'); g1.label = 'Everyone with a role';
+    d.ranks.filter(function (r) { return r.name !== 'admin'; }).forEach(function (r) { var o = A.el('option', null, r.label); o.value = 'role:' + r.name; g1.appendChild(o); });
+    var g2 = A.el('optgroup'); g2.label = 'One member';
+    d.people.forEach(function (p) { var o = A.el('option', null, p.display_name || 'Unnamed'); o.value = 'member:' + p.id; g2.appendChild(o); });
+    who.appendChild(g2); who.appendChild(g1); if (keepW) who.value = keepW;
+    var perm = $('g-perm'); if (!perm.options.length) O.PERMS.forEach(function (p) { option(perm, p.perm, p.label); });
+    var unit = $('g-unit'), keepU = unit.value;
+    unitOptions(unit, keepU || '', [], true); unit.options[0].textContent = 'Everywhere';
+    [].forEach.call(unit.options, function (o) { o.disabled = false; });
+    perm.onchange = function () { var sc = O.PERMS.find(function (p) { return p.perm === perm.value; }).scoped; unit.disabled = !sc; if (!sc) unit.value = ''; };
+    perm.onchange();
+
+    var list; try { list = await O.rpc('org_grants_list'); } catch (e) { return bad(e); }
+    var box = $('grants'); box.textContent = '';
+    if (!list.length) box.appendChild(A.el('p', 'empty', 'Only Admin and High-Com have access so far.'));
+    list.forEach(function (g) {
+      var r = A.el('div', 'row'); r.style.gridTemplateColumns = '1fr auto';
+      var w = A.el('div', 'who');
+      w.appendChild(A.el('b', null, g.member ? (g.member_name || 'Member') : 'Everyone with ' + (g.role_label || g.role)));
+      w.appendChild(A.el('small', null, O.permLabel(g.perm) + ' · ' + (g.unit_id ? (d.unit[g.unit_id] || {}).name + ' and everything under it' : 'everywhere')));
+      var a = A.el('div', 'acts');
+      a.appendChild(btn('Remove', async function () { if (await ask('Remove this access?', 'Remove')) act(function () { return O.rpc('org_grant_remove', { p_id: g.id }); }, 'Access removed.'); }, 'btn small ghost'));
+      r.appendChild(w); r.appendChild(a); box.appendChild(r);
+    });
+    var pg = $('pos-grants'); pg.textContent = '';
+    var withG = d.positions.filter(function (p) { return p.grants && p.grants.length; });
+    if (!withG.length) pg.appendChild(A.el('p', 'empty', 'No positions come with access. Edit a position to add some.'));
+    withG.forEach(function (p) {
+      var r = A.el('div', 'row'); r.style.gridTemplateColumns = '1fr auto';
+      var w = A.el('div', 'who');
+      w.appendChild(A.el('b', null, O.posLabel(p) + ' · ' + d.unit[p.unit_id].name));
+      w.appendChild(A.el('small', null, p.grants.map(O.permLabel).join(', ') + ' · filled by ' + (p.holder ? O.nameOf(d, p.holder) : 'nobody yet')));
+      var a = A.el('div', 'acts'); a.appendChild(btn('Edit', function () { openPos(p); }, 'btn small ghost'));
+      r.appendChild(w); r.appendChild(a); pg.appendChild(r);
+    });
+  }
+  $('grant-form').onsubmit = async function (e) {
+    e.preventDefault(); var f = this, who = f.who.value.split(':');
+    await act(function () {
+      return O.rpc('org_grant_add', { p_member: who[0] === 'member' ? who[1] : null, p_role: who[0] === 'role' ? who[1] : null, p_perm: f.perm.value, p_unit: f.unit.value ? +f.unit.value : null });
+    }, 'Access given.');
+  };
+
+  // ---------- Log ----------
+  async function loadLog() {
+    var box = $('log'); box.textContent = '';
+    var list; try { list = await O.rpc('org_log_list', { p_limit: 200 }); } catch (e) { return bad(e); }
+    if (!list.length) box.appendChild(A.el('p', 'empty', 'No changes yet.'));
+    list.forEach(function (l) {
+      var r = A.el('div', 'log-row'), bar = A.el('span', 'bar');
+      if (l.color) bar.style.background = '#' + ('00000' + l.color.toString(16)).slice(-6);
+      var t = A.el('div', 'stack'); t.style.gap = '2px';
+      t.appendChild(A.el('b', null, l.action));
+      t.appendChild(A.el('p', null, l.summary.replace(/\*\*/g, '').replace(/^-# /m, '')));
+      var when = A.el('small', null, new Date(l.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '\n' + (l.actor_name || 'System') + '');
+      when.style.whiteSpace = 'pre-line';
+      r.appendChild(bar); r.appendChild(t); r.appendChild(when); box.appendChild(r);
+    });
+  }
+
+  try { await reload(); } catch (e) { $('app').hidden = false; bad(e); }
+})();
+</script>
+</body>
+</html>

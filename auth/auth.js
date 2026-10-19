@@ -56,7 +56,7 @@
   };
   A.date = function (d) { return d ? new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; };
 
-  // Fill the page header's nav for this person. `current` is 'members' | 'dashboard' | 'login' | 'account'.
+  // Fill the page header's nav for this person. `current` is 'members' | 'dashboard' | 'login' | 'account' | 'org'.
   A.header = function (p, current) {
     var nav = document.getElementById('acct-nav');
     if (!nav) return;
@@ -70,8 +70,10 @@
     if (p) {
       if (A.isAdmin(p)) link('dashboard/', 'Dashboard', 'dashboard');
       link('members/', 'Members', 'members');
+      link('org/', 'Org', 'org');
       var out = A.el('button', null, 'Log out'); out.type = 'button'; out.onclick = A.signOut; nav.appendChild(out);
     } else {
+      link('org/', 'Org', 'org');
       link('login/', 'Log in', 'login');
     }
   };

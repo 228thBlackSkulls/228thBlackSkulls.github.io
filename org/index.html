@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Org Chart · 228th Black Skulls Corps</title>
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../auth/auth.css">
+<link rel="stylesheet" href="org.css?v=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
+<script src="../auth/config.js?v=3"></script>
+<script src="../auth/auth.js?v=4"></script>
+<script src="org.js?v=1"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../"><img src="../images/logo-nav.webp" alt="">228th <span>Black Skulls</span></a>
+  <nav id="acct-nav" aria-label="Account"></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="msg" id="msg" role="status"></div>
+
+  <div class="org-head">
+    <div class="head">
+      <p class="label"><b>//</b> Order of battle</p>
+      <h1>Org chart</h1>
+      <p class="muted" id="lede">Every unit in the Corps, the positions in it and who fills them.</p>
+    </div>
+    <div class="tally" id="tally" aria-label="Totals"></div>
+  </div>
+
+  <!-- Signed-in member's own summary -->
+  <section class="panel stack" id="mine" hidden style="margin-bottom:24px">
+    <div style="display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+      <div style="display:flex;gap:14px;align-items:center;min-width:0" id="mine-who"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn small" href="manage/" id="manage-btn" hidden>Manage org</a>
+      </div>
+    </div>
+  </section>
+
+  <p class="msg" id="guest" hidden>You're seeing the structure only. <a href="../login/">Log in</a> to see who fills each position.</p>
+
+  <div class="toolbar">
+    <input type="search" id="find" placeholder="Find a unit, position or member" aria-label="Find a unit, position or member">
+    <span class="spacer"></span>
+    <button class="btn ghost small" type="button" id="open-all">Expand all</button>
+    <button class="btn ghost small" type="button" id="close-all">Collapse all</button>
+  </div>
+
+  <div class="tree" id="tree"><p class="empty">Loading the org chart…</p></div>
+</main>
+
+<dialog class="card" id="card" aria-labelledby="card-name"><div class="card-in" id="card-in"></div></dialog>
+
+<script>
+(async function () {
+  var A = window.Auth, O = window.Org, $ = function (id) { return document.getElementById(id); }, msg = $('msg'), d;
+  var CHEV = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+
+  if (!A.sb) { A.header(null, 'org'); $('tree').innerHTML = '<p class="empty">The org chart is being set up. Check back soon.</p>'; return; }
+  var me = null;
+  try { me = await A.me(); } catch (e) { /* not signed in is fine */ }
+  A.header(me, 'org');
+  try { d = await O.load(); } catch (e) { $('tree').textContent = ''; return A.fail(msg, e); }
+
+  $('guest').hidden = d.member;
+
+  // Totals
+  var filled = d.positions.filter(function (p) { return p.filled; }).length;
+  [['Units', d.units.length], ['Positions filled', filled, d.positions.length], d.member ? ['Members', d.people.length] : null].filter(Boolean).forEach(function (t) {
+    var box = A.el('div'), b = A.el('b', null, String(t[1]));
+    if (t[2] != null) b.appendChild(A.el('span', null, ' / ' + t[2]));
+    box.appendChild(b); box.appendChild(A.el('span', 'label', t[0])); $('tally').appendChild(box);
+  });
+
+  // Tree
+  function renderUnit(u, depth) {
+    var sec = A.el('section', 'unit'), kids = d.kids[u.id], slots = d.posOf[u.id];
+    sec.dataset.unit = u.id;
+    sec.dataset.open = depth < 2 ? 'true' : 'false';
+    var row = A.el('div', 'u-row');
+    var tog = A.el('button', 'u-tog'); tog.type = 'button'; tog.innerHTML = CHEV;
+    tog.setAttribute('aria-label', 'Show or hide ' + u.name);
+    tog.setAttribute('aria-expanded', sec.dataset.open);
+    if (!kids.length && !slots.length && !u.about) tog.disabled = true;
+    tog.onclick = function () { setOpen(sec, sec.dataset.open !== 'true'); };
+    row.appendChild(tog); row.appendChild(O.badge(u));
+    var nm = A.el('div', 'u-name'); nm.appendChild(A.el('h3', null, u.name));
+    var meta = A.el('div', 'u-meta');
+    meta.appendChild(A.el('span', 'label', O.KIND_LABEL[u.kind] || u.kind));
+    if (u.callsign && u.callsign !== u.name) meta.appendChild(A.el('span', 'chip red', u.callsign));
+    if (u.tier) meta.appendChild(A.el('span', 'chip', u.tier));
+    nm.appendChild(meta); row.appendChild(nm);
+    var f = O.filled(d, u.id, true), fill = A.el('span', 'u-fill');
+    if (f.all) { fill.appendChild(A.el('b', null, String(f.full))); fill.appendChild(document.createTextNode(' / ' + f.all + ' filled')); }
+    row.appendChild(fill);
+    sec.appendChild(row);
+
+    var body = A.el('div', 'u-body');
+    if (u.about) body.appendChild(A.el('p', 'u-about', u.about));
+    if (slots.length) {
+      var list = A.el('div', 'slots');
+      slots.forEach(function (p) {
+        var s = A.el('div', 'slot'); s.dataset.pos = p.id;
+        s.appendChild(A.el('span', 'cs', p.callsign || ''));
+        s.appendChild(A.el('span', 'ttl', p.title));
+        var h = A.el('span', 'holder');
+        if (p.holder && d.person[p.holder]) h.appendChild(O.personChip(d, p.holder, { button: true }));
+        else if (p.filled) h.appendChild(A.el('span', 'filled-tag', 'Filled'));
+        else h.appendChild(A.el('span', 'open', 'Open'));
+        s.appendChild(h); list.appendChild(s);
+      });
+      body.appendChild(list);
+    }
+    if (kids.length) {
+      var k = A.el('div', 'kids');
+      kids.forEach(function (c) { k.appendChild(renderUnit(c, depth + 1)); });
+      body.appendChild(k);
+    }
+    sec.appendChild(body);
+    return sec;
+  }
+  function setOpen(sec, open) {
+    sec.dataset.open = open ? 'true' : 'false';
+    var t = sec.querySelector(':scope > .u-row .u-tog'); if (t) t.setAttribute('aria-expanded', String(open));
+  }
+  var tree = $('tree'); tree.textContent = '';
+  if (!d.roots.length) tree.appendChild(A.el('p', 'empty', 'No units yet. Command can add them from the Org manager.'));
+  d.roots.forEach(function (u) { tree.appendChild(renderUnit(u, 0)); });
+  $('open-all').onclick = function () { tree.querySelectorAll('.unit').forEach(function (s) { setOpen(s, true); }); };
+  $('close-all').onclick = function () { tree.querySelectorAll('.unit').forEach(function (s, i) { setOpen(s, !s.parentNode.closest('.unit')); }); };
+
+  // Search: highlight matches and open the units around them.
+  $('find').oninput = function () {
+    var q = this.value.trim().toLowerCase();
+    tree.querySelectorAll('.hit').forEach(function (x) { x.classList.remove('hit'); });
+    if (q.length < 2) return;
+    var first = null;
+    function openUp(el) { var s = el.closest('.unit'); while (s) { setOpen(s, true); s = s.parentNode.closest('.unit'); } }
+    d.units.forEach(function (u) {
+      if ([u.name, u.callsign, u.tier].join(' ').toLowerCase().indexOf(q) >= 0) {
+        var s = tree.querySelector('[data-unit="' + u.id + '"]'); s.classList.add('hit'); openUp(s.parentNode); first = first || s;
+      }
+    });
+    d.positions.forEach(function (p) {
+      var who = p.holder && d.person[p.holder] ? d.person[p.holder].display_name : '';
+      if ([p.title, p.callsign, who].join(' ').toLowerCase().indexOf(q) >= 0) {
+        var s = tree.querySelector('[data-pos="' + p.id + '"]'); s.classList.add('hit'); openUp(s); first = first || s;
+      }
+    });
+    if (first) first.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  };
+
+  // Member card
+  tree.addEventListener('click', function (e) { var b = e.target.closest('[data-person]'); if (b) openCard(b.dataset.person); });
+  function openCard(id) {
+    var p = d.person[id]; if (!p) return;
+    var box = $('card-in'); box.textContent = '';
+    var top = A.el('div', 'card-top'); top.appendChild(O.avatar(p));
+    var t = A.el('div', 'stack'); t.style.gap = '6px';
+    var h = A.el('h2', null, p.display_name || 'Unnamed'); h.id = 'card-name'; t.appendChild(h);
+    var chips = A.el('div', 'chips'), r = O.rankOf(d, p);
+    if (r) chips.appendChild(A.el('span', 'chip red', r.label));
+    O.otherRoles(d, p).forEach(function (x) { chips.appendChild(A.el('span', 'chip', x.label)); });
+    t.appendChild(chips); top.appendChild(t);
+    var x = A.el('button', 'x', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Close'); x.onclick = function () { $('card').close(); };
+    top.appendChild(x); box.appendChild(top);
+
+    var facts = A.el('div', 'facts');
+    function group(title, items) {
+      var g = A.el('div'); g.appendChild(A.el('h4', null, title));
+      if (!items.length) { g.appendChild(A.el('p', 'muted', 'None yet')); facts.appendChild(g); return; }
+      var ul = A.el('ul'); items.forEach(function (i) { ul.appendChild(i); }); g.appendChild(ul); facts.appendChild(g);
+    }
+    group('Positions', (d.heldBy[id] || []).map(function (pos) {
+      var li = A.el('li'); li.appendChild(A.el('b', null, O.posLabel(pos)));
+      li.appendChild(A.el('small', null, ' · ' + O.path(d, pos.unit_id).slice(-2).map(function (u) { return u.name; }).join(' › ')));
+      return li;
+    }));
+    var held = (p.quals || []).map(function (q) { return d.qual[q]; }).filter(Boolean);
+    ['mos', 'qual', 'medal'].forEach(function (kind) {
+      var list = held.filter(function (q) { return q.kind === kind; });
+      var g = A.el('div'); g.appendChild(A.el('h4', null, kind === 'mos' ? 'MOS' : kind === 'qual' ? 'Qualifications' : 'Medals'));
+      if (!list.length) g.appendChild(A.el('p', 'muted', 'None yet'));
+      else { var c = A.el('div', 'chips'); list.forEach(function (q) { c.appendChild(A.el('span', 'chip ' + kind, q.name)); }); g.appendChild(c); }
+      facts.appendChild(g);
+    });
+    var j = A.el('p', 'label', p.joined ? 'Approved ' + A.date(p.joined) : '');
+    facts.appendChild(j);
+    box.appendChild(facts);
+    $('card').showModal();
+  }
+  $('card').addEventListener('click', function (e) { if (e.target === this) this.close(); });
+
+  // Your summary
+  if (d.member && d.access.id && d.person[d.access.id]) {
+    var mine = d.person[d.access.id], who = $('mine-who');
+    who.appendChild(O.avatar(mine));
+    var w = A.el('div', 'stack'); w.style.gap = '4px';
+    w.appendChild(A.el('b', null, mine.display_name || 'You'));
+    var pos = (d.heldBy[mine.id] || []).map(O.posLabel);
+    var rl = (O.rankOf(d, mine) || {}).label;
+    w.appendChild(A.el('small', 'muted', [rl].concat(pos.length ? pos : ['No position yet']).filter(function (x, i, all) { return x && all.indexOf(x) === i; }).join(' · ')));
+    who.appendChild(w);
+    $('mine').hidden = false;
+    $('manage-btn').hidden = !O.canAnything(d);
+  }
+})();
+</script>
+</body>
+</html>

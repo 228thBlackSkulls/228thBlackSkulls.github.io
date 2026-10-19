@@ -1,0 +1,140 @@
+/* Org chart and Org manager. Builds on auth/auth.css and uses its tokens. */
+:root{--rail:#3a3a40;--open:#5b5b62;--hl:rgba(226,51,59,.14)}
+
+.org-head{display:flex;gap:20px;align-items:end;justify-content:space-between;flex-wrap:wrap;margin-bottom:28px}
+.org-head .head{margin:0}
+.tally{display:flex;gap:28px;flex-wrap:wrap}
+.tally div{display:grid;gap:2px}
+.tally b{font:800 2rem/1 var(--display);font-variant-numeric:tabular-nums}
+.tally b span{color:var(--muted);font-size:1.2rem}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.toolbar input[type=search]{max-width:340px;flex:1 1 220px}
+.toolbar .spacer{flex:1}
+@media (max-width:560px){.toolbar input[type=search]{flex-basis:100%;max-width:none}.toolbar .spacer{display:none}}
+
+/* The tree: each unit is a block; children hang off a rail on the left. */
+.tree{display:grid;gap:12px}
+.unit{background:var(--panel);border:1px solid var(--line);border-radius:2px}
+.unit .unit{background:transparent;border:0;border-left:1px solid var(--rail);border-radius:0}
+.kids{display:grid;gap:4px;padding:0 0 10px 22px;margin-left:30px}
+.kids>.unit{position:relative}
+.kids>.unit::before{content:"";position:absolute;left:-1px;top:30px;width:16px;border-top:1px solid var(--rail)}
+.kids>.unit:last-child{border-left-color:transparent}
+.kids>.unit:last-child::after{content:"";position:absolute;left:-1px;top:0;height:31px;border-left:1px solid var(--rail)}
+
+.u-row{display:grid;grid-template-columns:auto 44px 1fr auto;gap:12px;align-items:center;padding:10px 14px 10px 10px}
+.unit .unit>.u-row{padding-left:16px}
+.u-tog{width:26px;height:26px;display:grid;place-items:center;background:none;border:1px solid var(--line);border-radius:2px;color:var(--soft);cursor:pointer;font:500 .9rem var(--mono);padding:0}
+.u-tog:hover{border-color:var(--accent);color:var(--accent)}
+.u-tog[disabled]{visibility:hidden}
+.u-tog svg{width:12px;height:12px;transition:transform .15s}
+.unit[data-open=false]>.u-row .u-tog svg{transform:rotate(-90deg)}
+.unit[data-open=false]>.u-body{display:none}
+.badge{width:44px;height:44px;object-fit:contain}
+.badge.mark{display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;font:800 1.3rem var(--display);color:var(--muted);background:var(--bg)}
+.u-name{display:grid;gap:4px;min-width:0}
+.u-name h3{font-size:1.3rem;overflow-wrap:anywhere}
+.u-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.u-fill{font:500 .75rem var(--mono);letter-spacing:.08em;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.u-fill b{color:var(--fg);font-weight:500}
+.u-about{color:var(--muted);font-size:.92rem;padding:0 14px 8px 92px;max-width:70ch}
+.unit .unit>.u-body>.u-about{padding-left:98px}
+
+/* Positions: callsign, title, who holds it. */
+.slots{display:grid;padding:0 14px 10px 92px}
+.unit .unit>.u-body>.slots{padding-left:98px}
+.slot{display:grid;grid-template-columns:minmax(90px,140px) minmax(120px,1fr) minmax(0,1.3fr);gap:12px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.slot:first-child{border-top:0}
+.slot .cs{font:500 .78rem var(--mono);letter-spacing:.06em;color:var(--accent);text-transform:uppercase;overflow-wrap:anywhere}
+.slot .cs:empty::before{content:"\2014";color:var(--muted)}
+.slot .ttl{font-weight:500;color:var(--soft);min-width:0}
+.slot .holder{min-width:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.open{font:500 .7rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--open);border:1px dashed var(--open);padding:.25em .6em;border-radius:2px}
+.filled-tag{font:500 .7rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--soft)}
+@media (max-width:720px){
+  .slots,.unit .unit>.u-body>.slots,.u-about,.unit .unit>.u-body>.u-about{padding-left:14px}
+  .slot{grid-template-columns:1fr;gap:4px}
+  .kids{margin-left:12px;padding-left:14px}
+  .u-row{grid-template-columns:auto 36px 1fr;padding-right:10px}
+  .u-row .u-fill{grid-column:3}
+  .badge{width:36px;height:36px}
+}
+
+.who-chip{display:inline-flex;gap:8px;align-items:center;background:none;border:0;padding:0;color:inherit;font:inherit;text-align:left;min-width:0;max-width:100%}
+button.who-chip{cursor:pointer}
+button.who-chip:hover b{color:var(--accent)}
+.who-chip .av{width:28px;height:28px;font-size:.8rem;flex:none}
+.who-text{display:grid;line-height:1.2;min-width:0}
+.who-text b{font-weight:600;font-size:.95rem;overflow-wrap:anywhere}
+.who-text small{color:var(--muted);font-size:.78rem}
+
+.hit>.u-row{background:var(--hl)}
+.slot.hit{background:var(--hl);margin-inline:-8px;padding-inline:8px}
+
+/* Member card */
+dialog.card{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-top:2px solid var(--accent-deep);border-radius:2px;padding:0;width:min(94vw,520px);max-height:88vh}
+dialog.card::backdrop{background:rgba(0,0,0,.72)}
+.card-in{display:grid;gap:18px;padding:22px}
+.card-top{display:grid;grid-template-columns:72px 1fr auto;gap:16px;align-items:center}
+.card-top .av{width:72px;height:72px;font-size:1.8rem}
+.card-top h2{font-size:1.7rem;overflow-wrap:anywhere}
+.x{background:none;border:1px solid var(--line);color:var(--soft);width:34px;height:34px;border-radius:2px;cursor:pointer;font-size:1.1rem;align-self:start}
+.x:hover{border-color:var(--accent);color:var(--accent)}
+.facts{display:grid;gap:14px}
+.facts h4{font:500 .72rem var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.facts ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.facts li{font-size:.95rem;color:var(--soft)}
+.facts li small{color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+
+.link-box{display:grid;gap:10px}
+.code{font:500 1.6rem var(--mono);letter-spacing:.2em;color:var(--fg);background:var(--bg);border:1px solid var(--line);padding:.4em .7em;border-radius:2px;user-select:all;justify-self:start}
+.cmd{font:400 .9rem var(--mono);background:var(--bg);border:1px solid var(--line);padding:.6em .8em;border-radius:2px;user-select:all;overflow-wrap:anywhere}
+
+/* Manager */
+.edit-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.icon-btn{background:none;border:1px solid var(--line);color:var(--soft);border-radius:2px;cursor:pointer;font:500 .68rem var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:.45em .6em;white-space:nowrap}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+.icon-btn[disabled]{opacity:.35;cursor:default;border-color:var(--line);color:var(--soft)}
+.slot.edit{grid-template-columns:minmax(90px,140px) minmax(120px,1fr) minmax(180px,1.3fr) auto}
+.slot select{width:100%;max-width:280px;padding:.45em .6em;font-size:.92rem}
+.warn-line{font-size:.8rem;color:var(--warn)}
+@media (max-width:720px){.slot.edit{grid-template-columns:1fr}.edit-acts{justify-content:flex-start}}
+
+dialog.form{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:2px;padding:22px;width:min(94vw,520px)}
+dialog.form::backdrop{background:rgba(0,0,0,.72)}
+dialog.form form{display:grid;gap:14px}
+.f-row{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+.f-row>*{min-width:0}
+.f-row select,dialog.form select,.mem-ctl select{width:100%;max-width:100%}
+.mem-ctl select{width:auto}
+.f-acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.perm-list{display:grid;gap:6px}
+fieldset{border:1px solid var(--line);border-radius:2px;padding:12px 14px;margin:0}
+legend{font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 6px}
+
+.mem-row{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:14px}
+.mem-row .who{display:grid;gap:2px;min-width:0}
+.mem-row .who b{font-weight:600}
+.mem-row .who small{color:var(--muted);font-size:.85rem}
+.mem-ctl{grid-column:2;display:grid;gap:10px}
+.mem-ctl .line{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mem-ctl .line>.label{min-width:92px}
+.mem-ctl select{padding:.45em .6em;font-size:.92rem;max-width:100%}
+.chips .chip button{background:none;border:0;color:inherit;cursor:pointer;padding:0 0 0 6px;font:inherit;line-height:1}
+.chip.mos{border-color:var(--accent-deep);color:var(--fg)}
+.chip.medal{border-color:var(--warn);color:var(--warn)}
+@media (max-width:560px){.mem-row{grid-template-columns:1fr}.mem-ctl{grid-column:1}}
+
+.log{display:grid}
+.log-row{display:grid;grid-template-columns:4px 1fr auto;gap:14px;padding:12px 0;border-top:1px solid var(--line);align-items:start}
+.log-row .bar{align-self:stretch;border-radius:2px;background:var(--muted)}
+.log-row b{font-weight:600}
+.log-row p{color:var(--soft);font-size:.95rem;white-space:pre-line;overflow-wrap:anywhere}
+.log-row small{color:var(--muted);font:400 .75rem var(--mono);white-space:nowrap;text-align:right}
+.steps{margin:0;padding-left:1.3em;display:grid;gap:8px;color:var(--soft)}
+.steps code,.panel code{font:400 .88em var(--mono);background:var(--bg);border:1px solid var(--line);padding:.05em .35em;border-radius:2px;overflow-wrap:anywhere}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+#hook-now,.panel .hint{overflow-wrap:anywhere}
+label.f{min-width:0}
