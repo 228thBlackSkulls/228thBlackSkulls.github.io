@@ -10,10 +10,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css?v=2">
+<link rel="stylesheet" href="../auth/auth.css?v=3">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=7"></script>
+<script src="../auth/auth.js?v=8"></script>
 <style>
 .why{font-size:.9rem;color:var(--muted)}.why summary{cursor:pointer;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding:4px 0}.why p{margin-top:8px;line-height:1.55}
 </style>
@@ -50,12 +50,12 @@
           <button type="button" role="tab" aria-selected="true" data-mode="in">Log in</button>
           <button type="button" role="tab" aria-selected="false" data-mode="up">Create account</button>
         </div>
-        <label class="f" id="name-f" hidden>228th name<input name="name" autocomplete="nickname" autocapitalize="off" spellcheck="false" placeholder="CT-1234 &quot;Nickname&quot;"><span class="hint">The same name you go by in the 228th, like CC-5733 "Flanker".</span></label>
+        <label class="f" id="name-f" hidden>Callsign<input name="name" autocomplete="nickname" autocapitalize="off" spellcheck="false" placeholder="CT-1234 &quot;Nickname&quot;"><span class="hint">Your rank designation, your ID number and your nickname, the way you go by in the 228th. Like CC-5733 "Flanker".</span></label>
         <div class="stack" id="ask-f" hidden>
           <p class="msg ok">To get accepted, fill in all of these so Command can confirm who you are and give you access.</p>
-          <label class="f">Which division are you in?<select name="division"><option value="">Pick one</option><option>Arma 3</option><option>VRChat</option></select></label>
+          <fieldset class="f picks"><legend>Which division are you in? <span class="hint">Select all that apply.</span></legend><label><input type="checkbox" name="division" value="Arma 3"> Arma 3</label><label><input type="checkbox" name="division" value="VRChat"> VRChat</label></fieldset>
           <label class="f">Discord username<input name="discord" maxlength="60" autocapitalize="off" spellcheck="false" placeholder="e.g. flanker228"></label>
-          <label class="f">Current rank<input name="rank" maxlength="60" placeholder="e.g. Sergeant"></label>
+          <label class="f">Current rank<select name="rank"><option value="">Pick your rank</option></select></label>
           <label class="f">Anything else Command should know (optional)<textarea name="other" maxlength="1000" placeholder="Who recruited you, how long you've been in, anything that helps us find you"></textarea></label>
         </div>
         <p class="msg ok" id="confirm-note" hidden>After you tap Request account, check your email (and spam folder) for a confirmation link. <b>You can't log in until you confirm it.</b></p>
@@ -99,13 +99,14 @@
 
   var form = document.getElementById('email'), mode = 'in';
   A.watchCallsign(form.name, form.name.nextElementSibling);
+  A.fillRanks(form.rank);
   form.querySelectorAll('[data-mode]').forEach(function (b) {
     b.onclick = function () {
       mode = b.dataset.mode;
       form.querySelectorAll('[data-mode]').forEach(function (x) { x.setAttribute('aria-selected', x === b); });
       document.getElementById('name-f').hidden = mode !== 'up';
       document.getElementById('ask-f').hidden = mode !== 'up';
-      ['division', 'discord', 'rank'].forEach(function (n) { form[n].required = mode === 'up'; });
+      ['discord', 'rank'].forEach(function (n) { form[n].required = mode === 'up'; });
       document.getElementById('confirm-note').hidden = mode !== 'up';
       document.getElementById('resend').hidden = true;
       document.getElementById('go').textContent = mode === 'up' ? 'Request account' : 'Log in';
@@ -123,7 +124,9 @@
       if (!name) { go.disabled = false; A.fail(msg, { message: 'Fix your 228th name first: ' + A.checkCallsign(form.name.value).problems.join(' ') }); form.name.focus(); return; }
       form.name.value = name;
       if (await A.numberTaken(name)) { go.disabled = false; A.fail(msg, { message: 'The number ' + name.match(/-(\d{4})/)[1] + ' is already used by another account. If it\'s yours, reach out to Command on Discord.' }); return; }
-      var info = { display_name: name, division: form.division.value, discord_name: form.discord.value.trim(), current_rank: form.rank.value.trim(), note: form.other.value.trim() };
+      var divs = [].slice.call(form.querySelectorAll('[name=division]:checked')).map(function (c) { return c.value; });
+      if (!divs.length) { go.disabled = false; A.fail(msg, { message: 'Pick which division you\'re in (select all that apply).' }); return; }
+      var info = { display_name: name, division: divs.join(', '), discord_name: form.discord.value.trim(), current_rank: form.rank.value.trim(), note: form.other.value.trim() };
       r = await A.sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: back, data: info } });
       go.disabled = false;
       if (r.error) return A.fail(msg, r.error);

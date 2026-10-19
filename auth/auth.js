@@ -50,8 +50,26 @@
     if (!A._prefixes) A._prefixes = fetch(A.url('content.json'), { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (c) {
       var list = (c.ranks || []).map(function (r) { return String(r.abbr || '').trim().toUpperCase(); }).filter(Boolean);
       if (list.length) A.prefixes = list.filter(function (x, i) { return list.indexOf(x) === i; });
+      A.ranks = (c.ranks || []).filter(function (r) { return r.name; });
     }).catch(function () {});
     return A._prefixes;
+  };
+  // Fills a <select> with every rank on the rank list, grouped, keeping `current` selected.
+  A.fillRanks = function (sel, current) {
+    return A.loadPrefixes().then(function () {
+      var ranks = A.ranks || [], groups = {}, order = [];
+      sel.innerHTML = '<option value="">Pick your rank</option>';
+      ranks.forEach(function (r) { var g = r.group || 'Ranks'; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(r); });
+      order.forEach(function (g) {
+        var og = document.createElement('optgroup'); og.label = g;
+        groups[g].forEach(function (r) { var o = document.createElement('option'); o.value = o.textContent = (r.abbr ? r.abbr + ' ' : '') + r.name; og.appendChild(o); });
+        sel.appendChild(og);
+      });
+      if (current) {
+        if (![].some.call(sel.options, function (o) { return o.value === current; })) { var o = document.createElement('option'); o.value = o.textContent = current; sel.appendChild(o); }
+        sel.value = current;
+      }
+    });
   };
   // Splits what someone typed into designation, number and nickname, however loosely they typed it.
   function parts(v) {

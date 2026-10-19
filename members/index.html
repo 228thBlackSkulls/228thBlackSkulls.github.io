@@ -10,10 +10,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css?v=2">
+<link rel="stylesheet" href="../auth/auth.css?v=3">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=7"></script>
+<script src="../auth/auth.js?v=8"></script>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -46,11 +46,11 @@
       <p class="muted">Command reviews every account. Once you're approved, this page opens up and you'll see the members area.</p>
     </div>
     <form class="panel stack" id="note-form">
-      <label class="f">228th name<input name="display_name" maxlength="40" required autocapitalize="off" spellcheck="false" placeholder="CT-1234 &quot;Nickname&quot;"><span class="hint">Like CC-5733 "Flanker". Command uses this to find you on Discord.</span></label>
+      <label class="f">Callsign<input name="display_name" maxlength="40" required autocapitalize="off" spellcheck="false" placeholder="CT-1234 &quot;Nickname&quot;"><span class="hint">Your rank designation, your ID number and your nickname, like CC-5733 "Flanker". Command uses this to find you on Discord.</span></label>
       <p class="msg ok">To get accepted, fill in all of these so Command can confirm who you are and give you access.</p>
-      <label class="f">Which division are you in?<select name="division" required><option value="">Pick one</option><option>Arma 3</option><option>VRChat</option></select></label>
+      <fieldset class="f picks"><legend>Which division are you in? <span class="hint">Select all that apply.</span></legend><label><input type="checkbox" name="division" value="Arma 3"> Arma 3</label><label><input type="checkbox" name="division" value="VRChat"> VRChat</label></fieldset>
       <label class="f">Discord username<input name="discord" maxlength="60" required autocapitalize="off" spellcheck="false" placeholder="e.g. flanker228"></label>
-      <label class="f">Current rank<input name="rank" maxlength="60" required placeholder="e.g. Sergeant"></label>
+      <label class="f">Current rank<select name="rank" required><option value="">Pick your rank</option></select></label>
       <label class="f">Anything else Command should know (optional)<textarea name="note" maxlength="1000" placeholder="Who recruited you, how long you've been in, anything that helps us find you"></textarea></label>
       <button class="btn" type="submit">Save</button>
     </form>
@@ -117,13 +117,13 @@
     var recheck = A.watchCallsign(f.display_name, f.display_name.nextElementSibling);
     f.display_name.value = me.display_name || ''; recheck();
     f.note.value = me.note || '';
-    f.division.value = me.division || ''; f.discord.value = me.discord_name || ''; f.rank.value = me.current_rank || '';
+    f.querySelectorAll('[name=division]').forEach(function (c) { c.checked = (me.division || '').split(', ').indexOf(c.value) >= 0; }); f.discord.value = me.discord_name || ''; A.fillRanks(f.rank, me.current_rank || '');
     f.onsubmit = async function (e) {
       e.preventDefault();
       var name = A.callsign(f.display_name.value);
       if (!name) { A.fail(msg, { message: 'Fix your 228th name first: ' + A.checkCallsign(f.display_name.value).problems.join(' ') }); f.display_name.focus(); return; }
       f.display_name.value = name;
-      var r = await A.sb.from('profiles').update({ display_name: name, note: f.note.value.trim(), division: f.division.value, discord_name: f.discord.value.trim(), current_rank: f.rank.value.trim() }).eq('id', me.id);
+      var r = await A.sb.from('profiles').update({ display_name: name, note: f.note.value.trim(), division: [].slice.call(f.querySelectorAll('[name=division]:checked')).map(function (c) { return c.value; }).join(', ') || null, discord_name: f.discord.value.trim(), current_rank: f.rank.value.trim() }).eq('id', me.id);
       if (r.error) return A.fail(msg, r.error);
       msg.className = 'msg ok'; msg.textContent = 'Saved. Command will see this with your request.';
     };

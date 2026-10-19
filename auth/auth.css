@@ -90,3 +90,10 @@ select{width:auto}
 /* Live check on the 228th name box */
 label.f input.good{border-color:var(--ok)}label.f input.bad{border-color:var(--accent)}
 label.f .hint.good{color:var(--ok)}label.f .hint.bad{color:var(--accent);white-space:pre-line}
+/* Check-box group (select all that apply) */
+fieldset.picks{border:0;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:10px 22px}
+fieldset.picks legend{width:100%;padding:0;margin-bottom:8px;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+fieldset.picks legend .hint{display:block;margin-top:4px;font:400 .85rem/1.4 var(--body);letter-spacing:0;text-transform:none}
+fieldset.picks label{display:flex;gap:8px;align-items:center;font-size:1rem;cursor:pointer}
+fieldset.picks input{width:auto;accent-color:var(--accent)}
+.f select{width:100%}

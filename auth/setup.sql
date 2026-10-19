@@ -81,13 +81,11 @@ update public.profiles set all_roles = array[role] where cardinality(all_roles) 
 -- Sign-up questions Command uses to confirm who someone is: their division and the rank they hold now.
 alter table public.profiles add column if not exists division text;
 alter table public.profiles add column if not exists current_rank text;
-do $$ begin
-  if not exists (select 1 from pg_constraint where conname = 'profiles_signup_fields_check') then
-    alter table public.profiles add constraint profiles_signup_fields_check check (
-      (division is null or division in ('Arma 3', 'VRChat')) and coalesce(length(current_rank), 0) <= 60
-      and coalesce(length(discord_name), 0) <= 60 and coalesce(length(note), 0) <= 1000);
-  end if;
-end $$;
+-- division can list several, like 'Arma 3, VRChat'.
+alter table public.profiles drop constraint if exists profiles_signup_fields_check;
+alter table public.profiles add constraint profiles_signup_fields_check check (
+  (division is null or division ~ '^(Arma 3|VRChat)(, (Arma 3|VRChat))?$') and coalesce(length(current_rank), 0) <= 60
+  and coalesce(length(discord_name), 0) <= 60 and coalesce(length(note), 0) <= 1000);
 
 -- Helpers (run with owner rights so policies can call them without recursion).
 create or replace function public.is_admin() returns boolean
@@ -202,7 +200,7 @@ begin
     case when new.raw_app_meta_data->>'provider' = 'discord' then coalesce(m->>'full_name', m->>'name')
          else left(nullif(btrim(m->>'discord_name'), ''), 60) end,
     null,
-    case when m->>'division' in ('Arma 3', 'VRChat') then m->>'division' end,
+    case when m->>'division' ~ '^(Arma 3|VRChat)(, (Arma 3|VRChat))?$' then m->>'division' end,
     left(nullif(btrim(m->>'current_rank'), ''), 60),
     left(nullif(btrim(m->>'note'), ''), 1000)
   )
