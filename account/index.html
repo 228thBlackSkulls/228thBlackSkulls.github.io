@@ -18,6 +18,14 @@
 .me{display:grid;grid-template-columns:120px 1fr;gap:24px;align-items:center}
 .me .av{width:120px;height:120px;font-size:2.6rem}
 @media (max-width:520px){.me{grid-template-columns:1fr;justify-items:start}}
+dialog.crop{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:2px;padding:20px;width:min(92vw,400px)}
+dialog.crop::backdrop{background:rgba(0,0,0,.75)}
+.stage{position:relative;width:100%;aspect-ratio:1;overflow:hidden;background:#000;touch-action:none;cursor:grab;user-select:none}
+.stage:active{cursor:grabbing}
+.stage img{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;pointer-events:none}
+.stage .ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.85);box-shadow:0 0 0 9999px rgba(10,10,11,.62);pointer-events:none}
+.zoom{display:flex;gap:10px;align-items:center;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.zoom input{flex:1;padding:0;accent-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -69,6 +77,19 @@
   </div>
 </main>
 
+<dialog class="crop" id="crop" aria-labelledby="crop-h">
+  <div class="stack">
+    <h3 id="crop-h">Crop your picture</h3>
+    <p class="muted" style="font-size:.9rem">Drag to move it. Use the slider (or pinch) to zoom. The circle shows how it will look.</p>
+    <div class="stage" id="stage"><img id="crop-img" alt=""><div class="ring"></div></div>
+    <label class="zoom">Zoom<input type="range" id="zoom" min="1" max="4" step="0.01" value="1"></label>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn ghost small" type="button" id="crop-cancel">Cancel</button>
+      <button class="btn small" type="button" id="crop-save">Save picture</button>
+    </div>
+  </div>
+</dialog>
+
 <script>
 (async function () {
   var A = window.Auth, sb = A.sb, msg = document.getElementById('msg'), $ = function (id) { return document.getElementById(id); };
@@ -92,28 +113,74 @@
   // Where a stored picture lives inside the avatars bucket, from its public URL.
   function pathOf(url) { var m = url && url.match(/\/object\/public\/avatars\/(.+)$/); return m ? decodeURIComponent(m[1]) : null; }
 
-  // Crop to a square and shrink to 256px before uploading.
-  function squareWebp(file) {
+  // Cropper: the photo sits under a see-through circle; drag to move, slider or pinch to zoom.
+  var dlg = $('crop'), stage = $('stage'), cimg = $('crop-img'), zoom = $('zoom');
+  var view = { x: 0, y: 0, base: 1, z: 1 }, pts = {}, pinch = null, srcUrl = null;
+  function size() { return stage.clientWidth; }
+  function clamp() {
+    var S = size(), k = view.base * view.z, w = cimg.naturalWidth * k, h = cimg.naturalHeight * k;
+    view.x = Math.min(0, Math.max(S - w, view.x)); view.y = Math.min(0, Math.max(S - h, view.y));
+  }
+  function draw() { clamp(); cimg.style.transform = 'translate(' + view.x + 'px,' + view.y + 'px) scale(' + (view.base * view.z) + ')'; }
+  // Zoom around a point on the stage so that spot stays put.
+  function setZoom(z, cx, cy) {
+    var S = size(); z = Math.min(4, Math.max(1, z));
+    if (cx == null) { cx = S / 2; cy = S / 2; }
+    var k0 = view.base * view.z, k1 = view.base * z;
+    view.x = cx - (cx - view.x) * k1 / k0; view.y = cy - (cy - view.y) * k1 / k0;
+    view.z = z; zoom.value = z; draw();
+  }
+  function openCrop(file) {
     return new Promise(function (done, fail) {
-      var img = new Image(), url = URL.createObjectURL(file);
-      img.onload = function () {
-        var side = Math.min(img.naturalWidth, img.naturalHeight), c = document.createElement('canvas');
-        c.width = c.height = 256;
-        c.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
-        URL.revokeObjectURL(url);
-        c.toBlob(function (b) { b ? done(b) : fail(new Error('Could not read that picture.')); }, 'image/webp', 0.85);
+      if (srcUrl) URL.revokeObjectURL(srcUrl);
+      srcUrl = URL.createObjectURL(file);
+      cimg.onload = function () {
+        dlg.showModal();
+        var S = size();
+        view.base = Math.max(S / cimg.naturalWidth, S / cimg.naturalHeight); view.z = 1; zoom.value = 1;
+        view.x = (S - cimg.naturalWidth * view.base) / 2; view.y = (S - cimg.naturalHeight * view.base) / 2;
+        draw();
+        $('crop-cancel').onclick = function () { dlg.close(); done(null); };
+        dlg.oncancel = function () { done(null); };
+        $('crop-save').onclick = function () {
+          var k = view.base * view.z, c = document.createElement('canvas');
+          c.width = c.height = 256;
+          c.getContext('2d').drawImage(cimg, -view.x / k, -view.y / k, size() / k, size() / k, 0, 0, 256, 256);
+          dlg.close();
+          c.toBlob(function (b) { b ? done(b) : fail(new Error('Could not read that picture.')); }, 'image/webp', 0.85);
+        };
       };
-      img.onerror = function () { URL.revokeObjectURL(url); fail(new Error('That file isn\'t a picture we can use.')); };
-      img.src = url;
+      cimg.onerror = function () { fail(new Error('That file isn\'t a picture we can use.')); };
+      cimg.src = srcUrl;
     });
   }
+  zoom.oninput = function () { setZoom(+zoom.value); };
+  stage.addEventListener('wheel', function (e) {
+    e.preventDefault(); var r = stage.getBoundingClientRect();
+    setZoom(view.z * (e.deltaY < 0 ? 1.08 : 1 / 1.08), e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
+  stage.addEventListener('pointerdown', function (e) { stage.setPointerCapture(e.pointerId); pts[e.pointerId] = { x: e.clientX, y: e.clientY }; pinch = null; });
+  stage.addEventListener('pointermove', function (e) {
+    var p = pts[e.pointerId]; if (!p) return;
+    var ids = Object.keys(pts);
+    if (ids.length === 1) { view.x += e.clientX - p.x; view.y += e.clientY - p.y; draw(); }
+    else if (ids.length === 2) {
+      var o = pts[ids[0] == e.pointerId ? ids[1] : ids[0]], d = Math.hypot(e.clientX - o.x, e.clientY - o.y), r = stage.getBoundingClientRect();
+      if (pinch) setZoom(view.z * d / pinch, (e.clientX + o.x) / 2 - r.left, (e.clientY + o.y) / 2 - r.top);
+      pinch = d;
+    }
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+  });
+  ['pointerup', 'pointercancel'].forEach(function (t) { stage.addEventListener(t, function (e) { delete pts[e.pointerId]; pinch = null; }); });
 
   $('file').onchange = async function () {
     var f = this.files[0]; this.value = '';
     if (!f) return;
-    msg.className = 'msg ok'; msg.textContent = 'Uploading…';
     try {
-      var blob = await squareWebp(f), path = me.id + '/' + Date.now() + '.webp';
+      var blob = await openCrop(f);
+      if (!blob) return;
+      msg.className = 'msg ok'; msg.textContent = 'Uploading…';
+      var path = me.id + '/' + Date.now() + '.webp';
       var up = await sb.storage.from('avatars').upload(path, blob, { contentType: 'image/webp' });
       if (up.error) throw up.error;
       var url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl, old = pathOf(me.avatar_url);
