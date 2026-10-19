@@ -14,6 +14,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
 <script src="../auth/auth.js?v=5"></script>
+<style>
+.why{font-size:.9rem;color:var(--muted)}.why summary{cursor:pointer;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding:4px 0}.why p{margin-top:8px;line-height:1.55}
+</style>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -58,6 +61,10 @@
         <p class="msg ok" id="confirm-note" hidden>After you tap Request account, check your email (and spam folder) for a confirmation link. <b>You can't log in until you confirm it.</b></p>
         <label class="f">Email<input name="email" type="email" autocomplete="email" required></label>
         <label class="f">Password<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <details class="why">
+          <summary>Why do we ask for your email?</summary>
+          <p>Your email is your login username. Your 228th name, number and Discord are things other members can see, so if those were your login, anyone would already have half of what they need to try getting into your account. Your email stays private to you, which makes your account much harder for someone else to get into. We don't share it or send you anything except account emails, like your confirmation link or a password reset.</p>
+        </details>
         <button class="btn" type="submit" id="go">Log in</button>
         <button class="btn ghost small" type="button" id="resend" hidden>Send the confirmation email again</button>
         <button class="btn ghost small" type="button" id="forgot">Forgot password?</button>
