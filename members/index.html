@@ -47,7 +47,11 @@
     </div>
     <form class="panel stack" id="note-form">
       <label class="f">228th name<input name="display_name" maxlength="40" required autocapitalize="off" spellcheck="false" placeholder="CT-1234 &quot;Nickname&quot;"><span class="hint">Like CC-5733 "Flanker". Command uses this to find you on Discord.</span></label>
-      <label class="f">Anything Command should know (optional)<textarea name="note" maxlength="500" placeholder="Your CT number, which Discord you're in, who recruited you…"></textarea></label>
+      <p class="msg ok">To get accepted, fill in all of these so Command can confirm who you are and give you access.</p>
+      <label class="f">Which division are you in?<select name="division" required><option value="">Pick one</option><option>Arma 3</option><option>VRChat</option></select></label>
+      <label class="f">Discord username<input name="discord" maxlength="60" required autocapitalize="off" spellcheck="false" placeholder="e.g. flanker228"></label>
+      <label class="f">Current rank<input name="rank" maxlength="60" required placeholder="e.g. Sergeant"></label>
+      <label class="f">Anything else Command should know (optional)<textarea name="note" maxlength="1000" placeholder="Who recruited you, how long you've been in, anything that helps us find you"></textarea></label>
       <button class="btn" type="submit">Save</button>
     </form>
   </div>
@@ -112,12 +116,13 @@
     var f = $('note-form');
     f.display_name.value = me.display_name || '';
     f.note.value = me.note || '';
+    f.division.value = me.division || ''; f.discord.value = me.discord_name || ''; f.rank.value = me.current_rank || '';
     f.onsubmit = async function (e) {
       e.preventDefault();
       var name = A.callsign(f.display_name.value);
       if (!name) { A.fail(msg, { message: A.callsignHelp }); f.display_name.focus(); return; }
       f.display_name.value = name;
-      var r = await A.sb.from('profiles').update({ display_name: name, note: f.note.value.trim() }).eq('id', me.id);
+      var r = await A.sb.from('profiles').update({ display_name: name, note: f.note.value.trim(), division: f.division.value, discord_name: f.discord.value.trim(), current_rank: f.rank.value.trim() }).eq('id', me.id);
       if (r.error) return A.fail(msg, r.error);
       msg.className = 'msg ok'; msg.textContent = 'Saved. Command will see this with your request.';
     };

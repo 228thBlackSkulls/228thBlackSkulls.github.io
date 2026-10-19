@@ -116,6 +116,11 @@
     w.appendChild(top);
     var bits = [p.discord_name ? 'Discord: ' + p.discord_name : '', p.email || '', 'Joined ' + A.date(p.created_at)].filter(Boolean);
     w.appendChild(A.el('small', null, bits.join(' · ')));
+    // Their sign-up answers, so Command can confirm who they are.
+    if (p.status !== 'approved') {
+      var ans = [p.division ? 'Division: ' + p.division : 'Division: not given', p.current_rank ? 'Current rank: ' + p.current_rank : 'Current rank: not given'];
+      w.appendChild(A.el('small', null, ans.join(' · ')));
+    }
     if (p.note) w.appendChild(A.el('span', 'note', p.note));
     r.appendChild(A.avatar(p)); r.appendChild(w);
     var acts = A.el('div', 'acts'); r.appendChild(acts);
