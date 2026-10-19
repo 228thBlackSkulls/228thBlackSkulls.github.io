@@ -632,7 +632,7 @@ begin
   if exists (select 1 from org_units) then return; end if;
 
   insert into org_units (name, kind, about, badge, sort) values ('228th Black Skulls Corps', 'corps',
-    'Every platform, every game, every division and every trooper operating under the banner.', 'images/logo-pad.webp', 0) returning id into corps;
+    'Every platform, every game, every division and every trooper operating under the banner.', 'images/corps-emblem.webp', 0) returning id into corps;
   insert into org_positions (unit_id, title, min_rank, sort) values (corps, 'Marshal Commander', 'marshal-commander', 0);
 
   insert into org_units (parent_id, name, kind, callsign, about, sort) values (corps, 'High Command', 'command', 'HICOM',
