@@ -508,13 +508,35 @@
     var list; try { list = await O.rpc('org_grants_list'); } catch (e) { return bad(e); }
     var box = $('grants'); box.textContent = '';
     if (!list.length) box.appendChild(A.el('p', 'empty', 'Only Admin and High-Com have access so far.'));
+    // One box per person (or role), with each kind of access side by side, grouped by where it applies.
+    var groups = [], byWho = {};
     list.forEach(function (g) {
+      var k = g.member ? 'm:' + g.member : 'r:' + g.role;
+      if (!byWho[k]) { byWho[k] = { name: g.member ? (g.member_name || 'Member') : 'Everyone with ' + (g.role_label || g.role), places: {}, ids: [] }; groups.push(byWho[k]); }
+      var pk = g.unit_id == null ? '' : String(g.unit_id);
+      (byWho[k].places[pk] = byWho[k].places[pk] || []).push(g);
+      byWho[k].ids.push(g.id);
+    });
+    groups.forEach(function (grp) {
       var r = A.el('div', 'row'); r.style.gridTemplateColumns = '1fr auto';
-      var w = A.el('div', 'who');
-      w.appendChild(A.el('b', null, g.member ? (g.member_name || 'Member') : 'Everyone with ' + (g.role_label || g.role)));
-      w.appendChild(A.el('small', null, O.permLabel(g.perm) + ' · ' + (g.unit_id ? (d.unit[g.unit_id] || {}).name + ' and everything under it' : 'everywhere')));
+      var w = A.el('div', 'who stack'); w.style.gap = '8px';
+      w.appendChild(A.el('b', null, grp.name));
+      Object.keys(grp.places).forEach(function (pk) {
+        w.appendChild(A.el('small', null, pk ? (d.unit[pk] || {}).name + ' and everything under it' : 'Everywhere'));
+        var chips = A.el('div', 'chips');
+        grp.places[pk].forEach(function (g) {
+          var c = A.el('span', 'chip', O.permLabel(g.perm)), x = A.el('button', null, '×');
+          x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + O.permLabel(g.perm) + ' from ' + grp.name);
+          x.onclick = function () { act(function () { return O.rpc('org_grant_remove', { p_id: g.id }); }, 'Access removed.'); };
+          c.appendChild(x); chips.appendChild(c);
+        });
+        w.appendChild(chips);
+      });
       var a = A.el('div', 'acts');
-      a.appendChild(btn('Remove', async function () { if (await ask('Remove this access?', 'Remove')) act(function () { return O.rpc('org_grant_remove', { p_id: g.id }); }, 'Access removed.'); }, 'btn small ghost'));
+      a.appendChild(btn('Remove all', async function () {
+        if (await ask('Remove all of ' + grp.name + '\'s access?', 'Remove all'))
+          act(async function () { for (var i = 0; i < grp.ids.length; i++) await O.rpc('org_grant_remove', { p_id: grp.ids[i] }); }, 'Access removed.');
+      }, 'btn small ghost'));
       r.appendChild(w); r.appendChild(a); box.appendChild(r);
     });
     var pg = $('pos-grants'); pg.textContent = '';
