@@ -66,11 +66,11 @@
       <p style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span class="chip red" id="my-role"></span><a class="btn ghost small" href="../account/">My account</a></p>
     </div>
     <div class="grid2" style="align-items:start">
-      <section class="stack" aria-labelledby="posts-h">
+      <section class="stack" aria-labelledby="posts-h" style="min-width:0">
         <h2 id="posts-h">Briefings</h2>
         <div class="stack" id="posts"></div>
       </section>
-      <section class="stack" aria-labelledby="roster-h">
+      <section class="stack" aria-labelledby="roster-h" style="min-width:0">
         <h2 id="roster-h">Roster</h2>
         <div class="rows" id="roster"></div>
       </section>
@@ -145,7 +145,14 @@
     var a = A.el('article', 'panel post'), m = A.el('div', 'meta');
     if (p.pinned) m.appendChild(A.el('span', 'chip red', 'Pinned'));
     m.appendChild(A.el('span', 'label', A.date(p.created_at)));
-    if (p.visible_to && p.visible_to.length) m.appendChild(A.el('span', 'chip', p.visible_to.map(function (n) { return label[n] || n; }).join(', ') + ' only'));
+    if (p.visible_to && p.visible_to.length) {
+      // "This role and up" posts list every role from the top down; show those as "<lowest> and up".
+      var order = (rl.data || []).map(function (r) { return r.name; }), at = Math.max.apply(null, p.visible_to.map(function (n) { return order.indexOf(n); }));
+      var upward = at > 0 && p.visible_to.length === at + 1 && order.slice(0, at + 1).every(function (n) { return p.visible_to.indexOf(n) >= 0; });
+      var who = A.el('span', 'chip', upward ? (label[order[at]] || order[at]) + ' and up' : p.visible_to.map(function (n) { return label[n] || n; }).join(', ') + ' only');
+      who.style.whiteSpace = 'normal';
+      m.appendChild(who);
+    }
     a.appendChild(m); a.appendChild(A.el('h3', null, p.title));
     if (p.body) a.appendChild(A.el('p', null, p.body));
     pb.appendChild(a);

@@ -146,6 +146,10 @@
   // Who a briefing is for, in words.
   function seenBy(list) {
     if (!list || !list.length) return 'Everyone';
+    // A "This role and up" post holds every role from the top down to one; say it that way.
+    var at = roles.findIndex(function (r) { return list.indexOf(r.name) < 0; });
+    if (at < 0) at = roles.length;
+    if (at > 1 && list.length === at) return roles[at - 1].label + ' and up';
     return list.map(labelOf).join(', ');
   }
   // Save the on-screen order as hidden ranks (Admin stays on top at 100).
