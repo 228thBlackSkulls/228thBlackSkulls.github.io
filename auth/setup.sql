@@ -145,7 +145,11 @@ create policy roles_read  on public.roles for select to authenticated using (tru
 create policy roles_admin on public.roles for all    to authenticated using (is_admin()) with check (is_admin());
 
 -- Profiles: you see your own; admins see everyone. Members can only edit their own name and note.
-revoke insert, update on public.profiles from anon, authenticated;
+-- Table permissions are set here explicitly, so this works whether or not "Automatically expose new tables" is on.
+revoke all on public.roles, public.profiles, public.posts from anon, authenticated;
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.roles, public.posts to authenticated;
+grant select, delete on public.profiles to authenticated;
 grant  update (display_name, note) on public.profiles to authenticated;
 drop policy if exists profiles_read   on public.profiles;
 drop policy if exists profiles_update on public.profiles;
@@ -161,7 +165,6 @@ create policy posts_read  on public.posts for select to authenticated
   using (my_rank() > 0 and my_rank() >= coalesce((select r.rank from roles r where r.name = posts.min_role), 0));
 create policy posts_admin on public.posts for all to authenticated using (is_admin()) with check (is_admin());
 
-revoke all on public.roles, public.profiles, public.posts from anon;
 
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)
 -- to make yourself the first admin. Everything after that is done from the dashboard.
