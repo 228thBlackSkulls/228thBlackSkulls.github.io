@@ -1,0 +1,88 @@
+/* Shared styles for the login, members and dashboard pages. Same tokens as the main site. */
+:root{
+  --bg:#0a0a0b;--panel:#151517;--line:#29292d;--fg:#efefed;--soft:#c6c6c8;--muted:#8e8e93;
+  --accent:#e2333b;--accent-deep:#b3141b;--ok:#3fbf6a;--warn:#d9a02b;
+  --display:"Big Shoulders Stencil Display","Impact","Arial Narrow",sans-serif;
+  --body:"Barlow","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:400 1.0625rem/1.6 var(--body);margin:0;min-height:100vh}
+a{color:inherit}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1120px;margin-inline:auto;padding-inline:clamp(16px,4vw,32px)}
+h1,h2,h3{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:.95;margin:0}
+h1{font-size:clamp(2.6rem,7vw,4.4rem)}
+h2{font-size:clamp(1.8rem,4vw,2.4rem)}
+h3{font-size:1.35rem;font-weight:600}
+p{margin:0}
+.label{font:500 .75rem/1.5 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.label b{color:var(--accent);font-weight:500}
+.muted{color:var(--muted)}
+
+.top{border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(10,10,11,.92);backdrop-filter:blur(8px);z-index:5}
+.top .wrap{display:flex;align-items:center;gap:16px;min-height:64px;flex-wrap:wrap}
+.top .brand{display:flex;align-items:center;gap:10px;text-decoration:none;font:800 1.25rem var(--display);text-transform:uppercase;letter-spacing:.03em;margin-right:auto}
+.top .brand img{width:30px;height:30px;object-fit:contain}
+.top .brand span{color:var(--accent)}
+.top nav{display:flex;gap:4px;flex-wrap:wrap}
+.top nav a,.top nav button{font:500 .75rem var(--mono);letter-spacing:.12em;text-transform:uppercase;text-decoration:none;color:var(--soft);background:none;border:0;padding:.7em .8em;cursor:pointer;border-radius:2px}
+.top nav a:hover,.top nav button:hover,.top nav a[aria-current]{color:var(--fg);background:var(--panel)}
+
+main{padding-block:clamp(32px,6vw,64px)}
+.head{display:grid;gap:12px;margin-bottom:32px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:clamp(18px,3vw,28px)}
+.stack{display:grid;gap:16px}
+.grid2{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.6em;font:600 .8rem var(--mono);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;padding:.85em 1.2em;border:1px solid var(--accent-deep);color:var(--fg);background:var(--accent-deep);border-radius:2px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.btn:hover{background:transparent;color:var(--accent);border-color:var(--accent)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--fg)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn.small{padding:.55em .8em;font-size:.7rem}
+.btn.discord{background:#5865f2;border-color:#5865f2}
+.btn.discord:hover{background:transparent;color:#8c95ff;border-color:#8c95ff}
+.btn[disabled]{opacity:.5;cursor:default}
+.btn svg{width:1.25em;height:1.25em}
+
+label.f{display:grid;gap:6px;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+input,select,textarea{font:400 1rem var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:.7em .8em;width:100%}
+textarea{min-height:110px;resize:vertical}
+select{width:auto}
+.check{display:flex;gap:8px;align-items:center;font-size:.95rem;color:var(--soft)}
+.check input{width:auto}
+
+.msg{font-size:.95rem;padding:.8em 1em;border-left:3px solid var(--accent);background:rgba(226,51,59,.08);color:var(--soft)}
+.msg.ok{border-color:var(--ok);background:rgba(63,191,106,.08)}
+.msg:empty{display:none}
+
+.chip{display:inline-block;font:500 .68rem var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:.2em .55em;border-radius:2px;border:1px solid var(--line);color:var(--soft);white-space:nowrap}
+.chip.red{background:var(--accent-deep);border-color:var(--accent-deep);color:var(--fg)}
+.chip.ok{border-color:var(--ok);color:var(--ok)}
+.chip.warn{border-color:var(--warn);color:var(--warn)}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:20px;overflow-x:auto}
+.tabs button{font:500 .75rem var(--mono);letter-spacing:.12em;text-transform:uppercase;background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:.9em 1em;cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--fg);border-bottom-color:var(--accent)}
+.tabs .count{color:var(--accent);margin-left:.4em}
+
+.rows{display:grid;gap:10px}
+.row{display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:14px}
+.row .who{display:grid;gap:2px;min-width:0}
+.row .who b{font-weight:600}
+.row .who small{color:var(--muted);font-size:.85rem;overflow-wrap:anywhere}
+.row .who .note{color:var(--soft);font-size:.92rem;white-space:pre-line}
+.row .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:640px){.row{grid-template-columns:44px 1fr}.row .acts{grid-column:1/-1;justify-content:flex-start}}
+.av{width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--line);display:grid;place-items:center;font:800 1.1rem var(--display);color:var(--muted)}
+
+.post{border-top:2px solid var(--accent-deep)}
+.post .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.post p{color:var(--soft);white-space:pre-line;margin-top:10px}
+
+.empty{color:var(--muted);font-size:.95rem;padding:18px;border:1px dashed var(--line);border-radius:2px}
+.center{max-width:460px;margin-inline:auto}
+.or{display:flex;align-items:center;gap:12px;color:var(--muted);font:500 .7rem var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+[hidden]{display:none!important}

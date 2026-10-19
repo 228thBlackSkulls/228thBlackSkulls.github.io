@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Log in · 228th Black Skulls Corps</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../auth/auth.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../auth/config.js"></script>
+<script src="../auth/auth.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../"><img src="../logo.webp" alt="">228th <span>Black Skulls</span></a>
+  <nav id="acct-nav" aria-label="Account"></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="center stack">
+    <div class="head">
+      <p class="label"><b>//</b> Members</p>
+      <h1>Log in</h1>
+      <p class="muted">Anyone can request an account. Command approves each one before the members area opens up.</p>
+    </div>
+
+    <div class="msg" id="msg" role="status"></div>
+
+    <div class="panel stack" id="off" hidden>
+      <p>Member logins are being set up. Check back soon.</p>
+      <a class="btn ghost" href="../">Back to the site</a>
+    </div>
+
+    <div class="panel stack" id="box" hidden>
+      <button class="btn discord" type="button" id="discord" hidden>
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18.2 18.2 0 0 0-5.6 0L8.6 3a19.6 19.6 0 0 0-4.9 1.5C.6 9.1-.3 13.6.1 18.1a19.8 19.8 0 0 0 6 3l1.3-2.1a12.8 12.8 0 0 1-2-1l.5-.4a14.1 14.1 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.7 19.7 0 0 0 6-3c.5-5.2-.9-9.7-3.6-13.7ZM8 15.4c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.6 8 10.6s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>
+        Log in with Discord
+      </button>
+      <div class="or" id="or" hidden>or</div>
+      <form class="stack" id="email" hidden>
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" aria-selected="true" data-mode="in">Log in</button>
+          <button type="button" role="tab" aria-selected="false" data-mode="up">Create account</button>
+        </div>
+        <label class="f" id="name-f" hidden>Name or callsign<input name="name" autocomplete="nickname" placeholder="CT-1234 &quot;Nickname&quot;"></label>
+        <label class="f">Email<input name="email" type="email" autocomplete="email" required></label>
+        <label class="f">Password<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <button class="btn" type="submit" id="go">Log in</button>
+        <button class="btn ghost small" type="button" id="forgot">Forgot password?</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script>
+(async function () {
+  var A = window.Auth, msg = document.getElementById('msg');
+  A.header(null, 'login');
+  if (!A.sb) { document.getElementById('off').hidden = false; return; }
+
+  // Already logged in (or just came back from Discord): go to the members page.
+  try { if (await A.session()) { location.replace(A.url('members/')); return; } } catch (e) {}
+  var err = new URLSearchParams(location.search).get('error_description') || new URLSearchParams(location.hash.slice(1)).get('error_description');
+  if (err) A.fail(msg, { message: err });
+
+  document.getElementById('box').hidden = false;
+  var useDiscord = A.providers.indexOf('discord') >= 0, useEmail = A.providers.indexOf('email') >= 0;
+  document.getElementById('discord').hidden = !useDiscord;
+  document.getElementById('email').hidden = !useEmail;
+  document.getElementById('or').hidden = !(useDiscord && useEmail);
+  var back = A.url('members/');
+
+  document.getElementById('discord').onclick = async function () {
+    this.disabled = true;
+    var r = await A.sb.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: back, scopes: 'identify email' } });
+    if (r.error) { this.disabled = false; A.fail(msg, r.error); }
+  };
+
+  var form = document.getElementById('email'), mode = 'in';
+  form.querySelectorAll('[data-mode]').forEach(function (b) {
+    b.onclick = function () {
+      mode = b.dataset.mode;
+      form.querySelectorAll('[data-mode]').forEach(function (x) { x.setAttribute('aria-selected', x === b); });
+      document.getElementById('name-f').hidden = mode !== 'up';
+      document.getElementById('go').textContent = mode === 'up' ? 'Request account' : 'Log in';
+      form.password.autocomplete = mode === 'up' ? 'new-password' : 'current-password';
+      msg.textContent = '';
+    };
+  });
+
+  form.onsubmit = async function (e) {
+    e.preventDefault();
+    var go = document.getElementById('go'); go.disabled = true; msg.textContent = '';
+    var email = form.email.value.trim(), pw = form.password.value, r;
+    if (mode === 'up') {
+      r = await A.sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: back, data: { display_name: form.name.value.trim() } } });
+      go.disabled = false;
+      if (r.error) return A.fail(msg, r.error);
+      if (r.data.session) return location.replace(back);
+      msg.className = 'msg ok'; msg.textContent = 'Check your email and tap the link to confirm your account. Then Command will review your request.';
+    } else {
+      r = await A.sb.auth.signInWithPassword({ email: email, password: pw });
+      go.disabled = false;
+      if (r.error) return A.fail(msg, r.error);
+      location.replace(back);
+    }
+  };
+
+  document.getElementById('forgot').onclick = async function () {
+    var email = form.email.value.trim();
+    if (!email) { A.fail(msg, { message: 'Type your email above first.' }); form.email.focus(); return; }
+    var r = await A.sb.auth.resetPasswordForEmail(email, { redirectTo: A.url('members/?reset=1') });
+    if (r.error) return A.fail(msg, r.error);
+    msg.className = 'msg ok'; msg.textContent = 'If that email has an account, a reset link is on its way.';
+  };
+})();
+</script>
+</body>
+</html>

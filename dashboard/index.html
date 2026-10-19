@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Command Dashboard · 228th Black Skulls Corps</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../auth/auth.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../auth/config.js"></script>
+<script src="../auth/auth.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../"><img src="../logo.webp" alt="">228th <span>Black Skulls</span></a>
+  <nav id="acct-nav" aria-label="Account"></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="msg" id="msg" role="status"></div>
+
+  <div class="center panel stack" id="no" hidden>
+    <h2>Admins only</h2>
+    <p class="muted" id="no-text">This page is for Command.</p>
+    <a class="btn ghost" href="../members/">Go to the members area</a>
+  </div>
+
+  <div id="dash" hidden>
+    <div class="head">
+      <p class="label"><b>//</b> Command</p>
+      <h1>Dashboard</h1>
+      <p class="muted">Approve new accounts, set roles and post briefings to the members area.</p>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-tab="requests">Requests<span class="count" id="req-count"></span></button>
+      <button type="button" role="tab" aria-selected="false" data-tab="members">Members</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="briefings">Briefings</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="roles">Roles</button>
+    </div>
+
+    <section data-pane="requests" class="stack">
+      <div class="rows" id="requests"></div>
+      <details id="denied-wrap" hidden><summary class="label" style="cursor:pointer;padding:8px 0">Denied requests</summary><div class="rows" id="denied" style="margin-top:10px"></div></details>
+    </section>
+
+    <section data-pane="members" class="stack" hidden>
+      <input type="search" id="find" placeholder="Search members" aria-label="Search members" style="max-width:360px">
+      <div class="rows" id="members"></div>
+    </section>
+
+    <section data-pane="briefings" class="stack" hidden>
+      <form class="panel stack" id="post-form">
+        <h3>New briefing</h3>
+        <label class="f">Title<input name="title" maxlength="120" required></label>
+        <label class="f">Message<textarea name="body" maxlength="5000"></textarea></label>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:end">
+          <label class="f">Who can see it<select name="min_role" id="post-role"></select></label>
+          <label class="check"><input type="checkbox" name="pinned"> Pin to top</label>
+          <button class="btn" type="submit">Post</button>
+        </div>
+      </form>
+      <div class="rows" id="posts"></div>
+    </section>
+
+    <section data-pane="roles" class="stack" hidden>
+      <p class="muted">Higher rank sees everything a lower rank can. Admin manages this dashboard.</p>
+      <div class="rows" id="roles"></div>
+      <form class="panel" id="role-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
+        <label class="f" style="flex:1 1 180px">New role name<input name="label" maxlength="40" required placeholder="e.g. Recruiter"></label>
+        <label class="f" style="width:120px">Rank<input name="rank" type="number" min="1" max="99" value="20" required></label>
+        <button class="btn" type="submit">Add role</button>
+      </form>
+    </section>
+  </div>
+</main>
+
+<script>
+(async function () {
+  var A = window.Auth, sb = A.sb, msg = document.getElementById('msg'), $ = function (id) { return document.getElementById(id); };
+  var me, roles = [], people = [];
+
+  if (!sb) { A.header(null, 'dashboard'); $('no-text').textContent = 'Member logins are being set up.'; $('no').hidden = false; return; }
+  try { me = await A.me(); } catch (e) { A.header(null, 'dashboard'); $('no').hidden = false; return A.fail(msg, e); }
+  A.header(me, 'dashboard');
+  if (!me) { location.replace(A.url('login/')); return; }
+  if (!A.isAdmin(me)) { $('no').hidden = false; return; }
+  $('dash').hidden = false;
+
+  function ok(text) { msg.className = 'msg ok'; msg.textContent = text; setTimeout(function () { if (msg.textContent === text) msg.textContent = ''; }, 4000); }
+  function roleSelect(value) {
+    var s = A.el('select'); s.setAttribute('aria-label', 'Role');
+    roles.forEach(function (r) { var o = A.el('option', null, r.label); o.value = r.name; s.appendChild(o); });
+    s.value = value || 'member';
+    return s;
+  }
+  function btn(text, cls, fn) { var b = A.el('button', 'btn small ' + (cls || ''), text); b.type = 'button'; b.onclick = fn; return b; }
+  function personRow(p) {
+    var r = A.el('div', 'row'), w = A.el('div', 'who');
+    var top = A.el('b', null, p.display_name || 'Unnamed');
+    w.appendChild(top);
+    var bits = [p.discord_name ? 'Discord: ' + p.discord_name : '', p.email || '', 'Joined ' + A.date(p.created_at)].filter(Boolean);
+    w.appendChild(A.el('small', null, bits.join(' · ')));
+    if (p.note) w.appendChild(A.el('span', 'note', p.note));
+    r.appendChild(A.avatar(p)); r.appendChild(w);
+    var acts = A.el('div', 'acts'); r.appendChild(acts);
+    return { row: r, acts: acts };
+  }
+  async function setMember(p, status, role, done) {
+    var r = await sb.rpc('set_member', { target: p.id, new_status: status, new_role: role });
+    if (r.error) return A.fail(msg, r.error);
+    ok(done);
+    await loadPeople();
+  }
+
+  // Tabs.
+  document.querySelectorAll('[data-tab]').forEach(function (b) {
+    b.onclick = function () {
+      document.querySelectorAll('[data-tab]').forEach(function (x) { x.setAttribute('aria-selected', x === b); });
+      document.querySelectorAll('[data-pane]').forEach(function (p) { p.hidden = p.dataset.pane !== b.dataset.tab; });
+    };
+  });
+
+  async function loadRoles() {
+    var r = await sb.from('roles').select('*').order('rank', { ascending: false });
+    if (r.error) return A.fail(msg, r.error);
+    roles = r.data;
+    var box = $('roles'); box.textContent = '';
+    roles.forEach(function (role) {
+      var row = A.el('div', 'row'); row.style.gridTemplateColumns = '1fr auto';
+      var w = A.el('div', 'who');
+      var name = A.el('input'); name.value = role.label; name.maxLength = 40; name.setAttribute('aria-label', 'Role name');
+      w.appendChild(name);
+      var acts = A.el('div', 'acts');
+      var rank = A.el('input'); rank.type = 'number'; rank.min = 1; rank.max = role.name === 'admin' ? 100 : 99; rank.value = role.rank; rank.style.width = '84px'; rank.setAttribute('aria-label', 'Rank');
+      acts.appendChild(A.el('span', 'label', 'Rank')); acts.appendChild(rank);
+      acts.appendChild(btn('Save', 'ghost', async function () {
+        var u = await sb.from('roles').update({ label: name.value.trim() || role.label, rank: role.name === 'admin' ? 100 : +rank.value }).eq('name', role.name);
+        if (u.error) return A.fail(msg, u.error);
+        ok('Role saved.'); await loadRoles(); await loadPeople();
+      }));
+      if (['admin', 'member'].indexOf(role.name) < 0) acts.appendChild(btn('Delete', 'ghost', async function () {
+        if (!confirm('Delete the ' + role.label + ' role?')) return;
+        var d = await sb.from('roles').delete().eq('name', role.name);
+        if (d.error) return A.fail(msg, { message: 'Can\'t delete a role while members or briefings still use it.' });
+        ok('Role deleted.'); await loadRoles();
+      }));
+      row.appendChild(w); row.appendChild(acts); box.appendChild(row);
+    });
+    var ps = $('post-role'), keep = ps.value; ps.textContent = '';
+    roles.slice().reverse().forEach(function (r) { var o = A.el('option', null, r.label + (r.name === 'admin' ? ' only' : ' and up')); o.value = r.name; ps.appendChild(o); });
+    ps.value = keep || 'member';
+  }
+
+  async function loadPeople() {
+    var r = await sb.from('profiles').select('*').order('created_at', { ascending: true });
+    if (r.error) return A.fail(msg, r.error);
+    people = r.data;
+    var pending = people.filter(function (p) { return p.status === 'pending'; });
+    var denied = people.filter(function (p) { return p.status === 'denied'; });
+    $('req-count').textContent = pending.length ? pending.length : '';
+
+    var box = $('requests'); box.textContent = '';
+    if (!pending.length) box.appendChild(A.el('p', 'empty', 'No requests waiting.'));
+    pending.forEach(function (p) {
+      var x = personRow(p), sel = roleSelect('member');
+      x.acts.appendChild(sel);
+      x.acts.appendChild(btn('Approve', '', function () { setMember(p, 'approved', sel.value, (p.display_name || 'Member') + ' approved.'); }));
+      x.acts.appendChild(btn('Deny', 'ghost', function () { if (confirm('Deny ' + (p.display_name || 'this request') + '?')) setMember(p, 'denied', p.role, 'Request denied.'); }));
+      box.appendChild(x.row);
+    });
+
+    var db = $('denied'); db.textContent = ''; $('denied-wrap').hidden = !denied.length;
+    denied.forEach(function (p) {
+      var x = personRow(p);
+      x.acts.appendChild(btn('Move back to requests', 'ghost', function () { setMember(p, 'pending', p.role, 'Moved back to requests.'); }));
+      db.appendChild(x.row);
+    });
+    renderMembers();
+  }
+
+  function renderMembers() {
+    var q = $('find').value.trim().toLowerCase();
+    var list = people.filter(function (p) { return p.status === 'approved' && (!q || [p.display_name, p.discord_name, p.email].join(' ').toLowerCase().indexOf(q) >= 0); });
+    var rank = {}; roles.forEach(function (r) { rank[r.name] = r.rank; });
+    list.sort(function (a, b) { return (rank[b.role] || 0) - (rank[a.role] || 0) || String(a.display_name).localeCompare(String(b.display_name)); });
+    var box = $('members'); box.textContent = '';
+    if (!list.length) box.appendChild(A.el('p', 'empty', q ? 'No matches.' : 'No approved members yet.'));
+    list.forEach(function (p) {
+      var x = personRow(p), sel = roleSelect(p.role), self = p.id === me.id;
+      if (self) { sel.disabled = true; x.acts.appendChild(A.el('span', 'chip red', 'You')); }
+      sel.onchange = function () { setMember(p, 'approved', sel.value, 'Role updated.'); };
+      x.acts.appendChild(sel);
+      if (!self) x.acts.appendChild(btn('Remove access', 'ghost', function () { if (confirm('Remove ' + (p.display_name || 'this member') + '\'s access?')) setMember(p, 'denied', p.role, 'Access removed.'); }));
+      box.appendChild(x.row);
+    });
+  }
+  $('find').oninput = renderMembers;
+
+  async function loadPosts() {
+    var r = await sb.from('posts').select('*, roles(label)').order('pinned', { ascending: false }).order('created_at', { ascending: false });
+    if (r.error) return A.fail(msg, r.error);
+    var box = $('posts'); box.textContent = '';
+    if (!r.data.length) box.appendChild(A.el('p', 'empty', 'No briefings yet.'));
+    r.data.forEach(function (p) {
+      var row = A.el('div', 'row'); row.style.gridTemplateColumns = '1fr auto';
+      var w = A.el('div', 'who');
+      w.appendChild(A.el('b', null, (p.pinned ? '📌 ' : '') + p.title));
+      w.appendChild(A.el('small', null, A.date(p.created_at) + ' · ' + ((p.roles && p.roles.label) || p.min_role) + ' and up'));
+      if (p.body) w.appendChild(A.el('span', 'note', p.body.length > 240 ? p.body.slice(0, 240) + '…' : p.body));
+      var acts = A.el('div', 'acts');
+      acts.appendChild(btn(p.pinned ? 'Unpin' : 'Pin', 'ghost', async function () {
+        var u = await sb.from('posts').update({ pinned: !p.pinned }).eq('id', p.id);
+        if (u.error) return A.fail(msg, u.error); loadPosts();
+      }));
+      acts.appendChild(btn('Delete', 'ghost', async function () {
+        if (!confirm('Delete "' + p.title + '"?')) return;
+        var d = await sb.from('posts').delete().eq('id', p.id);
+        if (d.error) return A.fail(msg, d.error); ok('Briefing deleted.'); loadPosts();
+      }));
+      row.appendChild(w); row.appendChild(acts); box.appendChild(row);
+    });
+  }
+
+  $('post-form').onsubmit = async function (e) {
+    e.preventDefault();
+    var f = this, r = await sb.from('posts').insert({ title: f.title.value.trim(), body: f.body.value.trim(), min_role: f.min_role.value, pinned: f.pinned.checked });
+    if (r.error) return A.fail(msg, r.error);
+    f.reset(); f.min_role.value = 'member'; ok('Briefing posted.'); loadPosts();
+  };
+
+  $('role-form').onsubmit = async function (e) {
+    e.preventDefault();
+    var f = this, label = f.label.value.trim(), name = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (!name) return;
+    var r = await sb.from('roles').insert({ name: name, label: label, rank: Math.min(99, Math.max(1, +f.rank.value || 20)) });
+    if (r.error) return A.fail(msg, r.error.code === '23505' ? { message: 'That role already exists.' } : r.error);
+    f.reset(); f.rank.value = 20; ok('Role added.'); loadRoles();
+  };
+
+  await loadRoles();
+  await Promise.all([loadPeople(), loadPosts()]);
+})();
+</script>
+</body>
+</html>

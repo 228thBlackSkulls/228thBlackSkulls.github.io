@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Members · 228th Black Skulls Corps</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../auth/auth.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../auth/config.js"></script>
+<script src="../auth/auth.js"></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../"><img src="../logo.webp" alt="">228th <span>Black Skulls</span></a>
+  <nav id="acct-nav" aria-label="Account"></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="msg" id="msg" role="status"></div>
+
+  <!-- Not set up / not logged in -->
+  <div class="center panel stack" id="out" hidden>
+    <h2>Members only</h2>
+    <p class="muted" id="out-text">Log in to see the members area.</p>
+    <a class="btn" href="../login/" id="out-btn">Log in</a>
+  </div>
+
+  <!-- Set a new password after a reset link -->
+  <form class="center panel stack" id="reset" hidden>
+    <h2>New password</h2>
+    <label class="f">New password<input name="password" type="password" autocomplete="new-password" minlength="8" required></label>
+    <button class="btn" type="submit">Save password</button>
+  </form>
+
+  <!-- Waiting for approval -->
+  <div class="center stack" id="pending" hidden>
+    <div class="head">
+      <p class="label"><b>//</b> Request received</p>
+      <h1>Pending approval</h1>
+      <p class="muted">Command reviews every account. Once you're approved, this page opens up and you'll see the members area.</p>
+    </div>
+    <form class="panel stack" id="note-form">
+      <label class="f">Your name or callsign<input name="display_name" maxlength="60" placeholder="CT-1234 &quot;Nickname&quot;"></label>
+      <label class="f">Anything Command should know (optional)<textarea name="note" maxlength="500" placeholder="Your CT number, which Discord you're in, who recruited you…"></textarea></label>
+      <button class="btn" type="submit">Save</button>
+    </form>
+  </div>
+
+  <!-- Denied -->
+  <div class="center panel stack" id="denied" hidden>
+    <h2>Not approved</h2>
+    <p class="muted">Your request wasn't approved. If you think that's a mistake, reach out to Command on Discord.</p>
+  </div>
+
+  <!-- Approved -->
+  <div id="in" hidden>
+    <div class="head">
+      <p class="label"><b>//</b> Members area</p>
+      <h1 id="hello">Welcome back</h1>
+      <p><span class="chip red" id="my-role"></span></p>
+    </div>
+    <div class="grid2" style="align-items:start">
+      <section class="stack" aria-labelledby="posts-h">
+        <h2 id="posts-h">Briefings</h2>
+        <div class="stack" id="posts"></div>
+      </section>
+      <section class="stack" aria-labelledby="roster-h">
+        <h2 id="roster-h">Roster</h2>
+        <div class="rows" id="roster"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script>
+(async function () {
+  var A = window.Auth, msg = document.getElementById('msg'), $ = function (id) { return document.getElementById(id); };
+  function show(id) { ['out', 'reset', 'pending', 'denied', 'in'].forEach(function (k) { $(k).hidden = k !== id; }); }
+
+  if (!A.sb) { A.header(null, 'members'); $('out-text').textContent = 'Member logins are being set up. Check back soon.'; $('out-btn').hidden = true; show('out'); return; }
+
+  // Password reset link lands here.
+  var resetting = new URLSearchParams(location.search).get('reset') === '1';
+  A.sb.auth.onAuthStateChange(function (ev) { if (ev === 'PASSWORD_RECOVERY') { resetting = true; show('reset'); } });
+
+  var me;
+  try { me = await A.me(); } catch (e) { A.header(null, 'members'); show('out'); return A.fail(msg, e); }
+  A.header(me, 'members');
+  if (!me) { show('out'); return; }
+
+  if (resetting) {
+    show('reset');
+    $('reset').onsubmit = async function (e) {
+      e.preventDefault();
+      var r = await A.sb.auth.updateUser({ password: this.password.value });
+      if (r.error) return A.fail(msg, r.error);
+      history.replaceState(null, '', location.pathname);
+      location.reload();
+    };
+    return;
+  }
+
+  if (me.status === 'denied') { show('denied'); return; }
+  if (me.status !== 'approved') {
+    show('pending');
+    var f = $('note-form');
+    f.display_name.value = me.display_name || '';
+    f.note.value = me.note || '';
+    f.onsubmit = async function (e) {
+      e.preventDefault();
+      var r = await A.sb.from('profiles').update({ display_name: f.display_name.value.trim(), note: f.note.value.trim() }).eq('id', me.id);
+      if (r.error) return A.fail(msg, r.error);
+      msg.className = 'msg ok'; msg.textContent = 'Saved. Command will see this with your request.';
+    };
+    return;
+  }
+
+  // Approved.
+  show('in');
+  $('hello').textContent = 'Welcome, ' + (me.display_name || 'trooper');
+  $('my-role').textContent = (me.roles && me.roles.label) || me.role;
+
+  var posts = await A.sb.from('posts').select('*, roles(label)').order('pinned', { ascending: false }).order('created_at', { ascending: false });
+  if (posts.error) A.fail(msg, posts.error);
+  var pb = $('posts');
+  if (!posts.data || !posts.data.length) pb.appendChild(A.el('p', 'empty', 'No briefings yet.'));
+  (posts.data || []).forEach(function (p) {
+    var a = A.el('article', 'panel post'), m = A.el('div', 'meta');
+    if (p.pinned) m.appendChild(A.el('span', 'chip red', 'Pinned'));
+    m.appendChild(A.el('span', 'label', A.date(p.created_at)));
+    if (p.min_role !== 'member') m.appendChild(A.el('span', 'chip', (p.roles && p.roles.label || p.min_role) + '+'));
+    a.appendChild(m); a.appendChild(A.el('h3', null, p.title));
+    if (p.body) a.appendChild(A.el('p', null, p.body));
+    pb.appendChild(a);
+  });
+
+  var roster = await A.sb.rpc('member_roster');
+  if (roster.error) A.fail(msg, roster.error);
+  var rb = $('roster');
+  (roster.data || []).forEach(function (p) {
+    var r = A.el('div', 'row'), w = A.el('div', 'who');
+    r.style.gridTemplateColumns = '44px 1fr';
+    w.appendChild(A.el('b', null, p.display_name || 'Unnamed'));
+    w.appendChild(A.el('small', null, p.role_label));
+    r.appendChild(A.avatar(p)); r.appendChild(w); rb.appendChild(r);
+  });
+})();
+</script>
+</body>
+</html>
