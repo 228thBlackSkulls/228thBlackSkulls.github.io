@@ -10,10 +10,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css">
+<link rel="stylesheet" href="../auth/auth.css?v=2">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=4"></script>
+<script src="../auth/auth.js?v=5"></script>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -114,13 +114,14 @@
   if (me.status !== 'approved') {
     show('pending');
     var f = $('note-form');
-    f.display_name.value = me.display_name || '';
+    var recheck = A.watchCallsign(f.display_name, f.display_name.nextElementSibling);
+    f.display_name.value = me.display_name || ''; recheck();
     f.note.value = me.note || '';
     f.division.value = me.division || ''; f.discord.value = me.discord_name || ''; f.rank.value = me.current_rank || '';
     f.onsubmit = async function (e) {
       e.preventDefault();
       var name = A.callsign(f.display_name.value);
-      if (!name) { A.fail(msg, { message: A.callsignHelp }); f.display_name.focus(); return; }
+      if (!name) { A.fail(msg, { message: 'Fix your 228th name first: ' + A.checkCallsign(f.display_name.value).problems.join(' ') }); f.display_name.focus(); return; }
       f.display_name.value = name;
       var r = await A.sb.from('profiles').update({ display_name: name, note: f.note.value.trim(), division: f.division.value, discord_name: f.discord.value.trim(), current_rank: f.rank.value.trim() }).eq('id', me.id);
       if (r.error) return A.fail(msg, r.error);

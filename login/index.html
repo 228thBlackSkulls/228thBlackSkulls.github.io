@@ -10,10 +10,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css">
+<link rel="stylesheet" href="../auth/auth.css?v=2">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=4"></script>
+<script src="../auth/auth.js?v=5"></script>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -91,6 +91,7 @@
   };
 
   var form = document.getElementById('email'), mode = 'in';
+  A.watchCallsign(form.name, form.name.nextElementSibling);
   form.querySelectorAll('[data-mode]').forEach(function (b) {
     b.onclick = function () {
       mode = b.dataset.mode;
@@ -112,7 +113,7 @@
     var email = form.email.value.trim(), pw = form.password.value, r;
     if (mode === 'up') {
       var name = A.callsign(form.name.value);
-      if (!name) { go.disabled = false; A.fail(msg, { message: A.callsignHelp }); form.name.focus(); return; }
+      if (!name) { go.disabled = false; A.fail(msg, { message: 'Fix your 228th name first: ' + A.checkCallsign(form.name.value).problems.join(' ') }); form.name.focus(); return; }
       form.name.value = name;
       if (await A.numberTaken(name)) { go.disabled = false; A.fail(msg, { message: 'The number ' + name.match(/-(\d{4})/)[1] + ' is already used by another account. If it\'s yours, reach out to Command on Discord.' }); return; }
       var info = { display_name: name, division: form.division.value, discord_name: form.discord.value.trim(), current_rank: form.rank.value.trim(), note: form.other.value.trim() };

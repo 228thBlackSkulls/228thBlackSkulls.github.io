@@ -87,3 +87,6 @@ select{width:auto}
 .or{display:flex;align-items:center;gap:12px;color:var(--muted);font:500 .7rem var(--mono);letter-spacing:.14em;text-transform:uppercase}
 .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 [hidden]{display:none!important}
+/* Live check on the 228th name box */
+label.f input.good{border-color:var(--ok)}label.f input.bad{border-color:var(--accent)}
+label.f .hint.good{color:var(--ok)}label.f .hint.bad{color:var(--accent);white-space:pre-line}

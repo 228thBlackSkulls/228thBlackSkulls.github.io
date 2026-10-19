@@ -154,10 +154,12 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- Create a profile whenever someone signs up (Discord or email).
--- Names must be the 228th callsign: two to four letters, a dash, four numbers, then the nickname in quotes,
--- like CC-5733 "Flanker". Curly quotes from phone keyboards are straightened. Each number can only be used once.
+-- Names must be the 228th callsign: the rank designation (CC, T2C, CR-C...), a dash, four numbers, then the
+-- nickname in quotes, like CC-5733 "Flanker". Curly quotes from phone keyboards are straightened. Each number can only be used once.
+-- The website checks the designation against the rank list and the nickname's capitals; this is the backstop.
 create or replace function public.check_callsign() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare m text[];
 begin
   -- Once approved, only Admin can change someone's name.
   if tg_op = 'UPDATE' and new.display_name is distinct from old.display_name and old.status = 'approved' and not is_admin() then
@@ -165,9 +167,9 @@ begin
   end if;
   if new.display_name is null then return new; end if;
   new.display_name := regexp_replace(btrim(translate(new.display_name, '“”„‟″', '"""""')), '\s+', ' ', 'g');
-  new.display_name := regexp_replace(new.display_name, '^([A-Za-z]{2,4})\s*-\s*([0-9]{4})\s*"\s*(.*?)\s*"$', '\1-\2 "\3"');
-  new.display_name := upper(split_part(new.display_name, '-', 1)) || substr(new.display_name, length(split_part(new.display_name, '-', 1)) + 1);
-  if new.display_name !~ '^[A-Z]{2,4}-[0-9]{4} "[A-Za-z0-9][A-Za-z0-9 .''-]{0,23}"$' then
+  m := regexp_match(new.display_name, '^([A-Za-z][A-Za-z0-9]{1,3}(-[A-Za-z])?) *- *([0-9]{4}) *" *(.*[^ ]) *"$');
+  if m is not null then new.display_name := upper(m[1]) || '-' || m[3] || ' "' || m[4] || '"'; end if;
+  if new.display_name !~ '^[A-Z][A-Z0-9]{1,3}(-[A-Z])?-[0-9]{4} "[A-Za-z0-9][A-Za-z0-9 .''-]{0,23}"$' then
     raise exception 'Name must look like CT-1234 "Nickname"' using errcode = 'check_violation';
   end if;
   if exists (select 1 from profiles p where p.id <> new.id and substring(p.display_name from '-([0-9]{4}) ') = substring(new.display_name from '-([0-9]{4}) ')) then
