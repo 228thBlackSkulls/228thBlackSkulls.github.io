@@ -11,6 +11,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="../auth/auth.css">
+<style>
+.grip{cursor:grab;touch-action:none;user-select:none;color:var(--muted);font-size:1.3rem;line-height:1;padding:6px 4px;background:none;border:0}
+.grip:active{cursor:grabbing}
+.row.dragging{opacity:.6;border-color:var(--accent)}
+.rolechips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rolechips .chip{display:inline-flex;gap:6px;align-items:center}
+.rolechips .chip button{background:none;border:0;color:inherit;cursor:pointer;padding:0;font:inherit;line-height:1}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
 <script src="../auth/auth.js?v=3"></script>
@@ -71,7 +79,7 @@
     </section>
 
     <section data-pane="roles" class="stack" hidden>
-      <p class="muted">Roles are listed from highest to lowest. Give each member the role that matches their rank, and each briefing chooses which roles can see it. Admin runs this dashboard.</p>
+      <p class="muted">Roles are listed from highest to lowest. Drag the ⠿ handle to reorder. Members can hold several roles, and each briefing chooses which roles can see it. Admin runs this dashboard.</p>
       <div class="rows" id="roles"></div>
       <form class="panel" id="role-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
         <label class="f" style="flex:1 1 180px">New role name<input name="label" maxlength="40" required placeholder="e.g. Recruiter"></label>
@@ -113,6 +121,12 @@
     var acts = A.el('div', 'acts'); r.appendChild(acts);
     return { row: r, acts: acts };
   }
+  async function setRoles(p, list, done) {
+    var r = await sb.rpc('set_roles', { target: p.id, new_roles: list });
+    if (r.error) return A.fail(msg, r.error);
+    ok(done);
+    await loadPeople();
+  }
   async function setMember(p, status, role, done) {
     var r = await sb.rpc('set_member', { target: p.id, new_status: status, new_role: role });
     if (r.error) return A.fail(msg, r.error);
@@ -136,13 +150,12 @@
   }
   // Save the on-screen order as hidden ranks (Admin stays on top at 100).
   async function saveOrder(list) {
-    for (var i = 0; i < list.length; i++) {
-      var want = list[i].name === 'admin' ? 100 : 99 - i;
-      if (list[i].rank !== want) {
-        var u = await sb.from('roles').update({ rank: want }).eq('name', list[i].name);
-        if (u.error) return A.fail(msg, u.error);
-      }
-    }
+    var jobs = list.map(function (r, i) {
+      var want = r.name === 'admin' ? 100 : 99 - i;
+      return r.rank === want ? null : sb.from('roles').update({ rank: want }).eq('name', r.name);
+    }).filter(Boolean);
+    var res = await Promise.all(jobs), bad = res.find(function (r) { return r.error; });
+    if (bad) A.fail(msg, bad.error);
   }
 
   async function loadRoles() {
@@ -151,7 +164,10 @@
     roles = r.data;
     var box = $('roles'); box.textContent = '';
     roles.forEach(function (role, i) {
-      var row = A.el('div', 'row'); row.style.gridTemplateColumns = '1fr auto';
+      var row = A.el('div', 'row'); row.style.gridTemplateColumns = '28px 1fr auto'; row.dataset.role = role.name;
+      var grip = A.el('button', 'grip', role.name === 'admin' ? '' : '⠿'); grip.type = 'button';
+      if (role.name !== 'admin') { grip.setAttribute('aria-label', 'Drag to reorder ' + role.label); dragHandle(grip, row); } else grip.disabled = true;
+      row.appendChild(grip);
       var w = A.el('div', 'who');
       var name = A.el('input'); name.value = role.label; name.maxLength = 40; name.setAttribute('aria-label', 'Role name');
       w.appendChild(name);
@@ -161,17 +177,11 @@
         if (u.error) return A.fail(msg, u.error);
         ok('Role saved.'); await loadRoles(); await loadPeople();
       }));
-      if (role.name !== 'admin') {
-        var up = btn('↑', 'ghost', async function () { await move(i, -1); }), down = btn('↓', 'ghost', async function () { await move(i, 1); });
-        up.setAttribute('aria-label', 'Move ' + role.label + ' up'); down.setAttribute('aria-label', 'Move ' + role.label + ' down');
-        up.disabled = i <= 1; down.disabled = i === roles.length - 1;
-        acts.appendChild(up); acts.appendChild(down);
-      }
       if (['admin', 'member'].indexOf(role.name) < 0) acts.appendChild(btn('Delete', 'ghost', async function () {
-        if (!confirm('Delete the ' + role.label + ' role?')) return;
+        if (!confirm('Delete the ' + role.label + ' role? Anyone who has it loses it.')) return;
         var d = await sb.from('roles').delete().eq('name', role.name);
-        if (d.error) return A.fail(msg, { message: 'Can\'t delete a role while members still have it. Change their role first.' });
-        ok('Role deleted.'); await loadRoles();
+        if (d.error) return A.fail(msg, d.error);
+        ok('Role deleted.'); await loadRoles(); await loadPeople();
       }));
       row.appendChild(w); row.appendChild(acts); box.appendChild(row);
     });
@@ -186,11 +196,26 @@
     roles.forEach(function (r) { if (r.name !== 'member') { var o = A.el('option', null, r.label); o.value = r.name; bs.appendChild(o); } });
     bs.value = keepB || 'high-com';
   }
-  async function move(i, dir) {
-    var list = roles.slice(), j = i + dir;
-    if (j < 1 || j >= list.length) return;
-    var t = list[i]; list[i] = list[j]; list[j] = t;
-    await saveOrder(list); await loadRoles();
+  // Drag a role by its handle; the list rearranges as you move, and the new order saves when you let go.
+  function dragHandle(grip, row) {
+    grip.addEventListener('pointerdown', function (e) {
+      // Listen on the window: moving the row in the page would drop a pointer capture on the handle.
+      e.preventDefault(); row.classList.add('dragging');
+      var box = $('roles');
+      function onMove(ev) {
+        var rows = [].slice.call(box.children).filter(function (r) { return r !== row && r.dataset.role !== 'admin'; });
+        var next = rows.find(function (r) { var b = r.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
+        box.insertBefore(row, next || null);
+      }
+      async function onUp() {
+        window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp);
+        row.classList.remove('dragging');
+        var order = [].slice.call(box.children).map(function (r) { return roles.find(function (x) { return x.name === r.dataset.role; }); });
+        if (order.map(function (r) { return r.name; }).join() === roles.map(function (r) { return r.name; }).join()) return;
+        await saveOrder(order); ok('Order saved.'); await loadRoles(); await loadPeople();
+      }
+      window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onUp);
+    });
   }
   $('post-role').onchange = function () { $('post-up').disabled = !this.value; if (!this.value) $('post-up').checked = false; };
 
@@ -229,10 +254,24 @@
     var box = $('members'); box.textContent = '';
     if (!list.length) box.appendChild(A.el('p', 'empty', q ? 'No matches.' : 'No approved members yet.'));
     list.forEach(function (p) {
-      var x = personRow(p), sel = roleSelect(p.role), self = p.id === me.id;
-      if (self) { sel.disabled = true; x.acts.appendChild(A.el('span', 'chip red', 'You')); }
-      sel.onchange = function () { setMember(p, 'approved', sel.value, 'Role updated.'); };
-      x.acts.appendChild(sel);
+      var x = personRow(p), self = p.id === me.id, mine = (p.all_roles && p.all_roles.length) ? p.all_roles : [p.role];
+      if (self) x.acts.appendChild(A.el('span', 'chip red', 'You'));
+      var chips = A.el('div', 'rolechips');
+      roles.filter(function (r) { return mine.indexOf(r.name) >= 0; }).forEach(function (r) {
+        var c = A.el('span', 'chip' + (r.name === p.role ? ' red' : ''), r.label);
+        if (!(self && r.name === 'admin')) {
+          var x2 = A.el('button', null, '×'); x2.type = 'button'; x2.setAttribute('aria-label', 'Remove ' + r.label);
+          x2.onclick = function () { setRoles(p, mine.filter(function (n) { return n !== r.name; }), r.label + ' removed.'); };
+          c.appendChild(x2);
+        }
+        chips.appendChild(c);
+      });
+      var add = A.el('select'); add.setAttribute('aria-label', 'Add a role');
+      var first = A.el('option', null, '+ Add role'); first.value = ''; add.appendChild(first);
+      roles.forEach(function (r) { if (mine.indexOf(r.name) < 0) { var o = A.el('option', null, r.label); o.value = r.name; add.appendChild(o); } });
+      add.onchange = function () { if (add.value) setRoles(p, mine.concat(add.value), labelOf(add.value) + ' added.'); };
+      chips.appendChild(add);
+      x.acts.appendChild(chips);
       if (!self) x.acts.appendChild(btn('Remove access', 'ghost', function () { if (confirm('Remove ' + (p.display_name || 'this member') + '\'s access?')) setMember(p, 'denied', p.role, 'Access removed.'); }));
       box.appendChild(x.row);
     });

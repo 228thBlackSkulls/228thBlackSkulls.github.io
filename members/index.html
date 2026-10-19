@@ -129,8 +129,14 @@
   $('hello').textContent = 'Welcome, ' + (me.display_name || 'trooper');
   $('my-role').textContent = (me.roles && me.roles.label) || me.role;
 
-  var rl = await A.sb.from('roles').select('name, label'), label = {};
+  var rl = await A.sb.from('roles').select('name, label').order('rank', { ascending: false }), label = {};
   (rl.data || []).forEach(function (r) { label[r.name] = r.label; });
+  // Show every role this member holds, highest first.
+  var held = (rl.data || []).filter(function (r) { return (me.all_roles || [me.role]).indexOf(r.name) >= 0; });
+  if (held.length > 1) {
+    var chipRow = $('my-role').parentNode;
+    held.slice(1).reverse().forEach(function (r) { chipRow.insertBefore(A.el('span', 'chip', r.label), $('my-role').nextSibling); });
+  }
   var posts = await A.sb.from('posts').select('*').order('pinned', { ascending: false }).order('created_at', { ascending: false });
   if (posts.error) A.fail(msg, posts.error);
   var pb = $('posts');
@@ -152,7 +158,7 @@
     var r = A.el('div', 'row'), w = A.el('div', 'who');
     r.style.gridTemplateColumns = '44px 1fr';
     w.appendChild(A.el('b', null, p.display_name || 'Unnamed'));
-    w.appendChild(A.el('small', null, p.role_label));
+    w.appendChild(A.el('small', null, (p.role_labels && p.role_labels.length ? p.role_labels : [p.role_label]).join(' · ')));
     r.appendChild(A.avatar(p)); r.appendChild(w); rb.appendChild(r);
   });
 })();

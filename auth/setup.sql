@@ -74,6 +74,10 @@ do $$ begin
   end if;
 end $$;
 
+-- Members can hold several roles, like Discord. all_roles is the full list; role is the highest one (shown as their rank).
+alter table public.profiles add column if not exists all_roles text[] not null default '{}';
+update public.profiles set all_roles = array[role] where cardinality(all_roles) = 0;
+
 -- Helpers (run with owner rights so policies can call them without recursion).
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
@@ -85,6 +89,53 @@ language sql stable security definer set search_path = public as $$
   select coalesce((select r.rank from profiles p join roles r on r.name = p.role
                    where p.id = auth.uid() and p.status = 'approved'), 0);
 $$;
+
+create or replace function public.my_roles() returns text[]
+language sql stable security definer set search_path = public as $$
+  select all_roles from profiles where id = auth.uid() and status = 'approved';
+$$;
+
+-- Keep role and all_roles in step. Setting role on its own (approving someone) replaces the list with that one role;
+-- changing the list keeps only real roles, falls back to Recruit when empty, and makes role the highest one.
+create or replace function public.sync_roles() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'UPDATE' and new.all_roles is not distinct from old.all_roles and new.role is distinct from old.role then
+    new.all_roles := array[new.role];
+  elsif tg_op = 'INSERT' and cardinality(new.all_roles) = 0 then
+    new.all_roles := array[new.role];
+  end if;
+  new.all_roles := coalesce((select array_agg(r.name order by r.rank desc) from roles r where r.name = any(new.all_roles)), '{}');
+  if cardinality(new.all_roles) = 0 then new.all_roles := array['member']; end if;
+  new.role := new.all_roles[1];
+  return new;
+end $$;
+drop trigger if exists profiles_roles on public.profiles;
+create trigger profiles_roles before insert or update of role, all_roles on public.profiles
+  for each row execute function public.sync_roles();
+
+-- Deleting a role takes it off everyone and every briefing first. Reordering roles re-picks everyone's highest role.
+create or replace function public.role_removed() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if old.name in ('admin', 'member') then raise exception 'The % role can''t be deleted', old.label; end if;
+  update profiles set all_roles = array_remove(all_roles, old.name) where old.name = any(all_roles);
+  -- A briefing only that role could see falls back to Admin only, never to everyone.
+  update posts set visible_to = case when visible_to = array[old.name] then array['admin'] else array_remove(visible_to, old.name) end
+  where old.name = any(visible_to);
+  return old;
+end $$;
+drop trigger if exists roles_removed on public.roles;
+create trigger roles_removed before delete on public.roles for each row execute function public.role_removed();
+
+create or replace function public.roles_reordered() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  update profiles set all_roles = all_roles where cardinality(all_roles) > 1;
+  return null;
+end $$;
+drop trigger if exists roles_reordered on public.roles;
+create trigger roles_reordered after update of rank on public.roles for each statement execute function public.roles_reordered();
 
 create or replace function public.my_role() returns text
 language sql stable security definer set search_path = public as $$
@@ -162,11 +213,24 @@ begin
   where id = target;
 end $$;
 
+-- Admin action: set the full list of roles someone holds.
+create or replace function public.set_roles(target uuid, new_roles text[])
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'Admins only'; end if;
+  if target = auth.uid() and not ('admin' = any(new_roles)) then raise exception 'You can''t remove your own admin access'; end if;
+  update profiles set all_roles = new_roles where id = target;
+end $$;
+revoke execute on function public.set_roles(uuid, text[]) from public, anon;
+grant  execute on function public.set_roles(uuid, text[]) to authenticated;
+
 -- Roster for approved members: names, roles and pictures only (no emails).
+drop function if exists public.member_roster();
 create or replace function public.member_roster()
-returns table (display_name text, avatar_url text, role text, role_label text, rank int, approved_at timestamptz)
+returns table (display_name text, avatar_url text, role text, role_label text, rank int, approved_at timestamptz, role_labels text[])
 language sql stable security definer set search_path = public as $$
-  select p.display_name, p.avatar_url, p.role, r.label, r.rank, p.approved_at
+  select p.display_name, p.avatar_url, p.role, r.label, r.rank, p.approved_at,
+    (select array_agg(x.label order by x.rank desc) from roles x where x.name = any(p.all_roles))
   from profiles p join roles r on r.name = p.role
   where p.status = 'approved' and my_rank() > 0
   order by r.rank desc, p.display_name;
@@ -175,7 +239,8 @@ $$;
 revoke execute on function public.set_member(uuid, text, text) from public, anon;
 revoke execute on function public.member_roster() from public, anon;
 revoke execute on function public.my_role() from public, anon;
-grant  execute on function public.my_role() to authenticated;
+grant  execute on function public.my_role(), public.my_roles() to authenticated;
+revoke execute on function public.my_roles() from public, anon;
 grant  execute on function public.set_member(uuid, text, text) to authenticated;
 grant  execute on function public.member_roster() to authenticated;
 
@@ -207,7 +272,7 @@ create policy profiles_delete on public.profiles for delete to authenticated usi
 drop policy if exists posts_read  on public.posts;
 drop policy if exists posts_admin on public.posts;
 create policy posts_read  on public.posts for select to authenticated
-  using (my_role() is not null and (cardinality(visible_to) = 0 or my_role() = any(visible_to) or is_admin()));
+  using (my_roles() is not null and (cardinality(visible_to) = 0 or visible_to && my_roles() or is_admin()));
 create policy posts_admin on public.posts for all to authenticated using (is_admin()) with check (is_admin());
 
 
