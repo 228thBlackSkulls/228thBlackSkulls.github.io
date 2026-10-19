@@ -544,9 +544,12 @@
     if (!withG.length) pg.appendChild(A.el('p', 'empty', 'No positions come with access. Edit a position to add some.'));
     withG.forEach(function (p) {
       var r = A.el('div', 'row'); r.style.gridTemplateColumns = '1fr auto';
-      var w = A.el('div', 'who');
+      var w = A.el('div', 'who stack'); w.style.gap = '8px';
       w.appendChild(A.el('b', null, O.posLabel(p) + ' · ' + d.unit[p.unit_id].name));
-      w.appendChild(A.el('small', null, p.grants.map(O.permLabel).join(', ') + ' · filled by ' + (p.holder ? O.nameOf(d, p.holder) : 'nobody yet')));
+      w.appendChild(A.el('small', null, 'Filled by ' + (p.holder ? O.nameOf(d, p.holder) : 'nobody yet') + ' · ' + d.unit[p.unit_id].name + ' and everything under it'));
+      var chips = A.el('div', 'chips');
+      p.grants.forEach(function (g) { chips.appendChild(A.el('span', 'chip', O.permLabel(g))); });
+      w.appendChild(chips);
       var a = A.el('div', 'acts'); a.appendChild(btn('Edit', function () { openPos(p); }, 'btn small ghost'));
       r.appendChild(w); r.appendChild(a); pg.appendChild(r);
     });
