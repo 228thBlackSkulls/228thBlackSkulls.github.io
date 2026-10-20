@@ -173,7 +173,8 @@
     },
     {
       "name": "EOD [Explosive Ordnance Disposal]",
-      "description": "Locates, disarms and clears mines, traps and explosive devices."
+      "description": "Locates, disarms and clears mines, traps and explosive devices.",
+      "logo": "images/quals/eod.webp"
     },
     {
       "name": "RTO [Radio Telephone Operator]",
