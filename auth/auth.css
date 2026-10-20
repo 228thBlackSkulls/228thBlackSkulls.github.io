@@ -116,3 +116,6 @@ fieldset.picks input{width:auto;accent-color:var(--accent)}
 .ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .ev-grid .evt p{margin:8px 0 0;white-space:pre-line}
 fieldset.picks>.hint{font:400 .85rem/1.4 var(--body);color:var(--muted)}
+.perm-picks{display:grid;gap:6px;margin-top:10px}
+.perm-picks .check{font-size:.9rem;color:var(--soft)}
+.ocard[hidden],.tabs button[hidden]{display:none}

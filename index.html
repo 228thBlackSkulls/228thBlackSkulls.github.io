@@ -1248,8 +1248,8 @@ He left behind a holotape warning that the op had been a setup, with final order
       fetch('https://raw.githubusercontent.com/228thBlackSkulls/228th-ops/main/ops.json?v='+Math.floor(Date.now()/300000))
         .then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&Array.isArray(j.ops)){got.planner=j.ops;show();}}).catch(function(){});
       var C=window.SB_CONFIG||{};
-      if(C.url&&C.anonKey)fetch(C.url.replace(/\/$/,'')+'/rest/v1/events?select=title,description,game,starts_at&visibility=in.(public,both)&order=starts_at.asc',{headers:{apikey:C.anonKey,Authorization:'Bearer '+C.anonKey}})
-        .then(function(r){return r.ok?r.json():null;}).then(function(a){if(Array.isArray(a)){got.events=a.map(function(e){return {title:e.title,description:e.description,game:e.game,start:e.starts_at};});show();}}).catch(function(){});}
+      if(C.url&&C.anonKey)fetch(C.url.replace(/\/$/,'')+'/rest/v1/events?select=title,description,game,starts_at,repeats_weekly&visibility=in.(public,both)&order=starts_at.asc',{headers:{apikey:C.anonKey,Authorization:'Bearer '+C.anonKey}})
+        .then(function(r){return r.ok?r.json():null;}).then(function(a){if(Array.isArray(a)){got.events=a.map(function(e){var t=Date.parse(e.starts_at),wk=6048e5;if(e.repeats_weekly&&t+4*3600e3<=Date.now())t+=Math.ceil((Date.now()-4*3600e3-t)/wk)*wk;return {title:e.title,description:e.description,game:e.game,start:new Date(t).toISOString()};});show();}}).catch(function(){});}
     list('c-schedule',c.schedule,function(x){var d=el('div');d.appendChild(el('span','day',x.day));var t=el('span',null,x.title);t.appendChild(el('small',null,x.details));d.appendChild(t);d.appendChild(el('span','time',x.time));return d;});
     list('c-steps',c.join_steps,function(x,i){var li=el('li','reveal');li.appendChild(el('span','n',pad(i+1)));li.appendChild(el('h3',null,x.title));li.appendChild(el('p',null,x.text));return li;});
     list('c-reqs',c.requirements,function(x){return el('span',null,x);});
@@ -1670,10 +1670,10 @@ He left behind a holotape warning that the op had been a setup, with final order
   try{has=!!localStorage.getItem('sb-'+ref+'-auth-token');}catch(e){}
   if(!has)return;
   function load(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s);}
-  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js',function(){load('auth/auth.js?v=9',async function(){
+  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js',function(){load('auth/auth.js?v=10',async function(){
     try{var me=await window.Auth.me();if(!me)return;
       links.forEach(function(a){a.textContent='Members';a.href='members/';});
-      if(window.Auth.isAdmin(me))admin.forEach(function(a){a.hidden=false;});
+      if(window.Auth.canDash(me))admin.forEach(function(a){a.hidden=false;});
     }catch(e){}
   });});
 })();

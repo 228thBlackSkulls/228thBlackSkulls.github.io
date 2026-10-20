@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css?v=4">
+<link rel="stylesheet" href="../auth/auth.css?v=5">
 <style>
 .grip{cursor:grab;touch-action:none;user-select:none;color:var(--muted);font-size:1.3rem;line-height:1;padding:6px 4px;background:none;border:0}
 .grip:active{cursor:grabbing}
@@ -21,7 +21,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=9"></script>
+<script src="../auth/auth.js?v=10"></script>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -33,8 +33,8 @@
   <div class="msg" id="msg" role="status"></div>
 
   <div class="center panel stack" id="no" hidden>
-    <h2>Admins only</h2>
-    <p class="muted" id="no-text">This page is for Command.</p>
+    <h2>Command only</h2>
+    <p class="muted" id="no-text">This page is for Command. Your roles don't have any Dashboard permissions.</p>
     <a class="btn ghost" href="../members/">Go to the members area</a>
   </div>
 
@@ -91,6 +91,7 @@
           <label class="f" style="flex:1 1 220px">Date and time<input name="start" type="datetime-local" required><span class="hint" id="ev-tz"></span></label>
           <label class="f" style="flex:1 1 180px">Division<select name="game"><option value="">Whole unit</option><option>Arma 3</option><option>VRChat</option><option>Arma 3 &amp; VRChat</option></select></label>
         </div>
+        <div><label class="check"><input type="checkbox" name="weekly" style="width:auto"> Repeat every week</label><p class="muted" style="font-size:.85rem;margin:4px 0 0">Moving a weekly event's date moves that week and every week after it.</p></div>
         <label class="f">Details (optional)<textarea name="description" maxlength="2000" placeholder="Where to muster, what to bring, anything people should know"></textarea></label>
         <fieldset class="f picks"><legend>Where should it show?</legend>
           <div class="radios">
@@ -127,7 +128,7 @@
     </section>
 
     <section data-pane="roles" class="stack" hidden>
-      <p class="muted">Roles are listed from highest to lowest. Drag the ⠿ handle to reorder. Members can hold several roles, and each briefing chooses which roles can see it. Admin runs this dashboard.</p>
+      <p class="muted">Roles are listed from highest to lowest. Drag the ⠿ handle to reorder. Members can hold several roles, and each briefing chooses which roles can see it. Tick what each role is allowed to do on this Dashboard, like Discord. Admin can always do everything, and only Admin can change roles.</p>
       <div class="rows" id="roles"></div>
       <form class="panel" id="role-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
         <label class="f" style="flex:1 1 180px">New role name<input name="label" maxlength="40" required placeholder="e.g. Recruiter"></label>
@@ -147,13 +148,19 @@
   try { me = await A.me(); } catch (e) { A.header(null, 'dashboard'); $('no').hidden = false; return A.fail(msg, e); }
   A.header(me, 'dashboard');
   if (!me) { location.replace(A.url('login/')); return; }
-  if (!A.isAdmin(me)) { $('no').hidden = false; return; }
+  if (!A.canDash(me)) { $('no').hidden = false; return; }
   $('dash').hidden = false;
+  // Each tab and Overview card shows only if this person's roles allow it (Admin sees everything).
+  var can = function (p) { return A.can(me, p); };
+  var allow = { requests: can('members'), members: can('members') || can('bios'), roles: can('roles'), events: can('events'), briefings: can('briefings') };
+  Object.keys(allow).forEach(function (k) {
+    document.querySelectorAll('[data-tab="' + k + '"],[data-go="' + k + '"]').forEach(function (n) { n.hidden = !allow[k]; });
+  });
 
   function ok(text) { msg.className = 'msg ok'; msg.textContent = text; setTimeout(function () { if (msg.textContent === text) msg.textContent = ''; }, 4000); }
   function roleSelect(value) {
     var s = A.el('select'); s.setAttribute('aria-label', 'Role');
-    roles.forEach(function (r) { var o = A.el('option', null, r.label); o.value = r.name; s.appendChild(o); });
+    roles.forEach(function (r) { if (r.name !== 'admin' || A.isAdmin(me)) { var o = A.el('option', null, r.label); o.value = r.name; s.appendChild(o); } });
     s.value = value || 'member';
     return s;
   }
@@ -173,6 +180,24 @@
     r.appendChild(A.avatar(p)); r.appendChild(w);
     var acts = A.el('div', 'acts'); r.appendChild(acts);
     return { row: r, acts: acts };
+  }
+  // Edit a member's bio in place (their own, or anyone's with the bios permission).
+  function bioButton(p, row) {
+    return btn('Edit bio', 'ghost', function () {
+      if (row.querySelector('.bio-edit')) return;
+      var who = row.querySelector('.who'), old = who.querySelector('.note'), box = A.el('div', 'bio-edit stack');
+      var ta = A.el('textarea'); ta.maxLength = 1000; ta.value = p.note || ''; ta.setAttribute('aria-label', 'Bio'); box.style.gap = '8px';
+      var bar = A.el('div', 'acts');
+      bar.appendChild(btn('Save bio', '', async function () {
+        var r = await sb.rpc('set_bio', { target: p.id, bio: ta.value });
+        if (r.error) return A.fail(msg, r.error);
+        ok('Bio saved.'); loadPeople();
+      }));
+      bar.appendChild(btn('Cancel', 'ghost', function () { box.remove(); if (old) old.hidden = false; }));
+      box.appendChild(ta); box.appendChild(bar);
+      if (old) old.hidden = true;
+      who.appendChild(box); ta.focus();
+    });
   }
   async function setRoles(p, list, done) {
     var r = await sb.rpc('set_roles', { target: p.id, new_roles: list });
@@ -230,6 +255,21 @@
       var w = A.el('div', 'who');
       var name = A.el('input'); name.value = role.label; name.maxLength = 40; name.setAttribute('aria-label', 'Role name');
       w.appendChild(name);
+      if (role.name === 'admin') w.appendChild(A.el('small', null, 'Can do everything'));
+      else {
+        var pf = A.el('div', 'perm-picks');
+        A.PERMS.forEach(function (pm) {
+          var l = A.el('label', 'check'), c = A.el('input'); c.type = 'checkbox'; c.checked = (role.perms || []).indexOf(pm[0]) >= 0;
+          c.onchange = async function () {
+            var list = A.PERMS.map(function (x) { return x[0]; }).filter(function (k) { return k === pm[0] ? c.checked : (role.perms || []).indexOf(k) >= 0; });
+            var u = await sb.from('roles').update({ perms: list }).eq('name', role.name);
+            if (u.error) { c.checked = !c.checked; return A.fail(msg, u.error); }
+            role.perms = list; ok(role.label + ': permissions saved.');
+          };
+          l.appendChild(c); l.appendChild(document.createTextNode(' ' + pm[1])); pf.appendChild(l);
+        });
+        w.appendChild(pf);
+      }
       var acts = A.el('div', 'acts');
       acts.appendChild(btn('Save', 'ghost', async function () {
         var u = await sb.from('roles').update({ label: name.value.trim() || role.label }).eq('name', role.name);
@@ -317,10 +357,18 @@
     list.forEach(function (p) {
       var x = personRow(p), self = p.id === me.id, mine = (p.all_roles && p.all_roles.length) ? p.all_roles : [p.role];
       if (self) x.acts.appendChild(A.el('span', 'chip red', 'You'));
+      if (can('bios') || self) x.acts.appendChild(bioButton(p, x.row));
+      // Changing roles needs the members permission; only Admin can touch the Admin role or an Admin's roles.
+      var adminP = mine.indexOf('admin') >= 0;
+      if (!can('members') || (adminP && !A.isAdmin(me))) {
+        var ro = A.el('div', 'rolechips');
+        roles.filter(function (r) { return mine.indexOf(r.name) >= 0; }).forEach(function (r) { ro.appendChild(A.el('span', 'chip' + (r.name === p.role ? ' red' : ''), r.label)); });
+        x.acts.appendChild(ro); box.appendChild(x.row); return;
+      }
       var chips = A.el('div', 'rolechips');
       roles.filter(function (r) { return mine.indexOf(r.name) >= 0; }).forEach(function (r) {
         var c = A.el('span', 'chip' + (r.name === p.role ? ' red' : ''), r.label);
-        if (!(self && r.name === 'admin')) {
+        if (!(self && r.name === 'admin') && (r.name !== 'admin' || A.isAdmin(me))) {
           var x2 = A.el('button', null, '×'); x2.type = 'button'; x2.setAttribute('aria-label', 'Remove ' + r.label);
           x2.onclick = function () { setRoles(p, mine.filter(function (n) { return n !== r.name; }), r.label + ' removed.'); };
           c.appendChild(x2);
@@ -329,7 +377,7 @@
       });
       var add = A.el('select'); add.setAttribute('aria-label', 'Add a role');
       var first = A.el('option', null, '+ Add role'); first.value = ''; add.appendChild(first);
-      roles.forEach(function (r) { if (mine.indexOf(r.name) < 0) { var o = A.el('option', null, r.label); o.value = r.name; add.appendChild(o); } });
+      roles.forEach(function (r) { if (mine.indexOf(r.name) < 0 && (r.name !== 'admin' || A.isAdmin(me))) { var o = A.el('option', null, r.label); o.value = r.name; add.appendChild(o); } });
       add.onchange = function () { if (add.value) setRoles(p, mine.concat(add.value), labelOf(add.value) + ' added.'); };
       chips.appendChild(add);
       x.acts.appendChild(chips);
@@ -389,21 +437,22 @@
       var tm = /^(\d{1,2}):?(\d{2})/.exec(n.time_utc || '19:00'), now = new Date();
       var t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), tm ? +tm[1] : 19, tm ? +tm[2] : 0));
       t.setUTCDate(t.getUTCDate() + ((day < 0 ? 6 : day) - now.getUTCDay() + 7) % 7); if (t <= now) t.setUTCDate(t.getUTCDate() + 7);
-      weekly = { title: n.name || 'Main operation', t: t.getTime() };
+      weekly = { title: n.name || 'Main operation', t: t.getTime(), note: n.note || '' };
     } catch (e) { weekly = null; }
   }
   function eventRow(ev, past) {
     var row = A.el('div', 'row evt'); row.style.gridTemplateColumns = '1fr auto';
-    var w = A.el('div', 'who'), m = A.el('div', 'meta'), t = Date.parse(ev.starts_at);
+    var w = A.el('div', 'who'), m = A.el('div', 'meta'), t = past ? Date.parse(ev.starts_at) : A.nextStart(ev);
     m.appendChild(A.el('span', 'chip' + (ev.visibility === 'private' ? '' : ' red'), A.VIS[ev.visibility] || ev.visibility));
     if (ev.game) m.appendChild(A.el('span', 'chip', ev.game));
+    if (ev.repeats_weekly) m.appendChild(A.el('span', 'chip', 'Every week'));
     w.appendChild(m); w.appendChild(A.el('b', null, ev.title)); w.appendChild(A.el('small', null, A.when(t) + ' your time'));
     if (!past) { var cd = A.el('span', 'cd'); cd.dataset.until = t; w.appendChild(cd); }
     if (ev.description) w.appendChild(A.el('span', 'note', ev.description.length > 240 ? ev.description.slice(0, 240) + '…' : ev.description));
     var acts = A.el('div', 'acts');
     if (!past) acts.appendChild(btn('Edit', 'ghost', function () {
       var f = $('ev-form'); editing = ev.id;
-      f.title.value = ev.title; f.start.value = localInput(t); f.game.value = ev.game || ''; f.description.value = ev.description || '';
+      f.title.value = ev.title; f.start.value = localInput(t); f.weekly.checked = !!ev.repeats_weekly; f.game.value = ev.game || ''; f.description.value = ev.description || '';
       f.querySelector('[name=vis][value="' + ev.visibility + '"]').checked = true;
       $('ev-h').textContent = 'Edit event'; $('ev-save').textContent = 'Save changes'; $('ev-cancel').hidden = false;
       f.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -418,25 +467,37 @@
   async function loadEvents() {
     var r = await sb.from('events').select('*').order('starts_at', { ascending: true });
     if (r.error) return A.fail(msg, r.error);
-    var now = Date.now(), active = r.data.filter(function (e) { return Date.parse(e.starts_at) + A.EVENT_LIVE_MS > now; });
+    var now = Date.now(), active = r.data.filter(function (e) { return A.nextStart(e) + A.EVENT_LIVE_MS > now; });
+    active.sort(function (a, b) { return A.nextStart(a) - A.nextStart(b); });
     var past = r.data.filter(function (e) { return active.indexOf(e) < 0; }).reverse();
     var box = $('events'); box.textContent = '';
     if (!active.length) box.appendChild(A.el('p', 'empty', 'No events scheduled.'));
     active.forEach(function (e) { box.appendChild(eventRow(e)); });
-    if (weekly) {
+    // The site editor's weekly countdown. Once a public weekly event exists here, that one replaces it on the site.
+    var dashWeekly = active.some(function (e) { return e.repeats_weekly && e.visibility !== 'private'; });
+    if (weekly && !dashWeekly) {
       var pub = active.some(function (e) { return e.visibility !== 'private'; });
       var row = A.el('div', 'row evt'); row.style.gridTemplateColumns = '1fr';
       var w = A.el('div', 'who'), m = A.el('div', 'meta');
       m.appendChild(A.el('span', 'chip', 'Weekly · public site')); m.appendChild(A.el('span', 'chip ' + (pub ? 'warn' : 'ok'), pub ? 'Hidden while an event is scheduled' : 'Showing now'));
       w.appendChild(m); w.appendChild(A.el('b', null, weekly.title + ' (every week)')); w.appendChild(A.el('small', null, 'Next: ' + A.when(weekly.t) + ' your time'));
       var cd = A.el('span', 'cd'); cd.dataset.until = weekly.t; w.appendChild(cd);
-      w.appendChild(A.el('span', 'note', 'This is the standing countdown from the site editor. To change its day or time, use the site editor (Next operation).'));
-      row.appendChild(w); box.appendChild(row);
+      w.appendChild(A.el('span', 'note', 'This is the standing countdown from the site editor. Tap Edit to move it here, where you can change, postpone or delete it any time.'));
+      row.style.gridTemplateColumns = '1fr auto';
+      var wa = A.el('div', 'acts');
+      wa.appendChild(btn('Edit', 'ghost', function () {
+        var f = $('ev-form'); resetEvForm();
+        f.title.value = weekly.title; f.start.value = localInput(weekly.t); f.description.value = weekly.note || ''; f.weekly.checked = true;
+        f.querySelector('[name=vis][value="public"]').checked = true;
+        $('ev-h').textContent = 'Move the weekly countdown here'; $('ev-save').textContent = 'Save weekly event'; $('ev-cancel').hidden = false;
+        f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }));
+      row.appendChild(w); row.appendChild(wa); box.appendChild(row);
     }
     var pb = $('past'); pb.textContent = ''; $('past-wrap').hidden = !past.length;
     past.forEach(function (e) { pb.appendChild(eventRow(e, true)); });
-    $('ov-ev').textContent = active.length + (weekly ? 1 : 0);
-    $('ov-ev-t').textContent = active.length ? 'Next: ' + active[0].title + ', ' + A.when(Date.parse(active[0].starts_at)) : 'No events scheduled' + (weekly ? ', weekly countdown running' : '');
+    $('ov-ev').textContent = active.length + (weekly && !dashWeekly ? 1 : 0);
+    $('ov-ev-t').textContent = active.length ? 'Next: ' + active[0].title + ', ' + A.when(A.nextStart(active[0])) : 'No events scheduled' + (weekly ? ', weekly countdown running' : '');
     A.tickCountdowns();
   }
   function resetEvForm() {
@@ -447,7 +508,7 @@
     e.preventDefault();
     var f = this, t = new Date(f.start.value);
     if (isNaN(t)) return A.fail(msg, { message: 'Pick a date and time.' });
-    var row = { title: f.title.value.trim(), starts_at: t.toISOString(), game: f.game.value || null, description: f.description.value.trim() || null, visibility: f.querySelector('[name=vis]:checked').value };
+    var row = { title: f.title.value.trim(), starts_at: t.toISOString(), game: f.game.value || null, description: f.description.value.trim() || null, visibility: f.querySelector('[name=vis]:checked').value, repeats_weekly: f.weekly.checked };
     var r = editing ? await sb.from('events').update(row).eq('id', editing) : await sb.from('events').insert(row);
     if (r.error) return A.fail(msg, r.error);
     ok(editing ? 'Event saved.' : 'Event added. Its countdown is live on the site.'); resetEvForm(); loadEvents();
@@ -466,7 +527,7 @@
   };
 
   await loadRoles();
-  await Promise.all([loadPeople(), loadPosts(), loadWeekly().then(loadEvents)]);
+  await Promise.all([allow.members ? loadPeople() : null, allow.briefings ? loadPosts() : null, allow.events ? loadWeekly().then(loadEvents) : null]);
 })();
 </script>
 </body>

@@ -10,10 +10,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css?v=4">
+<link rel="stylesheet" href="../auth/auth.css?v=5">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=9"></script>
+<script src="../auth/auth.js?v=10"></script>
 <style>
 .me{display:grid;grid-template-columns:120px 1fr;gap:24px;align-items:center}
 .me .av{width:120px;height:120px;font-size:2.6rem}
@@ -62,6 +62,12 @@ dialog.crop::backdrop{background:rgba(0,0,0,.75)}
         </div>
       </section>
 
+      <form class="panel stack" id="bio-form" aria-labelledby="bio-h">
+        <h3 id="bio-h">Bio</h3>
+        <label class="f">About you<textarea name="bio" maxlength="1000" placeholder="Your role in the 228th, what you're in charge of, anything members should know about you"></textarea><span class="hint">Shows under your name on the Members roster.</span></label>
+        <button class="btn" type="submit">Save bio</button>
+      </form>
+
       <section class="panel stack" aria-labelledby="email-h">
         <h3 id="email-h">Email</h3>
         <p class="muted" id="email"></p>
@@ -109,6 +115,14 @@ dialog.crop::backdrop{background:rgba(0,0,0,.75)}
   }
   $('email').textContent = me.email || (me.user && me.user.email) || '';
   show();
+
+  $('bio-form').bio.value = me.note || '';
+  $('bio-form').onsubmit = async function (e) {
+    e.preventDefault();
+    var r = await sb.rpc('set_bio', { target: me.id, bio: this.bio.value });
+    if (r.error) return A.fail(msg, r.error);
+    ok('Bio saved.');
+  };
 
   // Where a stored picture lives inside the avatars bucket, from its public URL.
   function pathOf(url) { var m = url && url.match(/\/object\/public\/avatars\/(.+)$/); return m ? decodeURIComponent(m[1]) : null; }

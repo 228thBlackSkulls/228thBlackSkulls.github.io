@@ -22,10 +22,18 @@
     if (!s) return null;
     var r = await A.sb.from('profiles').select('*, roles(*)').eq('id', s.user.id).maybeSingle();
     if (r.error) throw r.error;
-    return r.data ? Object.assign(r.data, { user: s.user }) : { status: 'pending', user: s.user, missing: true };
+    if (!r.data) return { status: 'pending', user: s.user, missing: true, perms: [] };
+    var me = Object.assign(r.data, { user: s.user, perms: [] });
+    // What this person's roles let them do (set per role on the Dashboard). Admin can do everything.
+    if (me.status === 'approved') { var pr = await A.sb.rpc('my_perms'); me.perms = (!pr.error && pr.data) || (me.role === 'admin' ? ['events', 'briefings', 'bios', 'members', 'roles'] : []); }
+    return me;
   };
   A.isApproved = function (p) { return !!p && p.status === 'approved'; };
   A.isAdmin = function (p) { return A.isApproved(p) && p.role === 'admin'; };
+  A.can = function (p, perm) { return A.isApproved(p) && (p.perms || []).indexOf(perm) >= 0; };
+  A.canDash = function (p) { return A.isApproved(p) && (p.perms || []).length > 0; };
+  // The permissions a role can be given, in the order the Dashboard lists them.
+  A.PERMS = [['events', 'Create, edit and delete events and timers'], ['briefings', 'Post and delete briefings'], ['bios', 'Edit anyone\'s bio'], ['members', 'Approve sign-ups and change members\' roles']];
 
   A.signOut = async function () {
     if (A.sb) await A.sb.auth.signOut();
@@ -132,6 +140,13 @@
   // Events: where each one shows, a readable start time, and live countdowns.
   A.VIS = { public: 'Public site', private: 'Members only', both: 'Public + members' };
   A.EVENT_LIVE_MS = 4 * 3600e3; // an event stays up, marked live, for 4 hours after it starts
+  // When an event next starts. A weekly one rolls forward 7 days at a time once it has finished.
+  A.nextStart = function (ev) {
+    var t = Date.parse(ev.starts_at || ev.start), wk = 7 * 864e5, now = Date.now();
+    if (ev.repeats_weekly && t + A.EVENT_LIVE_MS <= now) t += Math.ceil((now - A.EVENT_LIVE_MS - t) / wk) * wk;
+    if (ev.repeats_weekly && t + A.EVENT_LIVE_MS <= now) t += wk;
+    return t;
+  };
   A.when = function (t) {
     var d = new Date(t);
     try { return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }); } catch (e) { return d.toString(); }
@@ -160,7 +175,7 @@
     }
     link('', 'Home');
     if (p) {
-      if (A.isAdmin(p)) link('dashboard/', 'Dashboard', 'dashboard');
+      if (A.canDash(p)) link('dashboard/', 'Dashboard', 'dashboard');
       link('members/', 'Members', 'members');
       link('org/', 'Org', 'org');
       var out = A.el('button', null, 'Log out'); out.type = 'button'; out.onclick = A.signOut; nav.appendChild(out);

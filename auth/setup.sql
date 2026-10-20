@@ -104,6 +104,44 @@ language sql stable security definer set search_path = public as $$
   select all_roles from profiles where id = auth.uid() and status = 'approved';
 $$;
 
+-- Permissions per role, like Discord. Admin always has every one; any other role gets only what's ticked on the Dashboard.
+--   events    = create, edit and delete events and timers
+--   briefings = post and delete briefings
+--   bios      = edit anyone's bio
+--   members   = approve sign-ups and change members' roles (never the Admin role)
+do $$ begin
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'roles' and column_name = 'perms') then
+    alter table public.roles add column perms text[] not null default '{}';
+    -- First time only: High-Com starts with events, briefings and bios.
+    update public.roles set perms = array['events', 'briefings', 'bios'] where name = 'high-com';
+  end if;
+end $$;
+alter table public.roles drop constraint if exists roles_perms_check;
+alter table public.roles add constraint roles_perms_check check (perms <@ array['events', 'briefings', 'bios', 'members']);
+
+create or replace function public.has_perm(p text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select is_admin() or exists (select 1 from roles where name = any(my_roles()) and p = any(perms));
+$$;
+create or replace function public.my_perms() returns text[]
+language sql stable security definer set search_path = public as $$
+  select case when is_admin() then array['events', 'briefings', 'bios', 'members', 'roles']
+    else coalesce((select array_agg(distinct x) from roles r, unnest(r.perms) x where r.name = any(my_roles())), '{}') end;
+$$;
+revoke execute on function public.has_perm(text), public.my_perms() from public, anon;
+grant  execute on function public.has_perm(text), public.my_perms() to authenticated;
+
+-- Bio: the "about me" line shown on the roster. Everyone edits their own on My account; the bios permission edits anyone's.
+create or replace function public.set_bio(target uuid, bio text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if target is distinct from auth.uid() and not has_perm('bios') then raise exception 'You don''t have permission to edit other members'' bios'; end if;
+  if length(bio) > 1000 then raise exception 'Keep the bio under 1000 characters'; end if;
+  update profiles set note = nullif(btrim(bio), '') where id = target;
+end $$;
+revoke execute on function public.set_bio(uuid, text) from public, anon;
+grant  execute on function public.set_bio(uuid, text) to authenticated;
+
 -- Keep role and all_roles in step. Setting role on its own (approving someone) replaces the list with that one role;
 -- changing the list keeps only real roles, falls back to Recruit when empty, and makes role the highest one.
 create or replace function public.sync_roles() returns trigger
@@ -216,8 +254,11 @@ create trigger on_auth_user_created after insert on auth.users
 create or replace function public.set_member(target uuid, new_status text, new_role text)
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if not is_admin() then raise exception 'Admins only'; end if;
-  if target = auth.uid() and (new_status <> 'approved' or new_role <> 'admin') then
+  if not has_perm('members') then raise exception 'You don''t have permission to manage members'; end if;
+  if not is_admin() and (new_role = 'admin' or exists (select 1 from profiles where id = target and 'admin' = any(all_roles))) then
+    raise exception 'Only an Admin can change Admin access';
+  end if;
+  if target = auth.uid() and is_admin() and (new_status <> 'approved' or new_role <> 'admin') then
     raise exception 'You can''t remove your own admin access';
   end if;
   update profiles set
@@ -232,8 +273,11 @@ end $$;
 create or replace function public.set_roles(target uuid, new_roles text[])
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if not is_admin() then raise exception 'Admins only'; end if;
-  if target = auth.uid() and not ('admin' = any(new_roles)) then raise exception 'You can''t remove your own admin access'; end if;
+  if not has_perm('members') then raise exception 'You don''t have permission to manage members'; end if;
+  if not is_admin() and ('admin' = any(new_roles) or exists (select 1 from profiles where id = target and 'admin' = any(all_roles))) then
+    raise exception 'Only an Admin can change Admin access';
+  end if;
+  if target = auth.uid() and is_admin() and not ('admin' = any(new_roles)) then raise exception 'You can''t remove your own admin access'; end if;
   update profiles set all_roles = new_roles where id = target;
 end $$;
 revoke execute on function public.set_roles(uuid, text[]) from public, anon;
@@ -242,10 +286,10 @@ grant  execute on function public.set_roles(uuid, text[]) to authenticated;
 -- Roster for approved members: names, roles and pictures only (no emails).
 drop function if exists public.member_roster();
 create or replace function public.member_roster()
-returns table (display_name text, avatar_url text, role text, role_label text, rank int, approved_at timestamptz, role_labels text[])
+returns table (display_name text, avatar_url text, role text, role_label text, rank int, approved_at timestamptz, role_labels text[], bio text)
 language sql stable security definer set search_path = public as $$
   select p.display_name, p.avatar_url, p.role, r.label, r.rank, p.approved_at,
-    (select array_agg(x.label order by x.rank desc) from roles x where x.name = any(p.all_roles))
+    (select array_agg(x.label order by x.rank desc) from roles x where x.name = any(p.all_roles)), p.note
   from profiles p join roles r on r.name = p.role
   where p.status = 'approved' and my_rank() > 0
   order by r.rank desc, p.display_name;
@@ -279,7 +323,7 @@ grant  update (display_name, note, avatar_url, discord_name, division, current_r
 drop policy if exists profiles_read   on public.profiles;
 drop policy if exists profiles_update on public.profiles;
 drop policy if exists profiles_delete on public.profiles;
-create policy profiles_read   on public.profiles for select to authenticated using (id = auth.uid() or is_admin());
+create policy profiles_read   on public.profiles for select to authenticated using (id = auth.uid() or is_admin() or has_perm('members') or has_perm('bios'));
 create policy profiles_update on public.profiles for update to authenticated using (id = auth.uid() or is_admin()) with check (id = auth.uid() or is_admin());
 create policy profiles_delete on public.profiles for delete to authenticated using (is_admin());
 
@@ -287,8 +331,8 @@ create policy profiles_delete on public.profiles for delete to authenticated usi
 drop policy if exists posts_read  on public.posts;
 drop policy if exists posts_admin on public.posts;
 create policy posts_read  on public.posts for select to authenticated
-  using (my_roles() is not null and (cardinality(visible_to) = 0 or visible_to && my_roles() or is_admin()));
-create policy posts_admin on public.posts for all to authenticated using (is_admin()) with check (is_admin());
+  using (my_roles() is not null and (cardinality(visible_to) = 0 or visible_to && my_roles() or has_perm('briefings')));
+create policy posts_admin on public.posts for all to authenticated using (has_perm('briefings')) with check (has_perm('briefings'));
 
 
 -- Profile pictures must be uploaded through the site (stored in the avatars bucket below).
@@ -323,9 +367,12 @@ create table if not exists public.events (
   game        text,
   starts_at   timestamptz not null,
   visibility  text not null default 'both',
+  repeats_weekly boolean not null default false,
   author      uuid default auth.uid(),
   created_at  timestamptz not null default now()
 );
+-- A weekly event repeats every 7 days from its start; editing its date moves this week and the ones after.
+alter table public.events add column if not exists repeats_weekly boolean not null default false;
 alter table public.events drop constraint if exists events_fields_check;
 alter table public.events add constraint events_fields_check check (
   length(trim(title)) between 1 and 120 and coalesce(length(description), 0) <= 2000
@@ -341,7 +388,7 @@ drop policy if exists events_admin   on public.events;
 -- Anyone (even logged out) sees public and both; approved members also see private; admins manage them all.
 create policy events_public  on public.events for select to anon, authenticated using (visibility in ('public', 'both'));
 create policy events_members on public.events for select to authenticated using (my_roles() is not null);
-create policy events_admin   on public.events for all to authenticated using (is_admin()) with check (is_admin());
+create policy events_admin   on public.events for all to authenticated using (has_perm('events')) with check (has_perm('events'));
 
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)
 -- to make yourself the first admin. Everything after that is done from the dashboard.

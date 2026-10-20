@@ -10,10 +10,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css?v=4">
+<link rel="stylesheet" href="../auth/auth.css?v=5">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=9"></script>
+<script src="../auth/auth.js?v=10"></script>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -148,12 +148,14 @@
     held.slice(1).reverse().forEach(function (r) { chipRow.insertBefore(A.el('span', 'chip', r.label), $('my-role').nextSibling); });
   }
   // Events Command set for members (members only, or both). Each counts down in your own time zone.
-  var evs = await A.sb.from('events').select('*').in('visibility', ['private', 'both']).gt('starts_at', new Date(Date.now() - A.EVENT_LIVE_MS).toISOString()).order('starts_at', { ascending: true });
+  var evs = await A.sb.from('events').select('*').in('visibility', ['private', 'both']).or('starts_at.gt.' + new Date(Date.now() - A.EVENT_LIVE_MS).toISOString() + ',repeats_weekly.is.true');
+  (evs.data || []).sort(function (a, b) { return A.nextStart(a) - A.nextStart(b); });
   if (evs.error) A.fail(msg, evs.error);
   (evs.data || []).forEach(function (ev) {
-    var a = A.el('article', 'panel evt'), m = A.el('div', 'meta'), t = Date.parse(ev.starts_at);
+    var a = A.el('article', 'panel evt'), m = A.el('div', 'meta'), t = A.nextStart(ev);
     m.appendChild(A.el('span', 'chip red', ev.visibility === 'private' ? 'Members only' : 'Event'));
     if (ev.game) m.appendChild(A.el('span', 'chip', ev.game));
+    if (ev.repeats_weekly) m.appendChild(A.el('span', 'chip', 'Every week'));
     a.appendChild(m); a.appendChild(A.el('h3', null, ev.title));
     a.appendChild(A.el('span', 'label', A.when(t) + ' · your time'));
     var cd = A.el('span', 'cd'); cd.dataset.until = t; a.appendChild(cd);
@@ -191,6 +193,7 @@
     r.style.gridTemplateColumns = '44px 1fr';
     w.appendChild(A.el('b', null, p.display_name || 'Unnamed'));
     w.appendChild(A.el('small', null, (p.role_labels && p.role_labels.length ? p.role_labels : [p.role_label]).join(' · ')));
+    if (p.bio) w.appendChild(A.el('span', 'note', p.bio));
     r.appendChild(A.avatar(p)); r.appendChild(w); rb.appendChild(r);
   });
 })();
