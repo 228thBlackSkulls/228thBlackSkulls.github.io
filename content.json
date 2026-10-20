@@ -193,7 +193,8 @@
     },
     {
       "name": "Jetpack",
-      "description": "Certified for jump-pack operations, vertical insertion and aerial maneuvering."
+      "description": "Certified for jump-pack operations, vertical insertion and aerial maneuvering.",
+      "logo": "images/quals/jetpack.webp"
     },
     {
       "name": "Marksman",
