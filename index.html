@@ -997,16 +997,10 @@ He left behind a holotape warning that the op had been a setup, with final order
         <div class="next reveal" id="op-weekly">
           <span class="live">NEXT OPERATION</span>
           <div>
-            <h3 id="op-name">Main operation</h3>
-            <p class="label" id="op-when" style="margin-top:6px">Saturday 1900Z</p>
+            <h3>No event planned</h3>
+            <p class="label" style="margin-top:6px">Next event coming soon</p>
           </div>
-          <div class="clock">
-            <div><strong class="cd-d">0</strong><span class="label">Days</span></div>
-            <div><strong class="cd-h">00</strong><span class="label">Hrs</span></div>
-            <div><strong class="cd-m">00</strong><span class="label">Min</span></div>
-            <div><strong class="cd-s">00</strong><span class="label">Sec</span></div>
-          </div>
-          <p style="color:var(--soft)" id="op-note">Muster in the Discord before step-off. The world link is posted in announcements.</p>
+          <p style="color:var(--soft)">Keep an eye on the Discord announcements. Countdowns show up here as soon as Command schedules the next one.</p>
         </div>
         </div>
         <div class="sched" id="c-schedule">
@@ -1115,7 +1109,6 @@ He left behind a holotape warning that the op had been a setup, with final order
     q('.cd-m').textContent=pad(Math.floor(s%3600/60)); q('.cd-s').textContent=pad(s%60);
   }
   function tick(){
-    var w=document.getElementById('op-weekly'); if(w){var ms=target-new Date(); if(ms<0){target=nextOp();ms=target-new Date();} fill(w,ms);}
     [].forEach.call(document.querySelectorAll('#c-ops .next[data-t]'),function(card){
       var ms=+card.dataset.t-Date.now(), live=card.querySelector('.live');
       if(ms<=0){ if(!card.classList.contains('is-live')){card.classList.add('is-live');live.textContent='LIVE NOW';} ms=0; }
@@ -1240,7 +1233,8 @@ He left behind a holotape warning that the op had been a setup, with final order
     var n=c.next_op||{};
     if(n.day&&DAYS.indexOf(String(n.day).toLowerCase())>=0){op.day=DAYS.indexOf(String(n.day).toLowerCase());op.label=n.day.charAt(0).toUpperCase()+n.day.slice(1).toLowerCase();}
     var tm=/^(\d{1,2}):?(\d{2})/.exec(n.time_utc||''); if(tm){op.h=+tm[1];op.m=+tm[2];}
-    text('op-name',n.name); text('op-note',n.note); setWhen(); tick();
+    // With nothing scheduled the page says "No event planned" (the old fixed weekly countdown is off; weekly ops are set on the Dashboard).
+    tick();
     // Scheduled ops come from the Dashboard's events (public or both) and the op planner's own repo.
     // If neither has anything upcoming, the weekly countdown stays.
     if(!applyContent.ops){applyContent.ops=1;
@@ -1248,8 +1242,8 @@ He left behind a holotape warning that the op had been a setup, with final order
       fetch('https://raw.githubusercontent.com/228thBlackSkulls/228th-ops/main/ops.json?v='+Math.floor(Date.now()/300000))
         .then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&Array.isArray(j.ops)){got.planner=j.ops;show();}}).catch(function(){});
       var C=window.SB_CONFIG||{};
-      if(C.url&&C.anonKey)fetch(C.url.replace(/\/$/,'')+'/rest/v1/events?select=title,description,game,starts_at,repeats_weekly&visibility=in.(public,both)&order=starts_at.asc',{headers:{apikey:C.anonKey,Authorization:'Bearer '+C.anonKey}})
-        .then(function(r){return r.ok?r.json():null;}).then(function(a){if(Array.isArray(a)){got.events=a.map(function(e){var t=Date.parse(e.starts_at),wk=6048e5;if(e.repeats_weekly&&t+4*3600e3<=Date.now())t+=Math.ceil((Date.now()-4*3600e3-t)/wk)*wk;return {title:e.title,description:e.description,game:e.game,start:new Date(t).toISOString()};});show();}}).catch(function(){});}
+      if(C.url&&C.anonKey)fetch(C.url.replace(/\/$/,'')+'/rest/v1/events?select=title,description,game,starts_at,repeats_weekly,cancelled&visibility=in.(public,both)&cancelled=is.false&order=starts_at.asc',{headers:{apikey:C.anonKey,Authorization:'Bearer '+C.anonKey}})
+        .then(function(r){return r.ok?r.json():null;}).then(function(a){if(Array.isArray(a)){got.events=a.filter(function(e){return !e.cancelled;}).map(function(e){var t=Date.parse(e.starts_at),wk=6048e5;if(e.repeats_weekly&&t+4*3600e3<=Date.now())t+=Math.ceil((Date.now()-4*3600e3-t)/wk)*wk;return {title:e.title,description:e.description,game:e.game,start:new Date(t).toISOString()};});show();}}).catch(function(){});}
     list('c-schedule',c.schedule,function(x){var d=el('div');d.appendChild(el('span','day',x.day));var t=el('span',null,x.title);t.appendChild(el('small',null,x.details));d.appendChild(t);d.appendChild(el('span','time',x.time));return d;});
     list('c-steps',c.join_steps,function(x,i){var li=el('li','reveal');li.appendChild(el('span','n',pad(i+1)));li.appendChild(el('h3',null,x.title));li.appendChild(el('p',null,x.text));return li;});
     list('c-reqs',c.requirements,function(x){return el('span',null,x);});

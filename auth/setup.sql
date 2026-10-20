@@ -373,6 +373,8 @@ create table if not exists public.events (
 );
 -- A weekly event repeats every 7 days from its start; editing its date moves this week and the ones after.
 alter table public.events add column if not exists repeats_weekly boolean not null default false;
+-- A cancelled event stays on the Dashboard (so it can be restored) but disappears from the site.
+alter table public.events add column if not exists cancelled boolean not null default false;
 alter table public.events drop constraint if exists events_fields_check;
 alter table public.events add constraint events_fields_check check (
   length(trim(title)) between 1 and 120 and coalesce(length(description), 0) <= 2000

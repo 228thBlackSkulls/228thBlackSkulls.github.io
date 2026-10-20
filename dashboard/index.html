@@ -107,7 +107,7 @@
         </div>
       </form>
       <h3>Active timers</h3>
-      <p class="muted" style="font-size:.92rem">Every countdown running on the site right now, soonest first. Events stay up, marked live, for 4 hours after they start.</p>
+      <p class="muted" style="font-size:.92rem">Every countdown running on the site right now, soonest first. Events stay up, marked live, for 4 hours after they start. Cancel takes one off the site without deleting it, and Restore brings it back.</p>
       <div class="rows" id="events"></div>
       <details id="past-wrap" hidden><summary class="label" style="cursor:pointer;padding:8px 0">Past events</summary><div class="rows" id="past" style="margin-top:10px"></div></details>
     </section>
@@ -449,8 +449,9 @@
     m.appendChild(A.el('span', 'chip' + (ev.visibility === 'private' ? '' : ' red'), A.VIS[ev.visibility] || ev.visibility));
     if (ev.game) m.appendChild(A.el('span', 'chip', ev.game));
     if (ev.repeats_weekly) m.appendChild(A.el('span', 'chip', 'Every week'));
+    if (ev.cancelled) { m.appendChild(A.el('span', 'chip warn', 'Cancelled · hidden from the site')); row.style.opacity = '.7'; }
     w.appendChild(m); w.appendChild(A.el('b', null, ev.title)); w.appendChild(A.el('small', null, A.when(t) + ' your time'));
-    if (!past) { var cd = A.el('span', 'cd'); cd.dataset.until = t; w.appendChild(cd); }
+    if (!past && !ev.cancelled) { var cd = A.el('span', 'cd'); cd.dataset.until = t; w.appendChild(cd); }
     if (ev.description) w.appendChild(A.el('span', 'note', ev.description.length > 240 ? ev.description.slice(0, 240) + '…' : ev.description));
     var acts = A.el('div', 'acts');
     if (!past) acts.appendChild(btn('Edit', 'ghost', function () {
@@ -459,6 +460,11 @@
       f.querySelector('[name=vis][value="' + ev.visibility + '"]').checked = true;
       $('ev-h').textContent = 'Edit event'; $('ev-save').textContent = 'Save changes'; $('ev-cancel').hidden = false;
       f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+    if (!past) acts.appendChild(btn(ev.cancelled ? 'Restore' : 'Cancel', 'ghost', async function () {
+      if (!ev.cancelled && !confirm('Cancel "' + ev.title + '"? It comes off the site until you restore it.')) return;
+      var u = await sb.from('events').update({ cancelled: !ev.cancelled }).eq('id', ev.id);
+      if (u.error) return A.fail(msg, u.error); ok(ev.cancelled ? 'Event restored. Its countdown is back on the site.' : 'Event cancelled. It\'s hidden from the site.'); loadEvents();
     }));
     acts.appendChild(btn('Delete', 'ghost', async function () {
       if (!confirm('Delete "' + ev.title + '"? Its countdown comes off the site.')) return;
@@ -474,21 +480,19 @@
     active.sort(function (a, b) { return A.nextStart(a) - A.nextStart(b); });
     var past = r.data.filter(function (e) { return active.indexOf(e) < 0; }).reverse();
     var box = $('events'); box.textContent = '';
-    if (!active.length) box.appendChild(A.el('p', 'empty', 'No events scheduled.'));
+    if (!active.length) box.appendChild(A.el('p', 'empty', 'No events scheduled. The public site shows "No event planned, next event coming soon."'));
     active.forEach(function (e) { box.appendChild(eventRow(e)); });
     // The site editor's weekly countdown. Once a public weekly event exists here, that one replaces it on the site.
-    var dashWeekly = active.some(function (e) { return e.repeats_weekly && e.visibility !== 'private'; });
+    var dashWeekly = r.data.some(function (e) { return e.repeats_weekly; });
     if (weekly && !dashWeekly) {
-      var pub = active.some(function (e) { return e.visibility !== 'private'; });
       var row = A.el('div', 'row evt'); row.style.gridTemplateColumns = '1fr';
       var w = A.el('div', 'who'), m = A.el('div', 'meta');
-      m.appendChild(A.el('span', 'chip', 'Weekly · public site')); m.appendChild(A.el('span', 'chip ' + (pub ? 'warn' : 'ok'), pub ? 'Hidden while an event is scheduled' : 'Showing now'));
-      w.appendChild(m); w.appendChild(A.el('b', null, weekly.title + ' (every week)')); w.appendChild(A.el('small', null, 'Next: ' + A.when(weekly.t) + ' your time'));
-      var cd = A.el('span', 'cd'); cd.dataset.until = weekly.t; w.appendChild(cd);
-      w.appendChild(A.el('span', 'note', 'This is the standing countdown from the site editor. Tap Edit to move it here, where you can change, postpone or delete it any time.'));
+      m.appendChild(A.el('span', 'chip warn', 'Off'));
+      w.appendChild(m); w.appendChild(A.el('b', null, weekly.title + ' (every week)')); w.appendChild(A.el('small', null, 'Was set in the site editor for ' + A.when(weekly.t) + ' your time'));
+      w.appendChild(A.el('span', 'note', 'The old fixed weekly countdown is off. With nothing scheduled, the public site says "No event planned, next event coming soon." Tap Turn on to add it back here as a weekly event you can edit, cancel or delete.'));
       row.style.gridTemplateColumns = '1fr auto';
       var wa = A.el('div', 'acts');
-      wa.appendChild(btn('Edit', 'ghost', function () {
+      wa.appendChild(btn('Turn on', 'ghost', function () {
         var f = $('ev-form'); resetEvForm();
         f.title.value = weekly.title; f.start.value = localInput(weekly.t); f.description.value = weekly.note || ''; f.weekly.checked = true;
         f.querySelector('[name=vis][value="public"]').checked = true;
@@ -499,8 +503,9 @@
     }
     var pb = $('past'); pb.textContent = ''; $('past-wrap').hidden = !past.length;
     past.forEach(function (e) { pb.appendChild(eventRow(e, true)); });
-    $('ov-ev').textContent = active.length + (weekly && !dashWeekly ? 1 : 0);
-    $('ov-ev-t').textContent = active.length ? 'Next: ' + active[0].title + ', ' + A.when(A.nextStart(active[0])) : 'No events scheduled' + (weekly ? ', weekly countdown running' : '');
+    var live = active.filter(function (e) { return !e.cancelled; });
+    $('ov-ev').textContent = live.length;
+    $('ov-ev-t').textContent = live.length ? 'Next: ' + live[0].title + ', ' + A.when(A.nextStart(live[0])) : 'No events scheduled';
     A.tickCountdowns();
   }
   function resetEvForm() {

@@ -149,7 +149,8 @@
     held.slice(1).reverse().forEach(function (r) { chipRow.insertBefore(A.el('span', 'chip', r.label), $('my-role').nextSibling); });
   }
   // Events Command set for members (members only, or both). Each counts down in your own time zone.
-  var evs = await A.sb.from('events').select('*').in('visibility', ['private', 'both']).or('starts_at.gt.' + new Date(Date.now() - A.EVENT_LIVE_MS).toISOString() + ',repeats_weekly.is.true');
+  var evs = await A.sb.from('events').select('*').in('visibility', ['private', 'both']).eq('cancelled', false).or('starts_at.gt.' + new Date(Date.now() - A.EVENT_LIVE_MS).toISOString() + ',repeats_weekly.is.true');
+  if (evs.data) evs.data = evs.data.filter(function (e) { return !e.cancelled; });
   (evs.data || []).sort(function (a, b) { return A.nextStart(a) - A.nextStart(b); });
   if (evs.error) A.fail(msg, evs.error);
   (evs.data || []).forEach(function (ev) {
