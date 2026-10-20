@@ -178,7 +178,8 @@
     },
     {
       "name": "RTO [Radio Telephone Operator]",
-      "description": "The squad's voice on comms. Calls in support and keeps command connected."
+      "description": "The squad's voice on comms. Calls in support and keeps command connected.",
+      "logo": "images/quals/rto.webp"
     },
     {
       "name": "Light Weaponry",
