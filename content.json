@@ -153,7 +153,8 @@
   "qualifications": [
     {
       "name": "Anti-Tank",
-      "description": "Trained to take down armor and vehicles with launchers and heavy ordnance."
+      "description": "Trained to take down armor and vehicles with launchers and heavy ordnance.",
+      "logo": "images/quals/anti-tank.webp"
     },
     {
       "name": "Breacher",

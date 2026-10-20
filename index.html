@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610201708";
+(function(){var v="202610201819";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -1268,7 +1268,7 @@ He left behind a holotape warning that the op had been a setup, with final order
     list('c-founders',c.founders,function(x){var li=el('li',null,x.name);li.appendChild(el('span',null,x.role));return li;});
     list('c-divisions',c.divisions,function(x){var a=el('article','div reveal'+(x.logo?' has-logo':''));a.appendChild(el('span','label','MOS'));a.appendChild(el('h3',null,x.name));if(x.callsign)a.appendChild(el('span','mos-call',x.callsign));if(x.logo){var im=el('img','mos-logo');im.src=x.logo;im.alt=x.name+' logo';im.loading='lazy';a.appendChild(im);}a.appendChild(el('p',null,x.description));return a;});
     text('quals-intro',c.qualifications_intro);
-    list('c-quals',c.qualifications,function(x){var a=el('article','div reveal');a.appendChild(el('span','label','Qualification'));a.appendChild(el('h3',null,x.name));a.appendChild(el('p',null,x.description));return a;});
+    list('c-quals',c.qualifications,function(x){var a=el('article','div reveal'+(x.logo?' has-logo':''));a.appendChild(el('span','label','Qualification'));a.appendChild(el('h3',null,x.name));if(x.logo){var im=el('img','mos-logo');im.src=x.logo;im.alt=x.name+' badge';im.loading='lazy';a.appendChild(im);}a.appendChild(el('p',null,x.description));return a;});
     text('medals-intro',c.medals_intro);
     (function(){var box=document.getElementById('c-medals'),M=c.medals;if(!box||!Array.isArray(M)||!M.length)return;var tpl=box.querySelector('.mdl'),gs=[],by={};
       M.forEach(function(m){var g=(m.group||'').trim()||'Medals';if(!by[g]){by[g]=[];gs.push(g);}by[g].push(m);});
