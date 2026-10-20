@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="../auth/auth.css?v=5">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=10"></script>
+<script src="../auth/auth.js?v=11"></script>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -137,10 +137,11 @@
   // Approved.
   show('in');
   $('hello').textContent = 'Welcome, ' + (me.display_name || 'trooper');
-  $('my-role').textContent = (me.roles && me.roles.label) || me.role;
+  await A.loadPrefixes();
+  $('my-role').textContent = A.rankName((me.roles && me.roles.label) || me.role);
 
   var rl = await A.sb.from('roles').select('name, label').order('rank', { ascending: false }), label = {};
-  (rl.data || []).forEach(function (r) { label[r.name] = r.label; });
+  (rl.data || []).forEach(function (r) { r.label = A.rankName(r.label); label[r.name] = r.label; });
   // Show every role this member holds, highest first.
   var held = (rl.data || []).filter(function (r) { return (me.all_roles || [me.role]).indexOf(r.name) >= 0; });
   if (held.length > 1) {
@@ -192,7 +193,7 @@
     var r = A.el('div', 'row'), w = A.el('div', 'who');
     r.style.gridTemplateColumns = '44px 1fr';
     w.appendChild(A.el('b', null, p.display_name || 'Unnamed'));
-    w.appendChild(A.el('small', null, (p.role_labels && p.role_labels.length ? p.role_labels : [p.role_label]).join(' · ')));
+    w.appendChild(A.el('small', null, (p.role_labels && p.role_labels.length ? p.role_labels : [p.role_label]).map(A.rankName).join(' · ')));
     if (p.bio) w.appendChild(A.el('span', 'note', p.bio));
     r.appendChild(A.avatar(p)); r.appendChild(w); rb.appendChild(r);
   });

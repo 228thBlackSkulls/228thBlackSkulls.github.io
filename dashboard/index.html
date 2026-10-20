@@ -21,7 +21,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=10"></script>
+<script src="../auth/auth.js?v=11"></script>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -245,6 +245,9 @@
     var r = await sb.from('roles').select('*').order('rank', { ascending: false });
     if (r.error) return A.fail(msg, r.error);
     roles = r.data;
+    // Show each role with its rank letters; raw keeps the stored name for renaming.
+    await A.loadPrefixes();
+    roles.forEach(function (x) { x.raw = x.label; x.label = A.rankName(x.label); });
     $('ov-roles').textContent = roles.length;
     var box = $('roles'); box.textContent = '';
     roles.forEach(function (role, i) {
@@ -253,7 +256,7 @@
       if (role.name !== 'admin') { grip.setAttribute('aria-label', 'Drag to reorder ' + role.label); dragHandle(grip, row); } else grip.disabled = true;
       row.appendChild(grip);
       var w = A.el('div', 'who');
-      var name = A.el('input'); name.value = role.label; name.maxLength = 40; name.setAttribute('aria-label', 'Role name');
+      var name = A.el('input'); name.value = role.raw; name.maxLength = 40; name.setAttribute('aria-label', 'Role name');
       w.appendChild(name);
       if (role.name === 'admin') w.appendChild(A.el('small', null, 'Can do everything'));
       else {
@@ -272,7 +275,7 @@
       }
       var acts = A.el('div', 'acts');
       acts.appendChild(btn('Save', 'ghost', async function () {
-        var u = await sb.from('roles').update({ label: name.value.trim() || role.label }).eq('name', role.name);
+        var u = await sb.from('roles').update({ label: name.value.trim() || role.raw }).eq('name', role.name);
         if (u.error) return A.fail(msg, u.error);
         ok('Role saved.'); await loadRoles(); await loadPeople();
       }));

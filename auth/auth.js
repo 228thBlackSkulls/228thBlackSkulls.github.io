@@ -62,6 +62,12 @@
     }).catch(function () {});
     return A._prefixes;
   };
+  // A role name with its rank designation in front, like "CC – Senior Commander" (as on the public rank list).
+  // Call after A.loadPrefixes(); roles that aren't on the rank list (Admin, High-Com) stay as they are.
+  A.rankName = function (label) {
+    var r = (A.ranks || []).find(function (x) { return x.abbr && String(x.name).trim().toLowerCase() === String(label || '').trim().toLowerCase(); });
+    return r ? r.abbr.trim() + ' – ' + label : label;
+  };
   // Fills a <select> with every rank on the rank list, grouped, keeping `current` selected.
   A.fillRanks = function (sel, current) {
     return A.loadPrefixes().then(function () {
@@ -70,7 +76,7 @@
       ranks.forEach(function (r) { var g = r.group || 'Ranks'; if (!groups[g]) { groups[g] = []; order.push(g); } groups[g].push(r); });
       order.forEach(function (g) {
         var og = document.createElement('optgroup'); og.label = g;
-        groups[g].forEach(function (r) { var o = document.createElement('option'); o.value = o.textContent = (r.abbr ? r.abbr + ' ' : '') + r.name; og.appendChild(o); });
+        groups[g].forEach(function (r) { var o = document.createElement('option'); o.value = o.textContent = (r.abbr ? r.abbr + ' – ' : '') + r.name; og.appendChild(o); });
         sel.appendChild(og);
       });
       if (current) {
