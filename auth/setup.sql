@@ -409,6 +409,8 @@ do $$ begin
 end $$;
 -- Which division's calendar it goes on: Arma 3, VRChat, or Both (shows on each).
 alter table public.schedule add column if not exists division text not null default 'Both';
+-- All day: no set time (like a day off); shows "All day" instead of a time.
+alter table public.schedule add column if not exists all_day boolean not null default false;
 alter table public.schedule drop constraint if exists schedule_fields_check;
 alter table public.schedule add constraint schedule_fields_check check (
   length(trim(title)) between 1 and 80 and coalesce(length(details), 0) <= 300 and day between 0 and 6

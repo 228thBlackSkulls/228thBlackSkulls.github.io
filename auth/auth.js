@@ -157,6 +157,7 @@
   A.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   A.slotDay = function (s) { return s.starts_ref ? new Date(s.starts_ref).getDay() : s.day; };
   A.slotTime = function (s) {
+    if (s.all_day) return 'All day';
     if (!s.starts_ref) return 'TBD';
     try { return new Date(s.starts_ref).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }); } catch (e) { return ''; }
   };
