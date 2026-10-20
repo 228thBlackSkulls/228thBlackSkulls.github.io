@@ -158,7 +158,8 @@
     },
     {
       "name": "Breacher",
-      "description": "First through the door. Specializes in forced entry and close-quarters assaults."
+      "description": "First through the door. Specializes in forced entry and close-quarters assaults.",
+      "logo": "images/quals/breacher.webp"
     },
     {
       "name": "Combat Medic",
