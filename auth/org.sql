@@ -685,7 +685,7 @@ begin
   insert into org_positions (unit_id, title, min_rank, sort) values (bn, 'Battalion Commander', 'battalion-commander', 0), (bn, 'Battalion Sergeant Major', 'sergeant-major', 1);
   -- Starting layout: two big companies, one platoon per conventional MOS. Rearrange freely.
   co_plts := array[
-    array['Skull|Conventional|images/mos/conventional.webp', 'Death Angel|Airborne|images/mos/airborne.webp', 'Drowned|Scuba|images/mos/scuba-2.webp', 'Marine|Marine|'],
+    array['Skull|Conventional|images/mos/conventional.webp', 'Death Angel|Airborne|images/mos/airborne.webp', 'Drowned|Scuba|images/mos/scuba-2.webp', 'Marine|Marine|images/mos/marine.webp'],
     array['Dreadnaught|Armored|images/mos/armored-2.webp', 'Hellrider|BARC|images/mos/barc-3.webp', 'Banshee|Pilot|images/mos/pilot.webp', 'Shatterfield|Combat Engineer|images/mos/engineer.webp']];
   for i in 1..2 loop
     insert into org_units (parent_id, name, kind, sort) values (bn, case i when 1 then '1st Company' else '2nd Company' end, 'company', i) returning id into co;

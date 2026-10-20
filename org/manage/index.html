@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610201351";
+(function(){var v="202610201708";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -157,7 +157,7 @@
   var BADGES = ['', 'images/corps-emblem.webp', 'images/hicom-emblem.webp', 'images/battalion-emblem.webp', 'images/socom-emblem.webp', 'images/logo-pad.webp', 'images/mos/conventional.webp', 'images/mos/arc-2.webp', 'images/mos/arc.webp', 'images/mos/arf.webp',
     'images/mos/airborne.webp', 'images/mos/armored-2.webp', 'images/mos/armored.webp', 'images/mos/barc-3.webp', 'images/mos/barc-2.webp',
     'images/mos/commando.webp', 'images/mos/engineer.webp', 'images/mos/medic.webp', 'images/mos/pilot.webp', 'images/mos/scuba-2.webp',
-    'images/mos/scuba.webp', 'images/mos/spec-ops-2.webp', 'images/mos/spec-ops.webp', 'images/mos/echelon.webp'];
+    'images/mos/scuba.webp', 'images/mos/marine.webp', 'images/mos/spec-ops-2.webp', 'images/mos/spec-ops.webp', 'images/mos/echelon.webp'];
 
   if (!A.sb) { A.header(null, 'org'); $('no-text').textContent = 'Member logins are being set up.'; $('no').hidden = false; return; }
   try { me = await A.me(); } catch (e) { A.header(null, 'org'); $('no').hidden = false; return A.fail($('no-text'), e); }
@@ -351,12 +351,21 @@
     })(d.roots, 0);
     sel.value = current == null ? '' : String(current);
   }
+  // Friendly names for the badge picker, like "Marine" or "ARC (version 2)", instead of file names.
+  function badgeName(x) {
+    var n = x.replace(/^.*\//, '').replace(/\.\w+$/, ''), alt = /-(\d)$/.exec(n);
+    n = n.replace(/-\d$/, '').replace(/-emblem$/, ' emblem').replace(/-/g, ' ');
+    var known = { corps: '228th Corps', hicom: 'High Command', battalion: '228th Battalion', socom: 'SOCOM', arc: 'ARC', arf: 'ARF', barc: 'BARC', 'logo pad': '228th cog logo' };
+    n = n.split(' emblem')[0]; var label = known[n] || n.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    if (/-emblem/.test(x)) label += ' emblem';
+    return label + (alt ? ' (version ' + alt[1] + ')' : '');
+  }
   function openUnit(u, parentId) {
     var f = $('unit-form'); editing = u ? u.id : null;
     $('unit-h').textContent = u ? 'Edit ' + u.name : 'New unit';
     var k = $('u-kind'); k.textContent = ''; O.KINDS.forEach(function (x) { option(k, x, O.KIND_LABEL[x]); });
     var b = $('u-badge'); b.textContent = '';
-    BADGES.concat(u && u.badge && BADGES.indexOf(u.badge) < 0 ? [u.badge] : []).forEach(function (x) { option(b, x, x ? x.replace(/^images\/(mos\/)?/, '') : 'No badge'); });
+    BADGES.concat(u && u.badge && BADGES.indexOf(u.badge) < 0 ? [u.badge] : []).forEach(function (x) { option(b, x, x ? badgeName(x) : 'No badge'); });
     unitOptions($('u-parent'), u ? u.parent_id : parentId, u ? [u.id].concat(O.descendants(d, u.id).map(function (x) { return x.id; })) : [], d.access.admin);
     f.name.value = u ? u.name : ''; k.value = u ? u.kind : (parentId && d.unit[parentId] ? childKind(d.unit[parentId].kind) : 'unit');
     f.callsign.value = u ? u.callsign || '' : ''; f.tier.value = u ? u.tier || '' : '';

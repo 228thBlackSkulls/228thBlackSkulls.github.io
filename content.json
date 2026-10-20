@@ -115,7 +115,8 @@
     },
     {
       "name": "Marine",
-      "description": "Assault troopers for boarding actions, ship-to-shore landings and close-quarters fights."
+      "description": "Assault troopers for boarding actions, ship-to-shore landings and close-quarters fights.",
+      "logo": "images/mos/marine.webp"
     },
     {
       "name": "Combat Medic",
