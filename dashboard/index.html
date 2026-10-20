@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css?v=5">
+<link rel="stylesheet" href="../auth/auth.css?v=6">
 <style>
 .grip{cursor:grab;touch-action:none;user-select:none;color:var(--muted);font-size:1.3rem;line-height:1;padding:6px 4px;background:none;border:0}
 .grip:active{cursor:grabbing}
@@ -21,7 +21,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=12"></script>
+<script src="../auth/auth.js?v=13"></script>
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -51,6 +51,7 @@
       <button type="button" role="tab" aria-selected="false" data-tab="members">Members</button>
       <button type="button" role="tab" aria-selected="false" data-tab="roles">Roles</button>
       <button type="button" role="tab" aria-selected="false" data-tab="events">Events</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="calendar">Calendar</button>
       <button type="button" role="tab" aria-selected="false" data-tab="briefings">Briefings</button>
     </div>
 
@@ -67,6 +68,7 @@
         <p class="label">Events &amp; posts</p>
         <div class="cards">
           <button type="button" class="ocard" data-go="events"><span class="label">Active timers</span><strong id="ov-ev">0</strong><small id="ov-ev-t">No events scheduled</small></button>
+          <button type="button" class="ocard" data-go="calendar"><span class="label">Weekly calendar</span><strong id="ov-cal">0</strong><small>standing events, Sunday to Saturday</small></button>
           <button type="button" class="ocard" data-go="briefings"><span class="label">Briefings</span><strong id="ov-posts">0</strong><small id="ov-posts-t">No briefings yet</small></button>
         </div>
       </div>
@@ -112,6 +114,11 @@
       <details id="past-wrap" hidden><summary class="label" style="cursor:pointer;padding:8px 0">Past events</summary><div class="rows" id="past" style="margin-top:10px"></div></details>
     </section>
 
+    <section data-pane="calendar" class="stack" hidden>
+      <p class="muted" style="font-size:.92rem">The standing weekly schedule on the main site's Operations section. Add, edit or remove what happens each day. Leave the time empty to show TBD. Everyone sees the times in their own time zone.</p>
+      <div class="stack" id="cal"></div>
+    </section>
+
     <section data-pane="briefings" class="stack" hidden>
       <form class="panel stack" id="post-form">
         <h3>New briefing</h3>
@@ -152,7 +159,7 @@
   $('dash').hidden = false;
   // Each tab and Overview card shows only if this person's roles allow it (Admin sees everything).
   var can = function (p) { return A.can(me, p); };
-  var allow = { requests: can('members'), members: can('members') || can('bios'), roles: can('roles'), events: can('events'), briefings: can('briefings') };
+  var allow = { requests: can('members'), members: can('members') || can('bios'), roles: can('roles'), events: can('events'), calendar: can('events'), briefings: can('briefings') };
   Object.keys(allow).forEach(function (k) {
     document.querySelectorAll('[data-tab="' + k + '"],[data-go="' + k + '"]').forEach(function (n) { n.hidden = !allow[k]; });
   });
@@ -522,6 +529,62 @@
     ok(editing ? 'Event saved.' : 'Event added. Its countdown is live on the site.'); resetEvForm(); loadEvents();
   };
 
+  // Weekly calendar: Sunday to Saturday, each day with its standing events.
+  var slots = [];
+  async function loadCalendar() {
+    var r = await sb.from('schedule').select('*').order('id');
+    if (r.error) return A.fail(msg, r.error);
+    slots = r.data; $('ov-cal').textContent = slots.length; renderCalendar();
+  }
+  function slotForm(s, day) {
+    var f = A.el('form', 'panel stack slot-form'); f.style.gap = '12px';
+    f.innerHTML = '<label class="f">What<input name="title" maxlength="80" required placeholder="e.g. Training"></label>' +
+      '<div style="display:flex;gap:12px;flex-wrap:wrap"><label class="f" style="flex:1 1 140px">Day<select name="day"></select></label>' +
+      '<label class="f" style="flex:1 1 140px">Time (empty = TBD)<input name="time" type="time"></label></div>' +
+      '<label class="f">Details (optional)<input name="details" maxlength="300"></label>';
+    A.DAYS.forEach(function (d, i) { var o = A.el('option', null, d); o.value = i; f.day.appendChild(o); });
+    f.day.value = s ? A.slotDay(s) : day;
+    if (s) {
+      f.title.value = s.title; f.details.value = s.details || '';
+      if (s.starts_ref) { var t = new Date(s.starts_ref); f.time.value = String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); }
+    }
+    var bar = A.el('div', 'acts'), save = A.el('button', 'btn small', s ? 'Save' : 'Add'); save.type = 'submit';
+    bar.appendChild(save); bar.appendChild(btn('Cancel', 'ghost', renderCalendar)); f.appendChild(bar);
+    f.onsubmit = async function (e) {
+      e.preventDefault();
+      var d = +f.day.value, row = { title: f.title.value.trim(), details: f.details.value.trim() || null, day: d, starts_ref: f.time.value ? A.slotRef(d, f.time.value) : null };
+      var r = s ? await sb.from('schedule').update(row).eq('id', s.id) : await sb.from('schedule').insert(row);
+      if (r.error) return A.fail(msg, r.error);
+      ok(s ? 'Calendar saved.' : 'Added to ' + A.DAYS[d] + '.'); loadCalendar();
+    };
+    return f;
+  }
+  function renderCalendar() {
+    var box = $('cal'); box.textContent = '';
+    A.DAYS.forEach(function (name, d) {
+      var day = A.el('div', 'cal-day'), head = A.el('div', 'cal-head'), list = A.el('div', 'rows');
+      head.appendChild(A.el('h3', null, name));
+      head.appendChild(btn('+ Add', 'ghost', function () { if (!day.querySelector('.slot-form')) day.appendChild(slotForm(null, d)); }));
+      day.appendChild(head);
+      var mine = slots.filter(function (s) { return A.slotDay(s) === d; }).sort(function (a, b) { return (a.starts_ref ? new Date(a.starts_ref).getHours() * 60 + new Date(a.starts_ref).getMinutes() : 9999) - (b.starts_ref ? new Date(b.starts_ref).getHours() * 60 + new Date(b.starts_ref).getMinutes() : 9999); });
+      if (!mine.length) list.appendChild(A.el('p', 'muted cal-none', 'Nothing set'));
+      mine.forEach(function (s) {
+        var row = A.el('div', 'row'); row.style.gridTemplateColumns = '1fr auto';
+        var w = A.el('div', 'who'); w.appendChild(A.el('b', null, s.title)); w.appendChild(A.el('small', null, A.slotTime(s)));
+        if (s.details) w.appendChild(A.el('span', 'note', s.details));
+        var acts = A.el('div', 'acts');
+        acts.appendChild(btn('Edit', 'ghost', function () { row.replaceWith(slotForm(s, d)); }));
+        acts.appendChild(btn('Remove', 'ghost', async function () {
+          if (!confirm('Remove "' + s.title + '" from ' + name + '?')) return;
+          var r = await sb.from('schedule').delete().eq('id', s.id);
+          if (r.error) return A.fail(msg, r.error); ok('Removed.'); loadCalendar();
+        }));
+        row.appendChild(w); row.appendChild(acts); list.appendChild(row);
+      });
+      day.appendChild(list); box.appendChild(day);
+    });
+  }
+
   $('role-form').onsubmit = async function (e) {
     e.preventDefault();
     var f = this, label = f.label.value.trim(), name = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -535,7 +598,7 @@
   };
 
   await loadRoles();
-  await Promise.all([allow.members ? loadPeople() : null, allow.briefings ? loadPosts() : null, allow.events ? loadWeekly().then(loadEvents) : null]);
+  await Promise.all([allow.members ? loadPeople() : null, allow.briefings ? loadPosts() : null, allow.events ? loadWeekly().then(loadEvents) : null, allow.calendar ? loadCalendar() : null]);
 })();
 </script>
 </body>

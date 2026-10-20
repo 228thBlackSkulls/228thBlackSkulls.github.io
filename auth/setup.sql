@@ -392,6 +392,38 @@ create policy events_public  on public.events for select to anon, authenticated 
 create policy events_members on public.events for select to authenticated using (my_roles() is not null);
 create policy events_admin   on public.events for all to authenticated using (has_perm('events')) with check (has_perm('events'));
 
+-- Weekly calendar: the standing Sunday-to-Saturday schedule on the main site, set from the Dashboard's Calendar tab.
+-- starts_ref is any one occurrence (it fixes the weekday and time, shown in each visitor's own time zone);
+-- with no time set (TBD), "day" (0 = Sunday) says which day it goes under.
+do $$ begin
+  if not exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'schedule') then
+    create table public.schedule (
+      id         bigint generated always as identity primary key,
+      title      text not null,
+      details    text,
+      day        int not null default 0,
+      starts_ref timestamptz,
+      created_at timestamptz not null default now()
+    );
+    -- First time only: start from the schedule that was on the site.
+    insert into public.schedule (title, details, day, starts_ref) values
+      ('Training', 'Division training and new member orientation', 3, null),
+      ('Roleplay night', 'Lore events and social hangouts', 5, null),
+      ('Main operation', 'Full Corps deployment', 6, '2026-10-24 19:00+00');
+  end if;
+end $$;
+alter table public.schedule drop constraint if exists schedule_fields_check;
+alter table public.schedule add constraint schedule_fields_check check (
+  length(trim(title)) between 1 and 80 and coalesce(length(details), 0) <= 300 and day between 0 and 6);
+alter table public.schedule enable row level security;
+revoke all on public.schedule from anon, authenticated;
+grant select on public.schedule to anon, authenticated;
+grant insert, update, delete on public.schedule to authenticated;
+drop policy if exists schedule_read   on public.schedule;
+drop policy if exists schedule_manage on public.schedule;
+create policy schedule_read   on public.schedule for select to anon, authenticated using (true);
+create policy schedule_manage on public.schedule for all to authenticated using (has_perm('events')) with check (has_perm('events'));
+
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)
 -- to make yourself the first admin. Everything after that is done from the dashboard.
 -- update public.profiles set status = 'approved', role = 'admin' where email = 'YOUR-EMAIL-HERE';

@@ -119,3 +119,6 @@ fieldset.picks>.hint{font:400 .85rem/1.4 var(--body);color:var(--muted)}
 .perm-picks{display:grid;gap:6px;margin-top:10px}
 .perm-picks .check{font-size:.9rem;color:var(--soft)}
 .ocard[hidden],.tabs button[hidden]{display:none}
+.cal-day{display:grid;gap:10px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.cal-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.cal-none{font-size:.9rem;margin:0}

@@ -1245,7 +1245,16 @@ He left behind a holotape warning that the op had been a setup, with final order
         .then(function(r){return r.ok?r.json():null;}).then(function(j){if(j&&Array.isArray(j.ops)){got.planner=j.ops;show();}}).catch(function(){});
       var C=window.SB_CONFIG||{};
       if(C.url&&C.anonKey)fetch(C.url.replace(/\/$/,'')+'/rest/v1/events?select=title,description,game,starts_at,repeats_weekly,cancelled&visibility=in.(public,both)&cancelled=is.false&order=starts_at.asc',{headers:{apikey:C.anonKey,Authorization:'Bearer '+C.anonKey}})
-        .then(function(r){return r.ok?r.json():null;}).then(function(a){if(Array.isArray(a)){got.events=a.filter(function(e){return !e.cancelled;}).map(function(e){var t=Date.parse(e.starts_at),wk=6048e5;if(e.repeats_weekly&&t+4*3600e3<=Date.now())t+=Math.ceil((Date.now()-4*3600e3-t)/wk)*wk;return {title:e.title,description:e.description,game:e.game,start:new Date(t).toISOString()};});show();}}).catch(function(){});}
+        .then(function(r){return r.ok?r.json():null;}).then(function(a){if(Array.isArray(a)){got.events=a.filter(function(e){return !e.cancelled;}).map(function(e){var t=Date.parse(e.starts_at),wk=6048e5;if(e.repeats_weekly&&t+4*3600e3<=Date.now())t+=Math.ceil((Date.now()-4*3600e3-t)/wk)*wk;return {title:e.title,description:e.description,game:e.game,start:new Date(t).toISOString()};});show();}}).catch(function(){});
+      // Weekly calendar from the Dashboard (Calendar tab). Each set time shows in the visitor's own time zone.
+      if(C.url&&C.anonKey)fetch(C.url.replace(/\/$/,'')+'/rest/v1/schedule?select=title,details,day,starts_ref',{headers:{apikey:C.anonKey,Authorization:'Bearer '+C.anonKey}})
+        .then(function(r){return r.ok?r.json():null;}).then(function(a){if(!Array.isArray(a))return;
+          var D=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],box=document.getElementById('c-schedule');if(!box)return;
+          var rows=a.map(function(x){var t=x.starts_ref?new Date(x.starts_ref):null;return {x:x,d:t?t.getDay():x.day,m:t?t.getHours()*60+t.getMinutes():9999,
+            time:t?t.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit',timeZoneName:'short'}):'TBD'};}).sort(function(p,q){return p.d-q.d||p.m-q.m;});
+          box.textContent='';if(!rows.length){box.appendChild(el('p',null,'Weekly schedule coming soon.'));return;}
+          rows.forEach(function(r){var d=el('div');d.appendChild(el('span','day',D[r.d]));var t=el('span',null,r.x.title);if(r.x.details)t.appendChild(el('small',null,r.x.details));d.appendChild(t);d.appendChild(el('span','time',r.time));box.appendChild(d);});
+        }).catch(function(){});}
     list('c-schedule',c.schedule,function(x){var d=el('div');d.appendChild(el('span','day',x.day));var t=el('span',null,x.title);t.appendChild(el('small',null,x.details));d.appendChild(t);d.appendChild(el('span','time',x.time));return d;});
     list('c-steps',c.join_steps,function(x,i){var li=el('li','reveal');li.appendChild(el('span','n',pad(i+1)));li.appendChild(el('h3',null,x.title));li.appendChild(el('p',null,x.text));return li;});
     list('c-reqs',c.requirements,function(x){return el('span',null,x);});
@@ -1666,7 +1675,7 @@ He left behind a holotape warning that the op had been a setup, with final order
   try{has=!!localStorage.getItem('sb-'+ref+'-auth-token');}catch(e){}
   if(!has)return;
   function load(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s);}
-  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js',function(){load('auth/auth.js?v=12',async function(){
+  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js',function(){load('auth/auth.js?v=13',async function(){
     try{var me=await window.Auth.me();if(!me)return;
       links.forEach(function(a){a.textContent='Members';a.href='members/';});
       if(window.Auth.canDash(me))admin.forEach(function(a){a.hidden=false;});

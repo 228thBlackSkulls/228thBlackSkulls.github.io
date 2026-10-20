@@ -153,6 +153,18 @@
     if (ev.repeats_weekly && t + A.EVENT_LIVE_MS <= now) t += wk;
     return t;
   };
+  // Weekly calendar slots: a set time is stored as one sample occurrence, so each visitor sees their own weekday and time.
+  A.DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  A.slotDay = function (s) { return s.starts_ref ? new Date(s.starts_ref).getDay() : s.day; };
+  A.slotTime = function (s) {
+    if (!s.starts_ref) return 'TBD';
+    try { return new Date(s.starts_ref).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }); } catch (e) { return ''; }
+  };
+  A.slotRef = function (day, hhmm) {
+    var p = hhmm.split(':'), d = new Date(); d.setHours(+p[0], +p[1], 0, 0);
+    d.setDate(d.getDate() + (day - d.getDay() + 7) % 7);
+    return d.toISOString();
+  };
   A.when = function (t) {
     var d = new Date(t);
     try { return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }); } catch (e) { return d.toString(); }
