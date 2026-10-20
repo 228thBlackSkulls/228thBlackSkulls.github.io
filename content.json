@@ -168,7 +168,8 @@
     },
     {
       "name": "Stealth",
-      "description": "Moves unseen. Trained in infiltration, recon and silent takedowns."
+      "description": "Moves unseen. Trained in infiltration, recon and silent takedowns.",
+      "logo": "images/quals/stealth.webp"
     },
     {
       "name": "EOD [Explosive Ordnance Disposal]",
