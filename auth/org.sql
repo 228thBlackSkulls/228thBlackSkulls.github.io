@@ -709,7 +709,7 @@ select v.name, v.kind, v.grp, v.sort from (values
   ('Armored','mos','Dreadnaught',5),('BARC','mos','Hellrider',6),('Commando','mos','Demon',7),('Combat Engineer','mos','Shatterfield',8),
   ('Marine','mos','Ghoul',9),('Combat Medic (MOS)','mos','Death Surgeon',10),('Pilot','mos','Banshee',11),('Scuba','mos','Drowned',12),
   ('Spec Ops','mos','Phantom',13),('Echelon','mos','Night-Stalker',14),
-  ('Anti-Tank','qual',null,1),('Breacher','qual',null,2),('Combat Medic','qual',null,3),('Stealth','qual',null,4),('EOD','qual',null,5),
+  ('Anti-Tank','qual',null,1),('Breacher','qual',null,2),('Medic','qual',null,3),('Stealth','qual',null,4),('EOD','qual',null,5),
   ('RTO','qual',null,6),('Light Weaponry','qual',null,7),('Heavy Weaponry','qual',null,8),('Jetpack','qual',null,9),('Marksman','qual',null,10),
   ('Piloting / Flight','qual',null,11),('Riot','qual',null,12),('SAR','qual',null,13),('SERE','qual',null,14),
   ('Black Skull Star','medal','Valor & Honor',1),('Order of the Crimson Skull','medal','Valor & Honor',2),('Medal of the Fallen Fang','medal','Valor & Honor',3),

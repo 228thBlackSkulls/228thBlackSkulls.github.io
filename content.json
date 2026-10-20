@@ -162,8 +162,9 @@
       "logo": "images/quals/breacher.webp"
     },
     {
-      "name": "Combat Medic",
-      "description": "Keeps troopers in the fight with field triage, stabilization and revives under fire."
+      "name": "Medic",
+      "description": "Keeps troopers in the fight with field triage, stabilization and revives under fire.",
+      "logo": "images/quals/medic.webp"
     },
     {
       "name": "Stealth",
