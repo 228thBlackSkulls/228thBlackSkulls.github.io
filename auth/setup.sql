@@ -314,6 +314,35 @@ create policy avatars_insert on storage.objects for insert to authenticated
 create policy avatars_delete on storage.objects for delete to authenticated
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 
+-- Events: ops and other times set from the Dashboard, each with its own countdown.
+-- "visibility" picks where it shows: public (the main site, no login), private (the members area) or both.
+create table if not exists public.events (
+  id          bigint generated always as identity primary key,
+  title       text not null,
+  description text,
+  game        text,
+  starts_at   timestamptz not null,
+  visibility  text not null default 'both',
+  author      uuid default auth.uid(),
+  created_at  timestamptz not null default now()
+);
+alter table public.events drop constraint if exists events_fields_check;
+alter table public.events add constraint events_fields_check check (
+  length(trim(title)) between 1 and 120 and coalesce(length(description), 0) <= 2000
+  and (game is null or game in ('Arma 3', 'VRChat', 'Arma 3 & VRChat'))
+  and visibility in ('public', 'private', 'both'));
+alter table public.events enable row level security;
+revoke all on public.events from anon, authenticated;
+grant select on public.events to anon, authenticated;
+grant insert, update, delete on public.events to authenticated;
+drop policy if exists events_public  on public.events;
+drop policy if exists events_members on public.events;
+drop policy if exists events_admin   on public.events;
+-- Anyone (even logged out) sees public and both; approved members also see private; admins manage them all.
+create policy events_public  on public.events for select to anon, authenticated using (visibility in ('public', 'both'));
+create policy events_members on public.events for select to authenticated using (my_roles() is not null);
+create policy events_admin   on public.events for all to authenticated using (is_admin()) with check (is_admin());
+
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)
 -- to make yourself the first admin. Everything after that is done from the dashboard.
 -- update public.profiles set status = 'approved', role = 'admin' where email = 'YOUR-EMAIL-HERE';

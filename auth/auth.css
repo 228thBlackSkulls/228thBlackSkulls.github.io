@@ -97,3 +97,22 @@ fieldset.picks legend .hint{display:block;margin-top:4px;font:400 .85rem/1.4 var
 fieldset.picks label{display:flex;gap:8px;align-items:center;font-size:1rem;cursor:pointer}
 fieldset.picks input{width:auto;accent-color:var(--accent)}
 .f select{width:100%}
+/* Events and countdowns */
+.cd{font:500 1.05rem var(--mono);letter-spacing:.06em;color:var(--fg)}
+.cd.live{color:var(--accent)}
+.evt .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.evt h3{margin:6px 0 2px}
+.evt .cd{display:block;margin-top:8px;font-size:1.4rem}
+.radios{display:flex;gap:10px 22px;flex-wrap:wrap}
+.radios label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.radios input{width:auto;accent-color:var(--accent)}
+.overview{display:grid;gap:22px}
+.overview .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.ocard{text-align:left;cursor:pointer;background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:16px;color:var(--fg);font:inherit;display:grid;gap:6px}
+.ocard:hover{border-color:var(--accent)}
+.ocard strong{font:800 2rem var(--display, inherit);line-height:1}
+.ocard .label{color:var(--muted)}
+.ocard small{color:var(--soft)}
+.ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.ev-grid .evt p{margin:8px 0 0;white-space:pre-line}
+fieldset.picks>.hint{font:400 .85rem/1.4 var(--body);color:var(--muted)}

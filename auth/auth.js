@@ -129,6 +129,23 @@
     var r = await A.sb.rpc('number_taken', { num: name.match(/-(\d{4}) /)[1] });
     return !r.error && r.data === true;
   };
+  // Events: where each one shows, a readable start time, and live countdowns.
+  A.VIS = { public: 'Public site', private: 'Members only', both: 'Public + members' };
+  A.EVENT_LIVE_MS = 4 * 3600e3; // an event stays up, marked live, for 4 hours after it starts
+  A.when = function (t) {
+    var d = new Date(t);
+    try { return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }); } catch (e) { return d.toString(); }
+  };
+  A.countdown = function (ms) {
+    if (ms <= 0) return 'LIVE NOW';
+    var s = Math.floor(ms / 1000), p = function (n) { return String(n).padStart(2, '0'); };
+    return (s >= 86400 ? Math.floor(s / 86400) + 'd ' : '') + p(Math.floor(s % 86400 / 3600)) + ':' + p(Math.floor(s % 3600 / 60)) + ':' + p(s % 60);
+  };
+  // Any element with data-until (a start time in ms) keeps its text counting down.
+  A.tickCountdowns = function () {
+    function run() { document.querySelectorAll('[data-until]').forEach(function (n) { var ms = +n.dataset.until - Date.now(); n.textContent = A.countdown(ms); n.classList.toggle('live', ms <= 0); }); }
+    run(); if (!A._ticking) A._ticking = setInterval(run, 1000);
+  };
   A.date = function (d) { return d ? new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; };
 
   // Fill the page header's nav for this person. `current` is 'members' | 'dashboard' | 'login' | 'account' | 'org'.
