@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css?v=6">
+<link rel="stylesheet" href="../auth/auth.css?v=7">
 <style>
 .grip{cursor:grab;touch-action:none;user-select:none;color:var(--muted);font-size:1.3rem;line-height:1;padding:6px 4px;background:none;border:0}
 .grip:active{cursor:grabbing}
@@ -115,7 +115,7 @@
     </section>
 
     <section data-pane="calendar" class="stack" hidden>
-      <p class="muted" style="font-size:.92rem">The standing weekly schedule on the main site's Operations section. Add, edit or remove what happens each day. Leave the time empty to show TBD. Everyone sees the times in their own time zone.</p>
+      <p class="muted" style="font-size:.92rem">The standing weekly schedule on the main site's Operations section. Add, edit or remove what happens each day. Pick which division's calendar each one goes on (Both shows on each). Tick "No set time yet" to show TBD. Everyone sees the times in their own time zone.</p>
       <div class="stack" id="cal"></div>
     </section>
 
@@ -539,20 +539,26 @@
   function slotForm(s, day) {
     var f = A.el('form', 'panel stack slot-form'); f.style.gap = '12px';
     f.innerHTML = '<label class="f">What<input name="title" maxlength="80" required placeholder="e.g. Training"></label>' +
-      '<div style="display:flex;gap:12px;flex-wrap:wrap"><label class="f" style="flex:1 1 140px">Day<select name="day"></select></label>' +
-      '<label class="f" style="flex:1 1 140px">Time (empty = TBD)<input name="time" type="time"></label></div>' +
+      '<div class="slot-grid"><label class="f">Division<select name="division"><option value="Both">Both divisions</option><option>Arma 3</option><option>VRChat</option></select></label>' +
+      '<label class="f">Day<select name="day"></select></label>' +
+      '<label class="f">Time<input name="time" type="time"></label>' +
+      '<label class="check"><input type="checkbox" name="tbd" style="width:auto"> No set time yet (shows TBD)</label></div>' +
       '<label class="f">Details (optional)<input name="details" maxlength="300"></label>';
     A.DAYS.forEach(function (d, i) { var o = A.el('option', null, d); o.value = i; f.day.appendChild(o); });
     f.day.value = s ? A.slotDay(s) : day;
+    f.division.value = (s && s.division) || 'Both';
     if (s) {
       f.title.value = s.title; f.details.value = s.details || '';
       if (s.starts_ref) { var t = new Date(s.starts_ref); f.time.value = String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'); }
+      else f.tbd.checked = true;
     }
+    f.tbd.onchange = function () { f.time.disabled = f.tbd.checked; f.time.required = !f.tbd.checked; };
+    f.tbd.onchange();
     var bar = A.el('div', 'acts'), save = A.el('button', 'btn small', s ? 'Save' : 'Add'); save.type = 'submit';
     bar.appendChild(save); bar.appendChild(btn('Cancel', 'ghost', renderCalendar)); f.appendChild(bar);
     f.onsubmit = async function (e) {
       e.preventDefault();
-      var d = +f.day.value, row = { title: f.title.value.trim(), details: f.details.value.trim() || null, day: d, starts_ref: f.time.value ? A.slotRef(d, f.time.value) : null };
+      var d = +f.day.value, row = { title: f.title.value.trim(), details: f.details.value.trim() || null, day: d, division: f.division.value, starts_ref: !f.tbd.checked && f.time.value ? A.slotRef(d, f.time.value) : null };
       var r = s ? await sb.from('schedule').update(row).eq('id', s.id) : await sb.from('schedule').insert(row);
       if (r.error) return A.fail(msg, r.error);
       ok(s ? 'Calendar saved.' : 'Added to ' + A.DAYS[d] + '.'); loadCalendar();
@@ -570,7 +576,8 @@
       if (!mine.length) list.appendChild(A.el('p', 'muted cal-none', 'Nothing set'));
       mine.forEach(function (s) {
         var row = A.el('div', 'row'); row.style.gridTemplateColumns = '1fr auto';
-        var w = A.el('div', 'who'); w.appendChild(A.el('b', null, s.title)); w.appendChild(A.el('small', null, A.slotTime(s)));
+        var w = A.el('div', 'who'), m = A.el('div', 'meta'); m.appendChild(A.el('span', 'chip' + (s.division === 'Both' ? '' : ' red'), s.division === 'Both' ? 'Both divisions' : s.division)); w.appendChild(m);
+        w.appendChild(A.el('b', null, s.title)); w.appendChild(A.el('small', null, A.slotTime(s)));
         if (s.details) w.appendChild(A.el('span', 'note', s.details));
         var acts = A.el('div', 'acts');
         acts.appendChild(btn('Edit', 'ghost', function () { row.replaceWith(slotForm(s, d)); }));

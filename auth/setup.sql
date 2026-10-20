@@ -405,16 +405,14 @@ do $$ begin
       starts_ref timestamptz,
       created_at timestamptz not null default now()
     );
-    -- First time only: start from the schedule that was on the site.
-    insert into public.schedule (title, details, day, starts_ref) values
-      ('Training', 'Division training and new member orientation', 3, null),
-      ('Roleplay night', 'Lore events and social hangouts', 5, null),
-      ('Main operation', 'Full Corps deployment', 6, '2026-10-24 19:00+00');
   end if;
 end $$;
+-- Which division's calendar it goes on: Arma 3, VRChat, or Both (shows on each).
+alter table public.schedule add column if not exists division text not null default 'Both';
 alter table public.schedule drop constraint if exists schedule_fields_check;
 alter table public.schedule add constraint schedule_fields_check check (
-  length(trim(title)) between 1 and 80 and coalesce(length(details), 0) <= 300 and day between 0 and 6);
+  length(trim(title)) between 1 and 80 and coalesce(length(details), 0) <= 300 and day between 0 and 6
+  and division in ('Both', 'Arma 3', 'VRChat'));
 alter table public.schedule enable row level security;
 revoke all on public.schedule from anon, authenticated;
 grant select on public.schedule to anon, authenticated;

@@ -298,8 +298,21 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 [hidden]{display:none!important}
 
 /* ops */
-.ops{display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
-@media (max-width:820px){.ops{grid-template-columns:1fr}}
+.ops{display:grid;gap:28px}
+.ops .opstack{grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))}
+.schedbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.divtabs{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.divtabs button{font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;background:none;border:0;color:var(--muted);padding:.75em 1em;cursor:pointer}
+.divtabs button+button{border-left:1px solid var(--line)}
+.divtabs button[aria-selected=true]{background:var(--accent-deep);color:var(--fg)}
+.schedcols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.schedcols.one{grid-template-columns:1fr}
+.schedcol[hidden]{display:none}
+.schedcol h3{font-size:1.2rem;margin-bottom:10px;color:var(--soft)}
+.sched div.empty-day{padding:10px 0;color:var(--muted)}
+.sched div.empty-day .day{color:var(--muted)}
+.sched div.empty-day .time{color:var(--muted)}
+@media (max-width:820px){.schedcols{grid-template-columns:1fr}}
 .next{background:var(--panel);border:1px solid var(--line);padding:clamp(20px,4vw,32px);display:grid;gap:18px}
 .live{display:inline-flex;align-items:center;gap:.5em;font:500 .75rem var(--mono);letter-spacing:.14em;color:var(--live)}
 .live::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--live);animation:pulse 1.6s ease-in-out infinite}
@@ -1005,10 +1018,19 @@ He left behind a holotape warning that the op had been a setup, with final order
           <p style="color:var(--soft)">Keep an eye on the Discord announcements. Countdowns show up here as soon as Command schedules the next one.</p>
         </div>
         </div>
-        <div class="sched" id="c-schedule">
-          <div><span class="day">Wed</span><span>Training<small>Division training and new member orientation</small></span><span class="time">TBD</span></div>
-          <div><span class="day">Fri</span><span>Roleplay night<small>Lore events and social hangouts</small></span><span class="time">TBD</span></div>
-          <div><span class="day">Sat</span><span>Main operation<small>Full Corps deployment</small></span><span class="time">1900Z</span></div>
+        <div class="schedwrap reveal">
+          <div class="schedbar">
+            <p class="label">Weekly schedule</p>
+            <div class="divtabs" role="tablist" aria-label="Show division">
+              <button type="button" role="tab" data-div="both" aria-selected="true">Both divisions</button>
+              <button type="button" role="tab" data-div="Arma 3" aria-selected="false">Arma 3</button>
+              <button type="button" role="tab" data-div="VRChat" aria-selected="false">VRChat</button>
+            </div>
+          </div>
+          <div class="schedcols" id="c-schedule">
+            <div class="schedcol" data-col="Arma 3"><h3>Arma 3</h3><div class="sched"></div></div>
+            <div class="schedcol" data-col="VRChat"><h3>VRChat</h3><div class="sched"></div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1198,6 +1220,34 @@ He left behind a holotape warning that the op had been a setup, with final order
       box.appendChild(drop('lore-g',g,kids,{n:('0'+(i+1)).slice(-2),meta:bs.length>1?bs.length+' files':count+(count===1?' entry':' entries')}));
     });
   }
+  // Weekly schedule: Arma 3 on the left, VRChat on the right; "Both" entries show in each. The tabs narrow it to one division.
+  var schedDiv='both';try{schedDiv=localStorage.getItem('228th-sched-div')||'both';}catch(e){}
+  function renderSched(rows){
+    var D=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],box=document.getElementById('c-schedule');if(!box)return;
+    rows=rows.slice().sort(function(p,q){return p.d-q.d||p.m-q.m;});
+    [].forEach.call(box.querySelectorAll('.schedcol'),function(col){
+      var name=col.dataset.col,list=col.querySelector('.sched'),mine=rows.filter(function(r){return r.division==='Both'||r.division===name;});
+      // Every day of the week is listed; a day with nothing set reads TBD.
+      list.textContent='';
+      for(var day=0;day<7;day++){
+        var on=mine.filter(function(r){return r.d===day;});
+        if(!on.length){var e=el('div','empty-day');e.appendChild(el('span','day',D[day]));e.appendChild(el('span',null,'To be determined'));e.appendChild(el('span','time','TBD'));list.appendChild(e);continue;}
+        on.forEach(function(r,i){var d=el('div');d.appendChild(el('span','day',i?'':D[r.d]));var t=el('span',null,r.title);if(r.details)t.appendChild(el('small',null,r.details));d.appendChild(t);d.appendChild(el('span','time',r.time));list.appendChild(d);});
+      }
+    });
+    showDiv(schedDiv);
+  }
+  function showDiv(v){
+    schedDiv=v;try{localStorage.setItem('228th-sched-div',v);}catch(e){}
+    var box=document.getElementById('c-schedule');if(!box)return;
+    [].forEach.call(document.querySelectorAll('.divtabs [data-div]'),function(b){b.setAttribute('aria-selected',b.dataset.div===v);});
+    [].forEach.call(box.querySelectorAll('.schedcol'),function(col){col.hidden=v!=='both'&&col.dataset.col!==v;});
+    box.classList.toggle('one',v!=='both');
+  }
+  [].forEach.call(document.querySelectorAll('.divtabs [data-div]'),function(b){b.onclick=function(){showDiv(b.dataset.div);};});
+  // Only what Command sets in the Dashboard's Calendar shows here; days with nothing set say TBD.
+  renderSched([]);
+
   function applyContent(c){
     var L=c.links||{};
     [].forEach.call(document.querySelectorAll('[data-link]'),function(a){var v=L[a.dataset.link];if(v){a.href=v;if(/^https?:/.test(v)){a.target='_blank';a.rel='noopener';}}});
@@ -1247,15 +1297,12 @@ He left behind a holotape warning that the op had been a setup, with final order
       if(C.url&&C.anonKey)fetch(C.url.replace(/\/$/,'')+'/rest/v1/events?select=title,description,game,starts_at,repeats_weekly,cancelled&visibility=in.(public,both)&cancelled=is.false&order=starts_at.asc',{headers:{apikey:C.anonKey,Authorization:'Bearer '+C.anonKey}})
         .then(function(r){return r.ok?r.json():null;}).then(function(a){if(Array.isArray(a)){got.events=a.filter(function(e){return !e.cancelled;}).map(function(e){var t=Date.parse(e.starts_at),wk=6048e5;if(e.repeats_weekly&&t+4*3600e3<=Date.now())t+=Math.ceil((Date.now()-4*3600e3-t)/wk)*wk;return {title:e.title,description:e.description,game:e.game,start:new Date(t).toISOString()};});show();}}).catch(function(){});
       // Weekly calendar from the Dashboard (Calendar tab). Each set time shows in the visitor's own time zone.
-      if(C.url&&C.anonKey)fetch(C.url.replace(/\/$/,'')+'/rest/v1/schedule?select=title,details,day,starts_ref',{headers:{apikey:C.anonKey,Authorization:'Bearer '+C.anonKey}})
+      if(C.url&&C.anonKey)fetch(C.url.replace(/\/$/,'')+'/rest/v1/schedule?select=title,details,day,starts_ref,division',{headers:{apikey:C.anonKey,Authorization:'Bearer '+C.anonKey}})
         .then(function(r){return r.ok?r.json():null;}).then(function(a){if(!Array.isArray(a))return;
-          var D=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],box=document.getElementById('c-schedule');if(!box)return;
-          var rows=a.map(function(x){var t=x.starts_ref?new Date(x.starts_ref):null;return {x:x,d:t?t.getDay():x.day,m:t?t.getHours()*60+t.getMinutes():9999,
-            time:t?t.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit',timeZoneName:'short'}):'TBD'};}).sort(function(p,q){return p.d-q.d||p.m-q.m;});
-          box.textContent='';if(!rows.length){box.appendChild(el('p',null,'Weekly schedule coming soon.'));return;}
-          rows.forEach(function(r){var d=el('div');d.appendChild(el('span','day',D[r.d]));var t=el('span',null,r.x.title);if(r.x.details)t.appendChild(el('small',null,r.x.details));d.appendChild(t);d.appendChild(el('span','time',r.time));box.appendChild(d);});
+          applyContent.dbSched=1;
+          renderSched(a.map(function(x){var t=x.starts_ref?new Date(x.starts_ref):null;return {d:t?t.getDay():x.day,m:t?t.getHours()*60+t.getMinutes():9999,title:x.title,details:x.details,division:x.division||'Both',
+            time:t?t.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit',timeZoneName:'short'}):'TBD'};}));
         }).catch(function(){});}
-    list('c-schedule',c.schedule,function(x){var d=el('div');d.appendChild(el('span','day',x.day));var t=el('span',null,x.title);t.appendChild(el('small',null,x.details));d.appendChild(t);d.appendChild(el('span','time',x.time));return d;});
     list('c-steps',c.join_steps,function(x,i){var li=el('li','reveal');li.appendChild(el('span','n',pad(i+1)));li.appendChild(el('h3',null,x.title));li.appendChild(el('p',null,x.text));return li;});
     list('c-reqs',c.requirements,function(x){return el('span',null,x);});
     var sh=c.shop||{}, on=!!sh.show;

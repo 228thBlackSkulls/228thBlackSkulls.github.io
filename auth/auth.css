@@ -122,3 +122,6 @@ fieldset.picks>.hint{font:400 .85rem/1.4 var(--body);color:var(--muted)}
 .cal-day{display:grid;gap:10px;padding-bottom:16px;border-bottom:1px solid var(--line)}
 .cal-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .cal-none{font-size:.9rem;margin:0}
+.slot-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:12px;align-items:end}
+.slot-grid input,.slot-grid select{min-width:0;width:100%}
+.row .meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
