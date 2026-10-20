@@ -183,11 +183,13 @@
     },
     {
       "name": "Light Weaponry",
-      "description": "Proficient with sidearms, carbines and rifles for fast, mobile engagements."
+      "description": "Proficient with sidearms, carbines and rifles for fast, mobile engagements.",
+      "logo": "images/quals/light-weaponry.webp"
     },
     {
       "name": "Heavy Weaponry",
-      "description": "Brings sustained firepower with heavy repeaters and support weapons."
+      "description": "Brings sustained firepower with heavy repeaters and support weapons.",
+      "logo": "images/quals/heavy-weaponry.webp"
     },
     {
       "name": "Jetpack",
