@@ -116,7 +116,8 @@
     {
       "name": "Marine",
       "description": "Assault troopers for boarding actions, ship-to-shore landings and close-quarters fights.",
-      "logo": "images/mos/marine.webp"
+      "logo": "images/mos/marine.webp",
+      "callsign": "Ghoul"
     },
     {
       "name": "Combat Medic",

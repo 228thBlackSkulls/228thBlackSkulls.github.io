@@ -685,7 +685,7 @@ begin
   insert into org_positions (unit_id, title, min_rank, sort) values (bn, 'Battalion Commander', 'battalion-commander', 0), (bn, 'Battalion Sergeant Major', 'sergeant-major', 1);
   -- Starting layout: two big companies, one platoon per conventional MOS. Rearrange freely.
   co_plts := array[
-    array['Skull|Conventional|images/mos/conventional.webp', 'Death Angel|Airborne|images/mos/airborne.webp', 'Drowned|Scuba|images/mos/scuba-2.webp', 'Marine|Marine|images/mos/marine.webp'],
+    array['Skull|Conventional|images/mos/conventional.webp', 'Death Angel|Airborne|images/mos/airborne.webp', 'Drowned|Scuba|images/mos/scuba-2.webp', 'Ghoul|Marine|images/mos/marine.webp'],
     array['Dreadnaught|Armored|images/mos/armored-2.webp', 'Hellrider|BARC|images/mos/barc-3.webp', 'Banshee|Pilot|images/mos/pilot.webp', 'Shatterfield|Combat Engineer|images/mos/engineer.webp']];
   for i in 1..2 loop
     insert into org_units (parent_id, name, kind, sort) values (bn, case i when 1 then '1st Company' else '2nd Company' end, 'company', i) returning id into co;
@@ -707,7 +707,7 @@ insert into public.quals (name, kind, grp, sort)
 select v.name, v.kind, v.grp, v.sort from (values
   ('Conventional','mos','Skull',1),('ARC','mos','Revenant',2),('ARF','mos','Hellhound',3),('Airborne','mos','Death Angel',4),
   ('Armored','mos','Dreadnaught',5),('BARC','mos','Hellrider',6),('Commando','mos','Demon',7),('Combat Engineer','mos','Shatterfield',8),
-  ('Marine','mos',null,9),('Combat Medic (MOS)','mos','Death Surgeon',10),('Pilot','mos','Banshee',11),('Scuba','mos','Drowned',12),
+  ('Marine','mos','Ghoul',9),('Combat Medic (MOS)','mos','Death Surgeon',10),('Pilot','mos','Banshee',11),('Scuba','mos','Drowned',12),
   ('Spec Ops','mos','Phantom',13),('Echelon','mos','Night-Stalker',14),
   ('Anti-Tank','qual',null,1),('Breacher','qual',null,2),('Combat Medic','qual',null,3),('Stealth','qual',null,4),('EOD','qual',null,5),
   ('RTO','qual',null,6),('Light Weaponry','qual',null,7),('Heavy Weaponry','qual',null,8),('Jetpack','qual',null,9),('Marksman','qual',null,10),
