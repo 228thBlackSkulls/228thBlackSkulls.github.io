@@ -208,7 +208,8 @@
     },
     {
       "name": "Riot",
-      "description": "Crowd and riot control with shields, non-lethal tools and line discipline."
+      "description": "Crowd and riot control with shields, non-lethal tools and line discipline.",
+      "logo": "images/quals/riot.webp"
     },
     {
       "name": "SAR [Search & Rescue]",
