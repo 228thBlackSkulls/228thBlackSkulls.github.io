@@ -203,7 +203,8 @@
     },
     {
       "name": "Piloting / Flight",
-      "description": "Cleared to fly transports and craft for insertions, extractions and air support."
+      "description": "Cleared to fly transports and craft for insertions, extractions and air support.",
+      "logo": "images/quals/piloting.webp"
     },
     {
       "name": "Riot",
