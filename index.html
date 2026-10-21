@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610212245";
+(function(){var v="202610212246";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -656,8 +656,6 @@ html.intro-on,html.intro-on body{overflow:hidden}
       <a href="login/" data-acct hidden>Log in</a><a href="#about">About</a><a href="#history">History</a><a href="#lore">Lore</a><a href="#command">Command</a><a href="#divisions">Programs</a><a href="#quals">Qualifications</a><a href="#medals">Medals</a><a href="#honor">Hall of Honor</a><a href="#ops">Operations</a><a href="#join">Join</a><a href="#shop" data-shop hidden>Shop</a><a href="#faq">FAQ</a>
     </nav>
     <div class="mnav-sub">
-      <a href="org/" data-acct hidden data-org>Unit Organization</a>
-      <a href="dashboard/" data-acct-admin hidden>Command Dashboard</a>
       <p class="label">Recruitment</p>
       <a href="#join" data-link="join_button">Join the Corps</a>
       <a href="https://discord.gg/2bXwURsNsE" target="_blank" rel="noopener" data-link="discord_vrchat">VRChat Discord</a>
