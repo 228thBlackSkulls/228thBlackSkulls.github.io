@@ -114,7 +114,8 @@
   O.badge = function (u) {
     if (u.badge) {
       var i = A.el('img', 'badge'); i.alt = ''; i.loading = 'lazy';
-      i.src = /^https?:/.test(u.badge) ? u.badge : A.url(u.badge);
+      // ?v= makes phones fetch badge images again after one is fixed; raise it when a badge file is replaced.
+      i.src = /^https?:/.test(u.badge) ? u.badge : A.url(u.badge) + '?v=2';
       i.onerror = function () { i.replaceWith(O.badgeMark(u)); };
       return i;
     }
