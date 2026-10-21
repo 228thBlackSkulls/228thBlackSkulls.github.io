@@ -213,7 +213,8 @@
     },
     {
       "name": "SAR [Search & Rescue]",
-      "description": "Finds and recovers downed or missing personnel and gets them home."
+      "description": "Finds and recovers downed or missing personnel and gets them home.",
+      "logo": "images/quals/sar.webp"
     },
     {
       "name": "SERE [Survival, Evasion, Resistance & Escape]",
