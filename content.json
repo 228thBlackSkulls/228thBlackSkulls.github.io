@@ -198,7 +198,8 @@
     },
     {
       "name": "Marksman",
-      "description": "Precision shooting at range. Overwatch, spotting and eliminating priority targets."
+      "description": "Precision shooting at range. Overwatch, spotting and eliminating priority targets.",
+      "logo": "images/quals/marksman.webp"
     },
     {
       "name": "Piloting / Flight",
