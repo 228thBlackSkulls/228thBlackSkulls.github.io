@@ -6,10 +6,11 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610210116";
+(function(){var v="202610211447";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
+<script src="auth/fx.js?v=1" data-nav-only></script>
 <meta name="description" content="Star Wars milsim and RP community since 2010. Now recruiting for VRChat, Arma 3 and Minecraft.">
 <meta name="theme-color" content="#0a0a0b">
 <meta property="og:type" content="website">
@@ -1728,7 +1729,7 @@ He left behind a holotape warning that the op had been a setup, with final order
   try{has=!!localStorage.getItem('sb-'+ref+'-auth-token');}catch(e){}
   if(!has)return;
   function load(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s);}
-  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js',function(){load('auth/auth.js?v=14',async function(){
+  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js',function(){load('auth/auth.js?v=15',async function(){
     try{var me=await window.Auth.me();if(!me)return;
       links.forEach(function(a){a.textContent='Members';a.href='members/';});
       if(window.Auth.canDash(me))admin.forEach(function(a){a.hidden=false;});

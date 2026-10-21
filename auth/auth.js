@@ -35,9 +35,14 @@
   // The permissions a role can be given, in the order the Dashboard lists them.
   A.PERMS = [['events', 'Create, edit and delete events and timers'], ['briefings', 'Post and delete briefings'], ['bios', 'Edit anyone\'s bio'], ['members', 'Approve sign-ups and change members\' roles']];
 
+  // Go to another page of the site, behind the pixel wipe when the page effects are loaded.
+  A.go = function (url) {
+    if (window.FX && FX.go) FX.go(url, FX.nameOf(url) || '228th Black Skulls Corps', { replace: true }); else location.replace(url);
+  };
+
   A.signOut = async function () {
     if (A.sb) await A.sb.auth.signOut();
-    location.href = A.url('');
+    if (window.FX && FX.go) FX.go(A.url(''), '228th Black Skulls Corps'); else location.href = A.url('');
   };
 
   // Tiny DOM helpers.

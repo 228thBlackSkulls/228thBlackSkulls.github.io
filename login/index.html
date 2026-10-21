@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610210116";
+(function(){var v="202610211447";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -19,7 +19,8 @@
 <link rel="stylesheet" href="../auth/auth.css?v=8">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=14"></script>
+<script src="../auth/auth.js?v=15"></script>
+<script src="../auth/fx.js?v=1"></script>
 <style>
 .why{font-size:.9rem;color:var(--muted)}.why summary{cursor:pointer;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding:4px 0}.why p{margin-top:8px;line-height:1.55}
 </style>
@@ -136,7 +137,7 @@
       r = await A.sb.auth.signUp({ email: email, password: pw, options: { emailRedirectTo: back, data: info } });
       go.disabled = false;
       if (r.error) return A.fail(msg, r.error);
-      if (r.data.session) return location.replace(back);
+      if (r.data.session) return A.go(back);
       msg.className = 'msg ok'; msg.innerHTML = '';
       msg.append('Almost done. We sent a confirmation link to ' + email + '. ');
       msg.appendChild(A.el('b', null, 'Open that email and tap the link before you try to log in.'));
@@ -152,7 +153,7 @@
         }
         return A.fail(msg, r.error);
       }
-      location.replace(back);
+      A.go(back);
     }
   };
 
