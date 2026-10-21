@@ -200,11 +200,11 @@
     link('', 'Home');
     if (p) {
       link('members/', 'Members', 'members');
-      link('org/', 'Org', 'org');
+      link('org/', 'Unit Organization', 'org');
       if (A.canDash(p)) link('dashboard/', 'Command Dashboard', 'dashboard');
       var out = A.el('button', null, 'Log out'); out.type = 'button'; out.onclick = A.signOut; nav.appendChild(out);
     } else {
-      link('org/', 'Org', 'org');
+      link('org/', 'Unit Organization', 'org');
       link('login/', 'Log in', 'login');
     }
   };
