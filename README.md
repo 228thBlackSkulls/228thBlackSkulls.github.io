@@ -2,8 +2,8 @@
 
 The public website for the 228th Black Skulls Corps.
 
-- **Site:** https://228thblackskulls.github.io/
-- **Edit page:** https://228thblackskulls.github.io/admin/
+- **Site:** https://228thblackskulls.com/
+- **Edit page:** https://228thblackskulls.com/admin/
 
 ## How editing works
 
