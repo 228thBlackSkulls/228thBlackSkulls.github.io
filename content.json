@@ -218,7 +218,8 @@
     },
     {
       "name": "SERE [Survival, Evasion, Resistance & Escape]",
-      "description": "Trained to survive behind enemy lines, evade capture, resist and escape."
+      "description": "Trained to survive behind enemy lines, evade capture, resist and escape.",
+      "logo": "images/quals/sere.webp"
     }
   ],
   "next_op": {
