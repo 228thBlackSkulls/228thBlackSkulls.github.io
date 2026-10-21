@@ -23,8 +23,8 @@
     '#fxpx .b i{position:absolute;inset:0;background:#e2333b;transform-origin:left;transform:scaleX(0)}' +
     '#fxpx .p{font:500 .72rem "IBM Plex Mono",ui-monospace,Menlo,monospace;letter-spacing:.14em;color:#e2333b}' +
     'html.fx-arr{background:#0a0a0b}html.fx-arr body{visibility:hidden}' +
-    '@keyframes fxUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}' +
-    '.fx-up{animation:fxUp .5s cubic-bezier(.2,.7,.2,1) both}';
+    '@keyframes fxUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}' +
+    '.fx-up{animation:fxUp .75s cubic-bezier(.2,.7,.2,1) both}';
   var st = document.createElement('style'); st.textContent = css; (document.head || document.documentElement).appendChild(st);
   if (arrive) document.documentElement.classList.add('fx-arr');
 
@@ -55,6 +55,7 @@
     lab = box.querySelector('.t'); bar = box.querySelector('.b i'); pct = box.querySelector('.p');
   }
   function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  var SLOW = 1.4; // >1 plays the wipe slower
   var RED = [226, 51, 59], DEEP = [150, 18, 24], DARK = [10, 10, 11];
   function grid(x, y) {
     var W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
@@ -70,13 +71,13 @@
     var g = grid(x, y), IN = 830, t0 = performance.now(), fired = false;
     box.classList.add('on'); lab.textContent = ''; bar.style.transform = 'scaleX(0)'; pct.textContent = '000%';
     (function frame(now) {
-      var t = now - t0; ctx.clearRect(0, 0, g.W, g.H);
+      var t = (now - t0) / SLOW; ctx.clearRect(0, 0, g.W, g.H);
       if (t < IN) {
         g.cells.forEach(function (k) { var a = t - k.t; if (a < 0) return; var c = a < 90 ? RED : mix(a < 200 ? RED : DEEP, DARK, Math.min(1, (a - (a < 200 ? 90 : 200)) / (a < 200 ? 110 : 180))); ctx.fillStyle = 'rgb(' + c.map(Math.round) + ')'; ctx.fillRect(k.x, k.y, g.cs + .5, g.cs + .5); });
       } else {
         ctx.fillStyle = 'rgb(10,10,11)'; ctx.fillRect(0, 0, g.W, g.H);
-        if (!fired) { fired = true; box.querySelector('.l').classList.add('on'); scramble(lab, label, 360); then(); }
-        var p = Math.min(.6, (t - IN) / 900); bar.style.transform = 'scaleX(' + p + ')'; pct.textContent = ('00' + Math.round(p * 100)).slice(-3) + '%';
+        if (!fired) { fired = true; box.querySelector('.l').classList.add('on'); scramble(lab, label, 560, function () { lab.textContent = label; setTimeout(then, 120); }); }
+        var p = Math.min(.6, (t - IN) / 700); bar.style.transform = 'scaleX(' + p + ')'; pct.textContent = ('00' + Math.round(p * 100)).slice(-3) + '%';
       }
       requestAnimationFrame(frame);
     })(t0);
@@ -87,9 +88,9 @@
     var x = (a.x || .5) * innerWidth, y = (a.y || .5) * innerHeight, g = grid(x, y);
     box.classList.add('on'); var l = box.querySelector('.l'); l.classList.add('on');
     lab.textContent = a.label || ''; document.documentElement.classList.remove('fx-arr');
-    var LOAD = 380, OUT = 580, t0 = performance.now();
+    var LOAD = 420, OUT = 580, t0 = performance.now();
     (function frame(now) {
-      var t = now - t0; ctx.clearRect(0, 0, g.W, g.H);
+      var t = (now - t0) / SLOW; ctx.clearRect(0, 0, g.W, g.H);
       if (t < LOAD) {
         ctx.fillStyle = 'rgb(10,10,11)'; ctx.fillRect(0, 0, g.W, g.H);
         var p = .6 + .4 * Math.min(1, t / (LOAD * .85)); bar.style.transform = 'scaleX(' + p + ')'; pct.textContent = ('00' + Math.round(p * 100)).slice(-3) + '%';
@@ -144,19 +145,19 @@
   document.addEventListener('click', function (e) {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var a = e.target.closest && e.target.closest('a');
-    var u = a && sitePage(a);
+    var u = a && sitePage(a), label = u ? labelFor(a, u) : '';
     if (!NAV_ONLY) {
       var b = e.target.closest && e.target.closest('button,.btn');
       var txt = b && buttonText(b);
       if (txt && !b._busy) {
-        b._busy = true; var w = b.style.width;
+        b._busy = true; b._orig = txt; var w = b.style.width;
         b.style.width = b.getBoundingClientRect().width + 'px';
-        scramble(b, txt, 380, function () { b._busy = false; b.style.width = w; });
+        scramble(b, txt, 480, function () { b._busy = false; b.style.width = w; });
       }
     }
     if (!u) return;
     e.preventDefault();
-    var x = e.clientX || innerWidth / 2, y = e.clientY || innerHeight / 2, label = labelFor(a, u);
+    var x = e.clientX || innerWidth / 2, y = e.clientY || innerHeight / 2;
     setTimeout(function () { FX.go(u.href, label, { x: x, y: y }); }, a.classList.contains('btn') ? 140 : 0);
   });
 
@@ -170,14 +171,14 @@
   var started = performance.now();
   function title(el) {
     var h = el.matches('h1,h2') ? el : el.querySelector('h1,h2');
-    if (h && !h.children.length && h.offsetParent) scramble(h, h._txt || (h._txt = h.textContent), 420);
+    if (h && !h.children.length && h.offsetParent) scramble(h, h._txt || (h._txt = h.textContent), 650);
   }
   function show(el, i) {
     if (!el || el.nodeType !== 1 || el.hidden || el.closest('[hidden]')) return;
     el.classList.remove('fx-up'); void el.offsetWidth;
-    el.style.animationDelay = (i || 0) * 70 + 'ms'; el.classList.add('fx-up');
+    el.style.animationDelay = (i || 0) * 110 + 'ms'; el.classList.add('fx-up');
     el.addEventListener('animationend', function h() { el.removeEventListener('animationend', h); el.classList.remove('fx-up'); el.style.animationDelay = ''; });
-    setTimeout(function () { title(el); }, (i || 0) * 70);
+    setTimeout(function () { title(el); }, (i || 0) * 110);
   }
   // A section's own blocks come in one after another.
   function showSection(el) {
@@ -198,7 +199,7 @@
     // Drop-down titles decode as they open.
     document.addEventListener('toggle', function (e) {
       var d = e.target; if (!d.open || d.tagName !== 'DETAILS') return;
-      var s = d.querySelector(':scope>summary'); if (s && !s.children.length) scramble(s, s._txt || (s._txt = s.textContent), 320);
+      var s = d.querySelector(':scope>summary'); if (s && !s.children.length) scramble(s, s._txt || (s._txt = s.textContent), 450);
     }, true);
   }
   function ready() { arrived(); enter(); }
