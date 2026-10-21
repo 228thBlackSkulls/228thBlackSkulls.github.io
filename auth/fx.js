@@ -55,7 +55,7 @@
     lab = box.querySelector('.t'); bar = box.querySelector('.b i'); pct = box.querySelector('.p');
   }
   function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
-  var SLOW = 1.4; // >1 plays the wipe slower
+  var SLOW = 1; // >1 plays the wipe slower; 1 matches the main page
   var RED = [226, 51, 59], DEEP = [150, 18, 24], DARK = [10, 10, 11];
   function grid(x, y) {
     var W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
@@ -68,7 +68,7 @@
   // Cover the screen from the tap point, then decode the next page's name while it loads.
   function wipeIn(x, y, label, then) {
     build(); busy = true;
-    var g = grid(x, y), IN = 830, t0 = performance.now(), fired = false;
+    var g = grid(x, y), IN = 830, LOAD = 900, t0 = performance.now(), fired = false, gone = false;
     box.classList.add('on'); lab.textContent = ''; bar.style.transform = 'scaleX(0)'; pct.textContent = '000%';
     (function frame(now) {
       var t = (now - t0) / SLOW; ctx.clearRect(0, 0, g.W, g.H);
@@ -76,24 +76,26 @@
         g.cells.forEach(function (k) { var a = t - k.t; if (a < 0) return; var c = a < 90 ? RED : mix(a < 200 ? RED : DEEP, DARK, Math.min(1, (a - (a < 200 ? 90 : 200)) / (a < 200 ? 110 : 180))); ctx.fillStyle = 'rgb(' + c.map(Math.round) + ')'; ctx.fillRect(k.x, k.y, g.cs + .5, g.cs + .5); });
       } else {
         ctx.fillStyle = 'rgb(10,10,11)'; ctx.fillRect(0, 0, g.W, g.H);
-        if (!fired) { fired = true; box.querySelector('.l').classList.add('on'); scramble(lab, label, 560, function () { lab.textContent = label; setTimeout(then, 120); }); }
-        var p = Math.min(.6, (t - IN) / 700); bar.style.transform = 'scaleX(' + p + ')'; pct.textContent = ('00' + Math.round(p * 100)).slice(-3) + '%';
+        if (!fired) { fired = true; box.querySelector('.l').classList.add('on'); scramble(lab, label, LOAD * .4); }
+        // One steady fill, the same pace as the main page; the next page opens once it's full.
+        var p = Math.min(1, (t - IN) / (LOAD * .85)); bar.style.transform = 'scaleX(' + p + ')'; pct.textContent = ('00' + Math.round(p * 100)).slice(-3) + '%';
+        if (t >= IN + LOAD && !gone) { gone = true; lab.textContent = label; then(); }
       }
       requestAnimationFrame(frame);
     })(t0);
   }
-  // On the new page: finish the bar, then dissolve the dark screen away.
+  // On the new page: the bar stays full for a moment, then the dark screen dissolves away.
   function wipeOut(a) {
     build();
     var x = (a.x || .5) * innerWidth, y = (a.y || .5) * innerHeight, g = grid(x, y);
     box.classList.add('on'); var l = box.querySelector('.l'); l.classList.add('on');
     lab.textContent = a.label || ''; document.documentElement.classList.remove('fx-arr');
-    var LOAD = 420, OUT = 580, t0 = performance.now();
+    var LOAD = 150, OUT = 580, t0 = performance.now();
+    bar.style.transform = 'scaleX(1)'; pct.textContent = '100%';
     (function frame(now) {
       var t = (now - t0) / SLOW; ctx.clearRect(0, 0, g.W, g.H);
       if (t < LOAD) {
         ctx.fillStyle = 'rgb(10,10,11)'; ctx.fillRect(0, 0, g.W, g.H);
-        var p = .6 + .4 * Math.min(1, t / (LOAD * .85)); bar.style.transform = 'scaleX(' + p + ')'; pct.textContent = ('00' + Math.round(p * 100)).slice(-3) + '%';
       } else if (t < LOAD + OUT) {
         l.classList.remove('on'); var u = t - LOAD;
         g.cells.forEach(function (k) { var b = u - k.o; if (b > 120) return; ctx.fillStyle = b > 0 ? 'rgba(10,10,11,' + (1 - b / 120) + ')' : 'rgb(10,10,11)'; if (b > 0 && b < 50) ctx.fillStyle = 'rgb(150,18,24)'; ctx.fillRect(k.x, k.y, g.cs + .5, g.cs + .5); });

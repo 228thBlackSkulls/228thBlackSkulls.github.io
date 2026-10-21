@@ -126,3 +126,34 @@ fieldset.picks>.hint{font:400 .85rem/1.4 var(--body);color:var(--muted)}
 .slot-grid input,.slot-grid select{min-width:0;width:100%}
 .row .meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
 .slot-grid label[hidden]{display:none}
+
+/* Menu button (top right) and the side panel with the member pages. */
+.top .side-tog{order:2;width:44px;height:44px;display:grid;place-items:center;background:none;border:1px solid var(--line);border-radius:2px;color:var(--fg);cursor:pointer;padding:0;flex:none}
+.top .side-tog:hover,.side-open .top .side-tog{border-color:var(--accent)}
+.side-tog i{position:relative;width:18px;height:12px;display:block}
+.side-tog i::before,.side-tog i::after,.side-tog i b{content:"";position:absolute;left:0;right:0;height:2px;background:currentColor;transition:transform .25s,opacity .2s,top .25s}
+.side-tog i::before{top:0}.side-tog i b{top:5px}.side-tog i::after{top:10px}
+.side-open .side-tog i::before{top:5px;transform:rotate(45deg)}
+.side-open .side-tog i::after{top:5px;transform:rotate(-45deg)}
+.side-open .side-tog i b{opacity:0}
+.top nav{order:1}
+@media (max-width:720px){.top .brand{order:0}.top .side-tog{order:1}.top nav{order:2;flex-basis:100%}}
+html.side-open{overflow:hidden}
+#side-dim{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.6);opacity:0;visibility:hidden;transition:opacity .3s,visibility 0s .3s}
+.side-open #side-dim{opacity:1;visibility:visible;transition:opacity .3s}
+#side{position:fixed;top:0;right:0;bottom:0;z-index:21;width:min(88vw,400px);background:var(--bg);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;
+  padding:calc(18px + env(safe-area-inset-top,0px)) 24px calc(28px + env(safe-area-inset-bottom,0px));transform:translateX(100%);visibility:hidden;transition:transform .45s cubic-bezier(.7,0,.25,1),visibility 0s .45s}
+#side::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;opacity:.3;pointer-events:none}
+.side-open #side{transform:none;visibility:visible;transition:transform .45s cubic-bezier(.7,0,.25,1)}
+#side>*{position:relative}
+.side-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.side-head .label b{color:var(--accent)}
+.side-x{width:44px;height:44px;display:grid;place-items:center;background:none;border:1px solid var(--accent);border-radius:2px;color:var(--fg);font-size:1.4rem;cursor:pointer;padding:0}
+.side-list{display:grid;gap:4px}
+.side-list a,.side-list button{position:relative;display:block;width:100%;text-align:left;padding:4px 0 4px 34px;background:none;border:0;cursor:pointer;text-decoration:none;color:var(--fg);
+  font:800 clamp(1.9rem,8vw,2.8rem)/1.05 var(--display);text-transform:uppercase;letter-spacing:.02em;clip-path:inset(0 0 100% 0)}
+.side-list a::before,.side-list button::before{content:attr(data-n);position:absolute;left:0;top:.55em;font:500 .62rem var(--mono);letter-spacing:.08em;color:var(--accent)}
+.side-list a:hover,.side-list button:hover,.side-list a[aria-current]{color:var(--accent)}
+.side-open .side-list a,.side-open .side-list button{clip-path:inset(0 0 -12% 0);transition:clip-path .32s cubic-bezier(.3,0,.2,1) calc(.25s + var(--i,0)*.06s)}
+.side-list .out{color:var(--muted);margin-top:18px}
+@media (prefers-reduced-motion:reduce){#side,.side-open #side,#side-dim,.side-list a,.side-list button{transition:none!important}}

@@ -207,6 +207,44 @@
       link('org/', 'Unit Organization', 'org');
       link('login/', 'Log in', 'login');
     }
+    A.sideMenu(p, current);
+  };
+
+  // Menu button in the top right that opens a side panel with the member pages.
+  A.sideMenu = function (p, current) {
+    var top = document.querySelector('.top .wrap'); if (!top) return;
+    var root = document.documentElement, tog = top.querySelector('.side-tog'), side = document.getElementById('side');
+    if (!tog) {
+      tog = A.el('button', 'side-tog'); tog.type = 'button'; tog.setAttribute('aria-label', 'Open menu'); tog.setAttribute('aria-controls', 'side'); tog.setAttribute('aria-expanded', 'false');
+      tog.innerHTML = '<i><b></b></i>'; top.appendChild(tog);
+      var dim = A.el('div'); dim.id = 'side-dim'; document.body.appendChild(dim);
+      side = A.el('aside'); side.id = 'side'; side.setAttribute('aria-label', 'Menu'); side.setAttribute('aria-hidden', 'true');
+      var head = A.el('div', 'side-head'); head.innerHTML = '<p class="label"><b>//</b> 228th Members</p>';
+      var x = A.el('button', 'side-x', '\u00d7'); x.type = 'button'; x.setAttribute('aria-label', 'Close menu'); head.appendChild(x);
+      side.appendChild(head); side.appendChild(A.el('nav', 'side-list')); document.body.appendChild(side);
+      var set = function (open) {
+        root.classList.toggle('side-open', open); tog.setAttribute('aria-expanded', open); side.setAttribute('aria-hidden', !open);
+        if (open) { var f = side.querySelector('.side-list a,.side-list button'); if (f) f.focus({ preventScroll: true }); }
+      };
+      tog.onclick = function () { set(!root.classList.contains('side-open')); };
+      x.onclick = dim.onclick = function () { set(false); };
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && root.classList.contains('side-open')) { set(false); tog.focus(); } });
+      addEventListener('pageshow', function (e) { if (e.persisted) set(false); });
+    }
+    var list = side.querySelector('.side-list'); list.textContent = '';
+    var n = 0;
+    function item(el, key) { n++; el.dataset.n = (n < 10 ? '0' : '') + n; el.style.setProperty('--i', n); if (key && key === current) el.setAttribute('aria-current', 'page'); list.appendChild(el); }
+    function go(href, text, key) { var a = A.el('a', null, text); a.href = A.url(href); item(a, key); }
+    go('', 'Home');
+    if (p) {
+      go('members/', 'Members', 'members');
+      go('org/', 'Unit Organization', 'org');
+      if (A.canDash(p)) go('dashboard/', 'Command Dashboard', 'dashboard');
+      var out = A.el('button', 'out', 'Log out'); out.type = 'button'; out.onclick = A.signOut; item(out);
+    } else {
+      go('org/', 'Unit Organization', 'org');
+      go('login/', 'Log in', 'login');
+    }
   };
 
   A.fail = function (box, err) {
