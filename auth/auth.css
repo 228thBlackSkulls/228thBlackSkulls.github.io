@@ -157,3 +157,6 @@ html.side-open{overflow:hidden}
 .side-open .side-list a,.side-open .side-list button{clip-path:inset(0 0 -12% 0);transition:clip-path .32s cubic-bezier(.3,0,.2,1) calc(.25s + var(--i,0)*.06s)}
 .side-list .out{color:var(--muted);margin-top:18px}
 @media (prefers-reduced-motion:reduce){#side,.side-open #side,#side-dim,.side-list a,.side-list button{transition:none!important}}
+/* The page links live only in the side panel (Flanker, 2026-10-21); the header keeps just the logo and the menu button. */
+#acct-nav{display:none}
+.top .brand{margin-right:auto}
