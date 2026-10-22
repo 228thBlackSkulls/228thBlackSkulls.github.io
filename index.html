@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610220338";
+(function(){var v="202610220340";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -1012,7 +1012,7 @@ He left behind a holotape warning that the op had been a setup, with final order
       <div class="head reveal">
         <p class="label"><b>09</b> &nbsp;/&nbsp; Operations</p>
         <h2>Deployment schedule</h2>
-        <p style="color:var(--soft)">Every countdown shows the time in your own time zone. <span class="tbd">TIMES SET BY HIGH COMMAND</span></p>
+        <p style="color:var(--soft)">Every countdown shows the time in your own time zone.<br><span class="tbd" style="display:inline-block;margin-top:8px">TIMES SET BY HIGH COMMAND</span></p>
       </div>
       <div class="ops">
         <div class="opstack" id="c-ops">
