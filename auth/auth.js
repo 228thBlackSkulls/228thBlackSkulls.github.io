@@ -235,6 +235,12 @@
     var n = 0;
     function item(el, key) { n++; el.dataset.n = (n < 10 ? '0' : '') + n; el.style.setProperty('--i', n); if (key && key === current) el.setAttribute('aria-current', 'page'); list.appendChild(el); }
     function go(href, text, key) { var a = A.el('a', null, text); a.href = A.url(href); item(a, key); }
+    if (p) {
+      var me = A.el('a', 'me'); me.href = A.url('account/'); me._orig = 'My account';
+      var nick = ((p.display_name || '').match(/"([^"]+)"/) || [])[1] || p.display_name || '?';
+      me.appendChild(A.avatar({ avatar_url: p.avatar_url, display_name: nick }));
+      me.appendChild(A.el('span', null, 'My account')); item(me, 'account');
+    }
     go('', 'Home');
     if (p) {
       go('members/', 'Members', 'members');

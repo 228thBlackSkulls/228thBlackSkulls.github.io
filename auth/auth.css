@@ -155,6 +155,8 @@ html.side-open{overflow:hidden}
 .side-list a::before,.side-list button::before{content:attr(data-n);position:absolute;left:0;top:.55em;font:500 .62rem var(--mono);letter-spacing:.08em;color:var(--accent)}
 .side-list a:hover,.side-list button:hover,.side-list a[aria-current]{color:var(--accent)}
 .side-open .side-list a,.side-open .side-list button{clip-path:inset(0 0 -12% 0);transition:clip-path .32s cubic-bezier(.3,0,.2,1) calc(.25s + var(--i,0)*.06s)}
+.side-list .me{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.side-list .me .av{flex:none;width:52px;height:52px;border:2px solid var(--accent);font-size:1.4rem;color:var(--fg)}
 .side-list .out{color:var(--muted);margin-top:18px}
 @media (prefers-reduced-motion:reduce){#side,.side-open #side,#side-dim,.side-list a,.side-list button{transition:none!important}}
 /* The page links live only in the side panel (Flanker, 2026-10-21); the header keeps just the logo and the menu button. */

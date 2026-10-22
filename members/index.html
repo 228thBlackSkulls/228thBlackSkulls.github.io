@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610220319";
+(function(){var v="202610220326";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -16,10 +16,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css?v=10">
+<link rel="stylesheet" href="../auth/auth.css?v=11">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=17"></script>
+<script src="../auth/auth.js?v=18"></script>
 <script src="../auth/fx.js?v=4"></script>
 </head>
 <body>
@@ -74,7 +74,7 @@
     <div class="head">
       <p class="label"><b>//</b> Members area</p>
       <h1 id="hello">Welcome back</h1>
-      <p style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span class="chip red" id="my-role"></span><a class="btn ghost small" href="../account/">My account</a></p>
+      <p style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span class="chip red" id="my-role"></span></p>
     </div>
     <section class="stack" aria-labelledby="ev-h" id="ev-wrap" style="margin-bottom:32px" hidden>
       <h2 id="ev-h">Upcoming events</h2>
