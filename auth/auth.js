@@ -201,7 +201,7 @@
     if (p) {
       link('members/', 'Members', 'members');
       link('org/', 'Unit Organization', 'org');
-      if (A.canDash(p)) link('dashboard/', 'Command Dashboard', 'dashboard');
+      if (A.canDash(p)) link('dashboard/', 'Command Center', 'dashboard');
       var out = A.el('button', null, 'Log out'); out.type = 'button'; out.onclick = A.signOut; nav.appendChild(out);
     } else {
       link('org/', 'Unit Organization', 'org');
@@ -245,7 +245,7 @@
     if (p) {
       go('members/', 'Dashboard', 'members');
       go('org/', 'Unit Organization', 'org');
-      if (A.canDash(p)) go('dashboard/', 'Command Dashboard', 'dashboard');
+      if (A.canDash(p)) go('dashboard/', 'Command Center', 'dashboard');
       var out = A.el('button', 'out', 'Log out'); out.type = 'button'; out.onclick = A.signOut; item(out);
     } else {
       go('org/', 'Unit Organization', 'org');
