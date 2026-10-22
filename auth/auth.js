@@ -243,7 +243,7 @@
     }
     go('', 'Home');
     if (p) {
-      go('members/', 'Members', 'members');
+      go('members/', 'Dashboard', 'members');
       go('org/', 'Unit Organization', 'org');
       if (A.canDash(p)) go('dashboard/', 'Command Dashboard', 'dashboard');
       var out = A.el('button', 'out', 'Log out'); out.type = 'button'; out.onclick = A.signOut; item(out);
