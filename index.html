@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610212248";
+(function(){var v="202610220319";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -610,13 +610,16 @@ html.intro-on,html.intro-on body{overflow:hidden}
 </div>
 <script>
 (function(){
-  // Opening animation: once per visit, not in the edit page preview, not for reduced-motion viewers.
+  // Opening animation: plays whenever someone opens the site from outside it (typed address, bookmark, a link
+  // from Discord), but not when moving between the site's own pages, and not again within a minute.
+  // Never in the edit page preview or for reduced-motion viewers.
   var box=document.getElementById('intro'), v=document.getElementById('intro-video'), seen=false;
-  try{seen=sessionStorage.getItem('228th-intro')==='1';}catch(e){}
+  try{var ref=document.referrer?new URL(document.referrer):null;if(ref&&ref.origin===location.origin)seen=true;}catch(e){}
+  try{if(Date.now()-(+localStorage.getItem('228th-intro-at')||0)<60000)seen=true;}catch(e){}
   if(seen||/[?&]preview\b/.test(location.search)||matchMedia('(prefers-reduced-motion: reduce)').matches){box.remove();return;}
   var root=document.documentElement, done=false;
   box.hidden=false; root.classList.add('intro-on');
-  function end(){ if(done)return; done=true; try{sessionStorage.setItem('228th-intro','1');}catch(e){} box.classList.add('out'); root.classList.remove('intro-on'); setTimeout(function(){box.remove();},1000); }
+  function end(){ if(done)return; done=true; try{localStorage.setItem('228th-intro-at',String(Date.now()));sessionStorage.setItem('228th-intro','1');}catch(e){} box.classList.add('out'); root.classList.remove('intro-on'); setTimeout(function(){box.remove();},1000); }
   document.getElementById('intro-skip').onclick=end;
   v.addEventListener('ended',end); document.getElementById('intro-last').addEventListener('error',end);
   v.addEventListener('timeupdate',function(){ if(v.duration&&v.currentTime>v.duration-0.6)end(); });
