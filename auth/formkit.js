@@ -29,12 +29,30 @@
     if (q.type === 'text' || q.type === 'long') {
       var i = A.el(q.type === 'long' ? 'textarea' : 'input'); i.id = i.name = name; i.maxLength = q.type === 'long' ? 4000 : 300;
       i.value = typeof val === 'string' ? val : ''; i.disabled = locked; box.appendChild(i);
+    } else if (q.type === 'date' || q.type === 'time') {
+      var d = A.el('input'); d.type = q.type; d.id = d.name = name; d.value = typeof val === 'string' ? val : ''; d.disabled = locked; d.style.maxWidth = '260px';
+      box.appendChild(d);
+    } else if (q.type === 'select') {
+      var sel = A.el('select'); sel.id = sel.name = name; sel.disabled = locked; sel.style.maxWidth = '420px';
+      var none = A.el('option', null, 'Choose'); none.value = ''; sel.appendChild(none);
+      (q.options || []).forEach(function (o) { var op = A.el('option', null, o); op.value = o; sel.appendChild(op); });
+      sel.value = typeof val === 'string' && (q.options || []).indexOf(val) >= 0 ? val : '';
+      box.appendChild(sel);
     } else {
       var opts2 = A.el('div', 'opts'), have = Array.isArray(val) ? val : val != null ? [val] : [];
       (q.options || []).forEach(function (o) {
         var l2 = A.el('label'), c2 = A.el('input'); c2.type = q.type === 'choice' ? 'radio' : 'checkbox'; c2.name = name; c2.value = o;
         c2.checked = have.indexOf(o) >= 0; c2.disabled = locked; l2.appendChild(c2); l2.appendChild(document.createTextNode(o)); opts2.appendChild(l2);
       });
+      // "Other:" with its own box, like Google Forms. Saved as "Other: what they typed".
+      if (q.other) {
+        var prev = have.filter(function (x) { return typeof x === 'string' && x.indexOf('Other: ') === 0; })[0];
+        var l3 = A.el('label', 'other'), c3 = A.el('input'), t3 = A.el('input');
+        c3.type = q.type === 'choice' ? 'radio' : 'checkbox'; c3.name = name; c3.value = '__other'; c3.checked = !!prev; c3.disabled = locked;
+        t3.className = 'other-text'; t3.maxLength = 300; t3.placeholder = 'Other'; t3.value = prev ? prev.slice(7) : ''; t3.disabled = locked;
+        t3.addEventListener('input', function () { if (t3.value.trim()) c3.checked = true; });
+        l3.appendChild(c3); l3.appendChild(document.createTextNode('Other:')); l3.appendChild(t3); opts2.appendChild(l3);
+      }
       box.appendChild(opts2);
     }
     return box;
@@ -86,6 +104,16 @@
     return w;
   }
 
+  // An answer in words, for the Answers view and spreadsheets.
+  K.answerText = function (q, v) {
+    if (q.type === 'agree') return v === true ? 'Agreed' : 'Not agreed';
+    if (q.type === 'signature') return v && v.name ? v.name + (v.drawing ? ' (signed)' : '') : '—';
+    if (q.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(v || '')) return new Date(v + 'T12:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    if (q.type === 'time' && /^\d{2}:\d{2}/.test(v || '')) { var t = v.split(':'); return new Date(2000, 0, 1, +t[0], +t[1]).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); }
+    if (Array.isArray(v)) return v.length ? v.join(', ') : '—';
+    return v == null || v === '' ? '—' : String(v);
+  };
+
   // Read the answers from a drawn form. missing is the first required question left empty, or null.
   K.collect = function (f, form) {
     var ans = {}, missing = null;
@@ -94,7 +122,7 @@
       if (q.type === 'info') return;
       var name = 'q_' + q.id, v, box = form.querySelector('[data-q="' + q.id + '"]');
       if (q.type === 'agree') v = form.querySelector('[name="' + name + '"]').checked;
-      else if (q.type === 'text' || q.type === 'long') v = form.querySelector('[name="' + name + '"]').value.trim();
+      else if (q.type === 'text' || q.type === 'long' || q.type === 'date' || q.type === 'time' || q.type === 'select') v = form.querySelector('[name="' + name + '"]').value.trim();
       else if (q.type === 'signature') {
         var sig = box.querySelector('.sig'), sv = sig._value(); v = sv;
         if (q.required && (!sv.name || !sv.drawing)) {
@@ -103,8 +131,11 @@
         }
         ans[q.id] = v; return;
       }
-      else if (q.type === 'choice') { var c = form.querySelector('[name="' + name + '"]:checked'); v = c ? c.value : ''; }
-      else v = Array.prototype.map.call(form.querySelectorAll('[name="' + name + '"]:checked'), function (x) { return x.value; });
+      else {
+        var oth = box.querySelector('.other-text'), pick = function (x) { return x.value === '__other' ? (oth && oth.value.trim() ? 'Other: ' + oth.value.trim() : '') : x.value; };
+        if (q.type === 'choice') { var c = form.querySelector('[name="' + name + '"]:checked'); v = c ? pick(c) : ''; }
+        else v = Array.prototype.map.call(form.querySelectorAll('[name="' + name + '"]:checked'), pick).filter(Boolean);
+      }
       var empty = v === false || v === '' || (Array.isArray(v) && !v.length);
       if (q.required && empty) { box.classList.add('bad'); if (!missing) missing = q; }
       ans[q.id] = v;

@@ -194,3 +194,5 @@ html.side-open{overflow:hidden}
 .sig .padbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .rcard img.sigimg{display:block;max-width:100%;width:320px;background:#f4f4f2;border-radius:2px;margin-top:6px}
 .sendrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.q .opts label.other{align-items:center;flex-wrap:wrap}
+.q .opts .other-text{flex:1 1 180px;width:auto;padding:.45em .6em}

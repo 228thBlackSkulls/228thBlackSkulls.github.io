@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610231336";
+(function(){var v="202610231430";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -16,13 +16,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css?v=12">
+<link rel="stylesheet" href="../auth/auth.css?v=13">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
 <script src="../auth/auth.js?v=22"></script>
 <script src="../auth/fx.js?v=8"></script>
-<script src="../auth/formkit.js?v=1"></script>
+<script src="../auth/formkit.js?v=2"></script>
 <style>
+.rnotes{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.rnotes textarea{min-height:90px}
 .dtree{border-top:1px solid var(--line)}
 .dtree summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .dtree summary::-webkit-details-marker{display:none}
@@ -111,6 +113,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
       <label class="f">Who can fill it in<select name="see"></select></label>
       <label class="check"><input type="checkbox" name="andup"> This role and up</label>
       <label class="check"><input type="checkbox" name="open"> Open for answers</label>
+      <label class="check"><input type="checkbox" name="multiple"> Members can send it more than once</label>
       <label class="check"><input type="checkbox" name="public"> Public (no login; shown on the Alliance page when the division is Alliance)</label>
     </div>
     <h4 class="label" style="margin:8px 0 0">Questions</h4>
@@ -135,8 +138,8 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
   A.header(me, 'forms');
   $('page').hidden = false;
 
-  var sb = A.sb, canEdit = A.can(me, 'forms'), forms = [], mine = {}, counts = {}, roles = [], cur = null, view = 'form';
-  var TYPES = [['text', 'Short answer'], ['long', 'Paragraph'], ['choice', 'Pick one'], ['checks', 'Pick any'], ['agree', 'Agree checkbox'], ['signature', 'Signature (callsign + drawn)'], ['info', 'Text block (no answer)']];
+  var sb = A.sb, canEdit = A.can(me, 'forms'), forms = [], mine = {}, myCount = {}, counts = {}, roles = [], cur = null, view = 'form';
+  var TYPES = [['text', 'Short answer'], ['long', 'Paragraph'], ['choice', 'Pick one'], ['checks', 'Pick any'], ['select', 'Drop-down'], ['date', 'Date'], ['time', 'Time'], ['agree', 'Agree checkbox'], ['signature', 'Signature (callsign + drawn)'], ['info', 'Text block (no answer)']];
 
   async function load() {
     var r = await Promise.all([
@@ -148,8 +151,13 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     if (r[2] && !r[2].error) roles = r[2].data.slice().sort(function (a, b) { return b.rank - a.rank; });
     // Public forms (like the Alliance form) are filled in on their own public page; members only see them here if they manage forms.
     forms = r[0].data.filter(function (f) { return canEdit || !f.public; }).sort(function (a, b) { return a.sort - b.sort || a.id - b.id; });
-    mine = {}; counts = {};
-    r[1].data.forEach(function (x) { counts[x.form_id] = (counts[x.form_id] || 0) + 1; if (x.user_id === me.id) mine[x.form_id] = x; });
+    mine = {}; counts = {}; myCount = {};
+    r[1].data.forEach(function (x) {
+      counts[x.form_id] = (counts[x.form_id] || 0) + 1;
+      if (x.user_id !== me.id) return;
+      myCount[x.form_id] = (myCount[x.form_id] || 0) + 1;
+      if (!mine[x.form_id] || mine[x.form_id].created_at < x.created_at) mine[x.form_id] = x;
+    });
   }
 
   var vOf = {};
@@ -173,7 +181,8 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
         sum.appendChild(A.el('span', 't', f.title));
         var chips = A.el('span', 'chips'), mineR = mine[f.id];
         var sig = (f.questions || []).some(function (q) { return q.type === 'signature'; });
-        chips.appendChild(mineR ? A.el('small', 'chip ok', (sig ? 'Signed ' : 'Sent ') + A.date(mineR.updated_at)) : A.el('small', 'chip', sig ? 'Not signed' : 'Not filled in'));
+        if (f.multiple) { if (myCount[f.id]) chips.appendChild(A.el('small', 'chip ok', 'You sent ' + myCount[f.id])); }
+        else chips.appendChild(mineR ? A.el('small', 'chip ok', (sig ? 'Signed ' : 'Sent ') + A.date(mineR.updated_at)) : A.el('small', 'chip', sig ? 'Not signed' : 'Not filled in'));
         if (!f.open) chips.appendChild(A.el('small', 'chip', 'Closed'));
         if (f.public) chips.appendChild(A.el('small', 'chip', 'Public'));
         var who = A.seenBy(roles, f.visible_to); if (who) chips.appendChild(A.el('small', 'chip lock', who));
@@ -221,7 +230,8 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
 
   // ---- Filling in ----
   function drawForm(p, f) {
-    var mineR = mine[f.id];
+    // A form that takes many answers (like a disciplinary report) always starts blank.
+    var mineR = f.multiple ? null : mine[f.id];
     if ((f.description || '').trim()) p.appendChild(A.richText(f.description));
     var form = A.el('form', 'fill'); form.noValidate = true;
     var signed = !!mineR && (f.questions || []).some(function (q) { return q.type === 'signature'; });
@@ -239,32 +249,28 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
   async function submit(f, form) {
     var got = FormKit.collect(f, form), ans = got.answers, missing = got.missing;
     if (missing) { say('Please answer: ' + (missing.label || 'the marked questions').replace(/[.?!]+$/, '') + '.'); form.querySelector('[data-q="' + missing.id + '"]').scrollIntoView({ block: 'center' }); return; }
-    var had = mine[f.id], r = had
+    var had = f.multiple ? null : mine[f.id], r = had
       ? await sb.from('form_responses').update({ answers: ans }).eq('id', had.id)
       : await sb.from('form_responses').insert({ form_id: f.id, answers: ans });
     if (r.error) return A.fail(msg, r.error);
     await refresh(f.id, 'form');
-    ok(had ? 'Your answers were updated.' : 'Sent. Thank you.');
+    ok(had ? 'Your answers were updated.' : f.multiple ? 'Sent. Thank you. The form is clear for the next one.' : 'Sent. Thank you.');
     scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // ---- Answers (forms permission) ----
-  function answerText(q, v) {
-    if (q.type === 'agree') return v === true ? 'Agreed' : 'Not agreed';
-    if (q.type === 'signature') return v && v.name ? v.name + (v.drawing ? ' (signed)' : '') : '—';
-    if (Array.isArray(v)) return v.join(', ');
-    return v == null || v === '' ? '—' : String(v);
-  }
+  var answerText = FormKit.answerText;
   async function drawResponses(p, f) {
     var box = A.el('div', 'resp'); box.appendChild(A.el('p', 'empty', 'Loading answers…')); p.appendChild(box);
-    var r = await sb.from('form_responses').select('*').eq('form_id', f.id);
+    var r = await sb.from('form_responses').select('*').eq('form_id', f.id), nr = await sb.from('response_notes').select('*');
     box.textContent = '';
     if (r.error) return A.fail(msg, r.error);
+    var notes = {}; (nr.data || []).forEach(function (n) { notes[n.response_id] = n; });
     var list = r.data.filter(function (x) { return x.form_id === f.id; }).sort(function (a, b) { return a.updated_at < b.updated_at ? 1 : -1; });
     var qs = (f.questions || []).filter(function (q) { return q.type !== 'info'; });
     var bar = A.el('div', 'sendrow');
     bar.appendChild(A.el('span', 'label', list.length + (list.length === 1 ? ' answer' : ' answers')));
-    if (list.length) bar.appendChild(btn('Download spreadsheet (CSV)', function () { csv(f, qs, list); }));
+    if (list.length) bar.appendChild(btn('Download spreadsheet (CSV)', function () { csv(f, qs, list, notes); }));
     box.appendChild(bar);
     if (!list.length) box.appendChild(A.el('p', 'empty', 'Nobody has filled this in yet.'));
     list.forEach(function (x) {
@@ -279,8 +285,19 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
         dl.appendChild(A.el('dt', null, q.label || 'Question')); dl.appendChild(dd);
       });
       c.appendChild(dl);
+      // High Command's own notes on this answer. Only people with the forms permission can see or change them.
+      var nb = A.el('div', 'rnotes'), nl = A.el('label', 'f'), nt = A.el('textarea'), had = notes[x.id];
+      nl.appendChild(document.createTextNode('High Command notes (internal)')); nt.maxLength = 20000; nt.value = had ? had.notes || '' : ''; nt.placeholder = 'Thoughts, decisions, follow-ups…';
+      nl.appendChild(nt); nb.appendChild(nl);
+      var nrow = A.el('div', 'sendrow'), ns = btn('Save notes', async function () {
+        var w = await sb.from('response_notes').upsert({ response_id: x.id, notes: nt.value.replace(/\s+$/, '') });
+        if (w.error) return A.fail(msg, w.error);
+        nm.textContent = 'Saved just now.';
+      }); ns.className = 'btn small';
+      var nm = A.el('span', 'muted', had && had.updated_at ? 'Last saved ' + A.date(had.updated_at) + (had.by_name ? ' by ' + had.by_name : '') + '.' : '');
+      nrow.appendChild(ns); nrow.appendChild(nm); nb.appendChild(nrow); c.appendChild(nb);
       var del = btn('Delete answer', async function () {
-        if (!confirm('Delete ' + (x.name || 'this member') + '\'s answers? They will need to fill it in again.')) return;
+        if (!confirm(f.multiple ? 'Delete this answer from ' + (x.name || 'this member') + '?' : 'Delete ' + (x.name || 'this member') + '\'s answers? They will need to fill it in again.')) return;
         var d = await sb.from('form_responses').delete().eq('id', x.id);
         if (d.error) return A.fail(msg, d.error);
         await refresh(f.id, 'responses'); ok('Answer deleted.');
@@ -289,10 +306,11 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
       box.appendChild(c);
     });
   }
-  function csv(f, qs, list) {
+  function csv(f, qs, list, notes) {
+    notes = notes || {};
     var cell = function (s) { s = String(s == null ? '' : s); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-    var rows = [['Member', 'Sent'].concat(qs.map(function (q) { return q.label || 'Question'; }))];
-    list.forEach(function (x) { rows.push([x.name || '', new Date(x.updated_at).toLocaleString()].concat(qs.map(function (q) { return answerText(q, (x.answers || {})[q.id]); }))); });
+    var rows = [['Member', 'Sent'].concat(qs.map(function (q) { return q.label || 'Question'; })).concat(['High Command notes'])];
+    list.forEach(function (x) { rows.push([x.name || '', new Date(x.updated_at).toLocaleString()].concat(qs.map(function (q) { return answerText(q, (x.answers || {})[q.id]); })).concat([(notes[x.id] || {}).notes || ''])); });
     var blob = new Blob(['﻿' + rows.map(function (r) { return r.map(cell).join(','); }).join('\r\n')], { type: 'text/csv' });
     var a = A.el('a'); a.href = URL.createObjectURL(blob); a.download = f.title.replace(/[^\w -]+/g, '') + ' answers.csv';
     document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
@@ -328,10 +346,12 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     box.appendChild(bar);
     var lab = A.el('label', 'f'), li = A.el('input'); li.maxLength = 300; li.value = q.label || ''; lab.appendChild(document.createTextNode('Question')); lab.appendChild(li); box.appendChild(lab);
     var hl = A.el('label', 'f'), ht = A.el('textarea'); ht.maxLength = 30000; ht.value = q.help || ''; hl.appendChild(document.createTextNode('Help text')); hl.appendChild(ht); box.appendChild(hl);
-    var ol = A.el('label', 'f'), ot = A.el('textarea'); ot.value = (q.options || []).join('\n'); ol.appendChild(document.createTextNode('Choices, one per line')); ol.appendChild(ot); box.appendChild(ol);
+    var oth = A.el('label', 'check'), oc = A.el('input'); oc.type = 'checkbox'; oc.checked = !!q.other; oth.appendChild(oc); oth.appendChild(document.createTextNode('Add an "Other:" box'));
+    var ol = A.el('label', 'f'), ot = A.el('textarea'); ot.value = (q.options || []).join('\n'); ol.appendChild(document.createTextNode('Choices, one per line')); ol.appendChild(ot); box.appendChild(ol); box.appendChild(oth);
     function sync() {
       var t = type.value;
-      ol.hidden = t !== 'choice' && t !== 'checks';
+      ol.hidden = t !== 'choice' && t !== 'checks' && t !== 'select';
+      oth.hidden = t !== 'choice' && t !== 'checks';
       req.hidden = t === 'info';
       lab.firstChild.textContent = t === 'info' ? 'Heading' : t === 'agree' ? 'Checkbox text' : 'Question';
       hl.firstChild.textContent = t === 'info' ? 'Text (paste terms or rules here)' : 'Help text (optional)';
@@ -341,7 +361,8 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     box._get = function () {
       var t = type.value, o = { id: box._id, type: t, label: li.value.trim() };
       if (ht.value.trim()) o.help = ht.value.replace(/\s+$/, '');
-      if (t === 'choice' || t === 'checks') o.options = ot.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+      if (t === 'choice' || t === 'checks' || t === 'select') o.options = ot.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+      if ((t === 'choice' || t === 'checks') && oc.checked) o.other = true;
       if (t !== 'info' && rc.checked) o.required = true;
       return o;
     };
@@ -351,7 +372,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
   function build(f, cat) {
     editing = f; var F = $('bform');
     $('bdlg-h').textContent = f ? 'Edit form' : 'New form';
-    F.title.value = f ? f.title : ''; F.description.value = f ? f.description || '' : ''; F.open.checked = f ? f.open : true; F.public.checked = !!(f && f.public);
+    F.title.value = f ? f.title : ''; F.description.value = f ? f.description || '' : ''; F.open.checked = f ? f.open : true; F.public.checked = !!(f && f.public); F.multiple.checked = !!(f && f.multiple);
     F.category.value = f ? f.category || '' : cat || 'Arma 3';
     var dl = $('cats'); dl.textContent = ''; groups().forEach(function (c) { var o = A.el('option'); o.value = c; dl.appendChild(o); });
     F.see.textContent = '';
@@ -377,9 +398,9 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
       see = F.andup.checked ? roles.slice(0, at + 1).map(function (r) { return r.name; }) : [F.see.value];
     }
     var qs = Array.prototype.map.call($('qlist').querySelectorAll('.qed'), function (b) { return b._get(); });
-    var bad = qs.find(function (q) { return (q.type === 'choice' || q.type === 'checks') && !(q.options || []).length; });
+    var bad = qs.find(function (q) { return (q.type === 'choice' || q.type === 'checks' || q.type === 'select') && !(q.options || []).length; });
     if (bad) return alert('"' + (bad.label || 'A question') + '" needs at least one choice.');
-    var row = { title: F.title.value.trim(), description: F.description.value.replace(/\s+$/, ''), visible_to: see, open: F.open.checked, questions: qs, category: F.category.value.trim(), public: F.public.checked }, r;
+    var row = { title: F.title.value.trim(), description: F.description.value.replace(/\s+$/, ''), visible_to: see, open: F.open.checked, questions: qs, category: F.category.value.trim(), public: F.public.checked, multiple: F.multiple.checked }, r;
     if (editing) r = await sb.from('forms').update(row).eq('id', editing.id);
     else { row.sort = forms.length ? Math.max.apply(null, forms.map(function (x) { return x.sort; })) + 1 : 0; r = await sb.from('forms').insert(row).select('id').single(); }
     if (r.error) return A.fail(msg, r.error);
@@ -389,7 +410,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
   };
   async function copyForm(f) {
     var t = prompt('Name for the copy', f.title + ' (copy)'); if (!t || !t.trim()) return;
-    var row = { title: t.trim(), description: f.description, visible_to: f.visible_to, open: false, questions: f.questions, category: f.category || '', public: !!f.public,
+    var row = { title: t.trim(), description: f.description, visible_to: f.visible_to, open: false, questions: f.questions, category: f.category || '', public: !!f.public, multiple: !!f.multiple,
       sort: Math.max.apply(null, forms.map(function (x) { return x.sort; })) + 1 };
     var r = await sb.from('forms').insert(row).select('id').single();
     if (r.error) return A.fail(msg, r.error);
