@@ -58,6 +58,18 @@ begin
   for i in 1..cardinality(ord) loop update public.roles set rank = 100 - i where name = ord[i]; end loop;
 end $$;
 
+-- Rank designation letters (CC, CPT, T2C, CR-C...). A member's callsign follows their rank: promote a CT to Corporal and
+-- CT-1234 "Nick" becomes CP-1234 "Nick". The Dashboard keeps these in step with the rank list on the edit page.
+alter table public.roles add column if not exists abbr text not null default '';
+alter table public.roles drop constraint if exists roles_abbr_check;
+alter table public.roles add constraint roles_abbr_check check (abbr = '' or abbr ~ '^[A-Z][A-Z0-9]{1,3}(-[A-Z])?$');
+update public.roles r set abbr = v.abbr from (values ('senior-commander', 'CC'), ('battalion-commander', 'CC'), ('commander', 'CC'),
+  ('major', 'CM'), ('captain', 'CPT'), ('first-lieutenant', 'C1L'), ('second-lieutenant', 'C2L'), ('command-sergeant-major', 'CCM'),
+  ('sergeant-major', 'CSM'), ('master-sergeant', 'CMS'), ('sergeant-first-class', 'CFC'), ('staff-sergeant', 'CSS'), ('sergeant', 'CS'),
+  ('senior-corporal', 'SCP'), ('corporal', 'CP'), ('lance-corporal', 'CLC'), ('specialist', 'SPC'), ('trooper-1st-class', 'T1C'),
+  ('trooper-2nd-class', 'T2C'), ('trooper-3rd-class', 'T3C'), ('shiny', 'CT'), ('cadet', 'CR-C')) v(name, abbr)
+  where r.name = v.name and r.abbr = '';
+
 -- One profile per account. Everyone starts as pending until an admin approves them.
 create table if not exists public.profiles (
   id           uuid primary key references auth.users on delete cascade,
@@ -169,6 +181,7 @@ grant  execute on function public.set_bio(uuid, text) to authenticated;
 -- changing the list keeps only real roles, falls back to Recruit when empty, and makes role the highest one.
 create or replace function public.sync_roles() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare l text; cur text;
 begin
   if tg_op = 'UPDATE' and new.all_roles is not distinct from old.all_roles and new.role is distinct from old.role then
     new.all_roles := array[new.role];
@@ -179,6 +192,13 @@ begin
   -- Rank groups (NCO, SNCO...) never count as someone's rank, so everyone also holds a real rank (Recruit if none).
   if not exists (select 1 from roles r where r.name = any(new.all_roles) and not r.divider) then new.all_roles := new.all_roles || array['member']; end if;
   new.role := (select r.name from roles r where r.name = any(new.all_roles) and not r.divider order by r.rank desc limit 1);
+  -- The callsign's letters follow the highest rank that has letters. Only rank letters are swapped, so special
+  -- designations (ARF, RC...) and ranks without letters (Marshal Commander, Recruit) keep the name as it is.
+  l := (select r.abbr from roles r where r.name = any(new.all_roles) and not r.divider and r.abbr <> '' order by r.rank desc limit 1);
+  cur := substring(new.display_name from '^([A-Z][A-Z0-9]{1,3}(?:-[A-Z])?)-[0-9]{4} "');
+  if l is not null and cur is not null and cur <> l and exists (select 1 from roles where abbr = cur) then
+    new.display_name := l || substr(new.display_name, length(cur) + 1);
+  end if;
   return new;
 end $$;
 drop trigger if exists profiles_roles on public.profiles;
@@ -206,11 +226,27 @@ create trigger roles_removed before delete on public.roles for each row execute 
 create or replace function public.roles_reordered() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  update profiles set all_roles = all_roles where cardinality(all_roles) > 1;
+  update profiles set all_roles = all_roles;
   return null;
 end $$;
 drop trigger if exists roles_reordered on public.roles;
-create trigger roles_reordered after update of rank on public.roles for each statement execute function public.roles_reordered();
+create trigger roles_reordered after update of rank, abbr on public.roles for each statement execute function public.roles_reordered();
+-- When a rank's letters change (on the edit page's rank list), members whose callsign uses the old letters for that rank get the new ones.
+create or replace function public.role_letters_changed() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if old.abbr = '' or new.abbr = '' or old.abbr = new.abbr then return null; end if;
+  perform set_config('app.rank_letters', 'on', true);
+  update profiles p set display_name = new.abbr || substr(p.display_name, length(old.abbr) + 1)
+    where p.display_name like old.abbr || '-____ "%' and p.display_name !~ ('^' || old.abbr || '-[A-Z]-')
+      and (select r.name from roles r where r.name = any(p.all_roles) and not r.divider and r.abbr <> '' order by r.rank desc limit 1) = new.name;
+  perform set_config('app.rank_letters', '', true);
+  return null;
+end $$;
+drop trigger if exists roles_letters on public.roles;
+create trigger roles_letters after update of abbr on public.roles for each row execute function public.role_letters_changed();
+-- Bring everyone's callsign letters in line with their rank now.
+update public.profiles set all_roles = all_roles;
 
 create or replace function public.my_role() returns text
 language sql stable security definer set search_path = public as $$
@@ -226,7 +262,8 @@ language plpgsql security definer set search_path = public as $$
 declare m text[];
 begin
   -- Once approved, only Admin can change someone's name.
-  if tg_op = 'UPDATE' and new.display_name is distinct from old.display_name and old.status = 'approved' and not is_admin() then
+  if tg_op = 'UPDATE' and new.display_name is distinct from old.display_name and old.status = 'approved' and not is_admin()
+     and coalesce(current_setting('app.rank_letters', true), '') <> 'on' then
     raise exception 'Only Command can change your name';
   end if;
   if new.display_name is null then return new; end if;
@@ -697,9 +734,11 @@ create policy notes_command on public.response_notes for all to authenticated us
 
 -- The public 228th Dossier (Lore on the main page) lists every approved member by callsign, highest rank first.
 -- Callsigns only: no emails, pictures or anything else.
+drop function if exists public.public_dossier();
 create or replace function public.public_dossier()
-returns table (name text) language sql stable security definer set search_path = public as $$
-  select p.display_name from profiles p join roles r on r.name = p.role
+returns table (name text, command boolean) language sql stable security definer set search_path = public as $$
+  -- command: Second Lieutenant and up (listed under Command); everyone else goes under Members.
+  select p.display_name, r.rank >= coalesce((select rank from roles where name = 'second-lieutenant'), 1000) from profiles p join roles r on r.name = p.role
   where p.status = 'approved' and p.display_name is not null
   order by r.rank desc, p.approved_at nulls last, p.display_name;
 $$;

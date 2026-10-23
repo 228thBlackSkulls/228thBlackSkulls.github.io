@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610231544";
+(function(){var v="202610231757";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -265,6 +265,16 @@
     roles = r.data;
     // Show each role with its rank letters; raw keeps the stored name for renaming.
     await A.loadPrefixes();
+    // Keep each role's callsign letters matching the rank list on the edit page (members' names follow them).
+    if (can('roles') && A.ranks && A.ranks.length) {
+      var fixes = roles.map(function (x) {
+        var rk = A.ranks.find(function (k) { return String(k.name).trim().toLowerCase() === String(x.label).trim().toLowerCase(); });
+        var want = rk ? String(rk.abbr || '').trim().toUpperCase() : null;
+        if (want === null || want === (x.abbr || '') || !/^([A-Z][A-Z0-9]{1,3}(-[A-Z])?)?$/.test(want) || x.abbr === undefined) return null;
+        x.abbr = want; return sb.from('roles').update({ abbr: want }).eq('name', x.name);
+      }).filter(Boolean);
+      if (fixes.length) await Promise.all(fixes);
+    }
     roles.forEach(function (x) { x.raw = x.label; x.label = A.rankName(x.label); });
     $('ov-roles').textContent = roles.length;
     var box = $('roles'); box.textContent = '';

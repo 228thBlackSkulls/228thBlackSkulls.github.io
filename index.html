@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610231544";
+(function(){var v="202610231757";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -1191,20 +1191,30 @@ He left behind a holotape warning that the op had been a setup, with final order
     if(extra&&extra.meta)s.appendChild(el('small',null,extra.meta));
     d.appendChild(s);var inn=el('div','in');kids.forEach(function(k){if(k)inn.appendChild(k);});d.appendChild(inn);return d;
   }
-  // Approved members from the site's accounts join the main 228th Dossier's Members list on their own.
-  // Anyone already listed (same 4-digit number or same name) isn't added twice.
+  // Approved members from the site's accounts join the main 228th Dossier on their own: officers (Second Lieutenant
+  // and up) under Command, everyone else under Members. Someone already listed (same number and nickname) isn't added
+  // again; their line just takes their current rank letters, so promotions show up here too.
   var dossierNames=null,loreLast=null;
+  function addUnder(t,head,names){
+    if(!names.length)return t;
+    var m=new RegExp('(^|\\n)###\\s*'+head+'[^\\n]*\\n','i').exec(t);
+    if(!m)return t.replace(/\s*$/,'')+'\n\n### '+head+'\n'+names.join('\n');
+    var from=m.index+m[0].length,next=t.slice(from).search(/\n\s*\n###\s/),at=next<0?t.length:from+next;
+    return t.slice(0,at).replace(/\s*$/,'')+'\n'+names.join('\n')+t.slice(at);
+  }
   function withDossier(entries){
     if(!dossierNames||!dossierNames.length)return entries;
     return entries.map(function(e){
       if(e.image||(e.chapter||'').trim()!=='Dossier'||!/^228th Black Skulls Corps/i.test((e.book||'').trim()))return e;
-      var t=String(e.text||''),have=t.toLowerCase().replace(/[“”]/g,'"'),add=dossierNames.filter(function(n){
-        var num=(n.match(/-(\d{4}) /)||[])[1],nick=((n.match(/"(.+)"/)||[])[1]||'').toLowerCase();
-        return have.indexOf(n.toLowerCase())<0&&!(num&&nick&&new RegExp('-'+num+'\\b').test(t)&&have.indexOf('"'+nick+'"')>=0);});
-      if(!add.length)return e;
-      var m=/(^|\n)###\s*Members[^\n]*\n/i.exec(t);
-      if(!m)t=t.replace(/\s*$/,'')+'\n\n### Members\n'+add.join('\n');
-      else{var from=m.index+m[0].length,next=t.slice(from).search(/\n\s*\n###\s/),at=next<0?t.length:from+next;t=t.slice(0,at).replace(/\s*$/,'')+'\n'+add.join('\n')+t.slice(at);}
+      var t=String(e.text||''),cmd=[],mem=[];
+      dossierNames.forEach(function(x){
+        var n=x.name,m=n.match(/^(.+)-(\d{4}) "(.+)"$/);
+        if(t.toLowerCase().replace(/[“”]/g,'"').indexOf(n.toLowerCase())>=0)return;
+        if(m){var nick=m[3].replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),re=new RegExp('[A-Za-z0-9]+(?:-[A-Za-z])?-'+m[2]+'(\\s*["“]'+nick+'["”])','i');
+          if(re.test(t)){t=t.replace(re,function(all,rest){return m[1]+'-'+m[2]+rest;});return;}}
+        (x.command?cmd:mem).push(n);
+      });
+      t=addUnder(addUnder(t,'Command',cmd),'Members',mem);
       var c={};for(var k in e)c[k]=e[k];c.text=t;return c;
     });
   }
@@ -1214,7 +1224,7 @@ He left behind a holotape warning that the op had been a setup, with final order
     if(!lore.fetched){lore.fetched=1;var C=window.SB_CONFIG||{};
       if(C.url&&C.anonKey&&!/[?&]preview=1/.test(location.search))fetch(C.url.replace(/\/$/,'')+'/rest/v1/rpc/public_dossier',{method:'POST',headers:{apikey:C.anonKey,Authorization:'Bearer '+C.anonKey,'Content-Type':'application/json'},body:'{}'})
         .then(function(r){return r.ok?r.json():null;}).then(function(a){if(!Array.isArray(a)||!a.length)return;
-          dossierNames=a.map(function(x){return String(x&&x.name||x||'').trim();}).filter(Boolean);
+          dossierNames=a.map(function(x){return {name:String(x&&x.name||x||'').trim(),command:!!(x&&x.command)};}).filter(function(x){return x.name;});
           var open=[].map.call(box.querySelectorAll('details[open]>summary .t'),function(x){return x.textContent;});
           lore(loreLast);
           [].forEach.call(box.querySelectorAll('details>summary .t'),function(x){if(open.indexOf(x.textContent)>=0)x.parentNode.parentNode.open=true;});
