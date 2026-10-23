@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
+   version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
+(function(){var v="202610231336";
+  var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
+  fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
+    if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
+<title>Alliance · 228th Black Skulls Corps</title>
+<meta name="description" content="Units seeking a formal alliance with the 228th Black Skulls Corps: read the Alliance Agreement and send a request.">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../auth/auth.css?v=12">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
+<script src="../auth/config.js?v=3"></script>
+<script src="../auth/auth.js?v=22"></script>
+<script src="../auth/fx.js?v=8"></script>
+<script src="../auth/formkit.js?v=1"></script>
+<style>
+.al-sub{font:500 .78rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 18px}
+.fill{max-width:860px}
+.done{max-width:640px}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../"><img src="../images/logo-nav.webp" alt="">228th <span>Black Skulls</span></a>
+  <nav id="acct-nav" aria-label="Account"></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="msg" id="msg" role="status"></div>
+  <div class="head">
+    <p class="label"><b>//</b> Diplomacy</p>
+    <h1>Alliance</h1>
+    <p class="muted">For units seeking a formal alliance with the 228th Black Skulls Corps. Read the agreement, then send your request. High Command reviews every one and will reach out on Discord.</p>
+  </div>
+  <div id="box"><p class="empty">Loading the agreement…</p></div>
+</main>
+
+<script>
+(async function () {
+  var A = window.Auth, $ = function (id) { return document.getElementById(id); }, msg = $('msg'), box = $('box');
+  function say(t) { msg.className = 'msg'; msg.textContent = t; }
+  var me = null;
+  if (!A.sb) { A.header(null, 'alliance'); box.innerHTML = '<p class="empty">The Alliance page is being set up. Check back soon.</p>'; return; }
+  try { me = await A.me(); } catch (e) { /* visitors don't need an account */ }
+  A.header(me, 'alliance');
+
+  var r = await A.sb.from('forms').select('*').eq('category', 'Alliance').eq('public', true).eq('open', true);
+  box.textContent = '';
+  if (r.error) return A.fail(msg, r.error);
+  var f = (r.data || []).filter(function (x) { return x.category === 'Alliance' && x.public && x.open; }).sort(function (a, b) { return a.sort - b.sort || a.id - b.id; })[0];
+  if (!f) { box.appendChild(A.el('p', 'empty', 'Alliance requests are closed right now. Check back later or reach out on Discord.')); return; }
+
+  if ((f.description || '').trim()) box.appendChild(A.el('p', 'al-sub', f.description));
+  var form = A.el('form', 'fill'); form.noValidate = true;
+  (f.questions || []).forEach(function (q) { form.appendChild(FormKit.question(q, null, false, { free: true })); });
+  // Hidden field people never see; bots that fill every box give themselves away.
+  var hp = A.el('input', 'hp'); hp.name = 'website'; hp.tabIndex = -1; hp.autocomplete = 'off'; hp.setAttribute('aria-hidden', 'true'); form.appendChild(hp);
+  var row = A.el('div', 'sendrow'), send = A.el('button', 'btn', 'Send alliance request'); send.type = 'submit';
+  row.appendChild(send); row.appendChild(A.el('span', 'muted', 'Only 228th High Command can read what you send.'));
+  form.appendChild(row);
+  box.appendChild(form);
+
+  form.onsubmit = async function (e) {
+    e.preventDefault();
+    if (hp.value) return;
+    var got = FormKit.collect(f, form);
+    if (got.missing) { say('Please answer: ' + (got.missing.label || 'the marked questions').replace(/[.?!]+$/, '') + '.'); form.querySelector('[data-q="' + got.missing.id + '"]').scrollIntoView({ block: 'center' }); return; }
+    send.disabled = true;
+    var w = await A.sb.from('form_responses').insert({ form_id: f.id, answers: got.answers });
+    send.disabled = false;
+    if (w.error) return A.fail(msg, w.error);
+    msg.className = 'msg'; msg.textContent = '';
+    box.textContent = '';
+    var d = A.el('div', 'panel stack done');
+    d.appendChild(A.el('h2', null, 'Request sent'));
+    d.appendChild(A.el('p', 'muted', 'Thank you. High Command will review your request and reach out on Discord. Always Stalking ~ Always Lurking.'));
+    var home = A.el('a', 'btn', 'Back to the main site'); home.href = '../'; d.appendChild(home);
+    box.appendChild(d);
+    scrollTo({ top: 0, behavior: 'smooth' });
+  };
+})();
+</script>
+</body>
+</html>

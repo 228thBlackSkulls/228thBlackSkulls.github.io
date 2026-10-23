@@ -162,3 +162,35 @@ html.side-open{overflow:hidden}
 /* The page links live only in the side panel (Flanker, 2026-10-21); the header keeps just the logo and the menu button. */
 #acct-nav{display:none}
 .top .brand{margin-right:auto}
+
+/* Forms (forms/ and the public Alliance page): questions, drawn signatures, written text. */
+.chip.ok{color:var(--ok);border-color:rgba(63,191,106,.45)}
+.chip.lock{color:var(--accent);border-color:rgba(226,51,59,.45)}
+.doc-text{max-width:72ch;color:var(--soft)}
+.doc-text p{margin:0 0 1em;white-space:pre-line;line-height:1.7}
+.doc-text h4{font:600 .78rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--fg);margin:1.4em 0 .5em}
+.doc-text ul{margin:0 0 1em;padding-left:1.2em}
+.doc-text li{margin:.25em 0}
+.doc-text a{color:var(--accent);overflow-wrap:anywhere}
+.fill{display:grid;gap:18px;margin-top:8px}
+.q{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:18px}
+.q>.ql{display:block;font:600 1.05rem/1.35 var(--body);color:var(--fg);margin:0 0 4px}
+.q .req{color:var(--accent);margin-left:4px}
+.q>.qh{color:var(--muted);font-size:.92rem;margin:0 0 10px;white-space:pre-line}
+.q.info{border-left:2px solid var(--accent-deep)}
+.q.info>h3{margin:0 0 10px;font:800 1.4rem/1.05 var(--display);text-transform:uppercase}
+.q .opts{display:grid;gap:8px;margin-top:8px}
+.q .opts label,.q label.agree{display:flex;gap:10px;align-items:flex-start;color:var(--soft);font-size:1rem;cursor:pointer}
+.q .opts input,.q label.agree input{width:auto;margin-top:.3em;flex:none}
+.q label.agree{color:var(--fg);font-weight:500}
+.q.bad{border-color:var(--accent)}
+.sig{display:grid;gap:10px;margin-top:8px}
+.sig label.f input{font:500 1.05rem var(--body)}
+.pad{position:relative;border:1px dashed var(--muted);border-radius:2px;background:#f4f4f2;touch-action:none;height:170px}
+.pad canvas{display:block;width:100%;height:100%;cursor:crosshair}
+.pad .line{position:absolute;left:18px;right:18px;bottom:38px;border-bottom:1px solid #b9b9bd;pointer-events:none}
+.pad .ph{position:absolute;left:18px;bottom:12px;font:500 .68rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#8e8e93;pointer-events:none}
+.pad.done .ph{display:none}
+.sig .padbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.rcard img.sigimg{display:block;max-width:100%;width:320px;background:#f4f4f2;border-radius:2px;margin-top:6px}
+.sendrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}

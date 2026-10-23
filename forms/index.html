@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610231231";
+(function(){var v="202610231336";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -16,11 +16,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="../auth/auth.css?v=11">
+<link rel="stylesheet" href="../auth/auth.css?v=12">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
 <script src="../auth/auth.js?v=22"></script>
-<script src="../auth/fx.js?v=7"></script>
+<script src="../auth/fx.js?v=8"></script>
+<script src="../auth/formkit.js?v=1"></script>
 <style>
 .dtree{border-top:1px solid var(--line)}
 .dtree summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -43,36 +44,6 @@
 .fhead{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin:6px 0 14px}
 .fhead h2{margin:0;font:800 clamp(1.7rem,6vw,2.6rem)/1.02 var(--display);text-transform:uppercase}
 .state{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
-.chip.ok{color:var(--ok);border-color:rgba(63,191,106,.45)}
-.chip.lock{color:var(--accent);border-color:rgba(226,51,59,.45)}
-.doc-text{max-width:72ch;color:var(--soft)}
-.doc-text p{margin:0 0 1em;white-space:pre-line;line-height:1.7}
-.doc-text h4{font:600 .78rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--fg);margin:1.4em 0 .5em}
-.doc-text ul{margin:0 0 1em;padding-left:1.2em}
-.doc-text li{margin:.25em 0}
-.doc-text a{color:var(--accent);overflow-wrap:anywhere}
-.fill{display:grid;gap:18px;margin-top:8px}
-.q{background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:18px}
-.q>.ql{display:block;font:600 1.05rem/1.35 var(--body);color:var(--fg);margin:0 0 4px}
-.q .req{color:var(--accent);margin-left:4px}
-.q>.qh{color:var(--muted);font-size:.92rem;margin:0 0 10px;white-space:pre-line}
-.q.info{border-left:2px solid var(--accent-deep)}
-.q.info>h3{margin:0 0 10px;font:800 1.4rem/1.05 var(--display);text-transform:uppercase}
-.q .opts{display:grid;gap:8px;margin-top:8px}
-.q .opts label,.q label.agree{display:flex;gap:10px;align-items:flex-start;color:var(--soft);font-size:1rem;cursor:pointer}
-.q .opts input,.q label.agree input{width:auto;margin-top:.3em;flex:none}
-.q label.agree{color:var(--fg);font-weight:500}
-.q.bad{border-color:var(--accent)}
-.sig{display:grid;gap:10px;margin-top:8px}
-.sig label.f input{font:500 1.05rem var(--body)}
-.pad{position:relative;border:1px dashed var(--muted);border-radius:2px;background:#f4f4f2;touch-action:none;height:170px}
-.pad canvas{display:block;width:100%;height:100%;cursor:crosshair}
-.pad .line{position:absolute;left:18px;right:18px;bottom:38px;border-bottom:1px solid #b9b9bd;pointer-events:none}
-.pad .ph{position:absolute;left:18px;bottom:12px;font:500 .68rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#8e8e93;pointer-events:none}
-.pad.done .ph{display:none}
-.sig .padbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.rcard img.sigimg{display:block;max-width:100%;width:320px;background:#f4f4f2;border-radius:2px;margin-top:6px}
-.sendrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .ed{display:none;gap:8px;flex-wrap:wrap;margin:0 0 16px}
 .editing .ed{display:flex}
 .ed .btn{padding:.5em .7em;font-size:.66rem}
@@ -140,6 +111,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
       <label class="f">Who can fill it in<select name="see"></select></label>
       <label class="check"><input type="checkbox" name="andup"> This role and up</label>
       <label class="check"><input type="checkbox" name="open"> Open for answers</label>
+      <label class="check"><input type="checkbox" name="public"> Public (no login; shown on the Alliance page when the division is Alliance)</label>
     </div>
     <h4 class="label" style="margin:8px 0 0">Questions</h4>
     <div class="stack" id="qlist" style="gap:10px"></div>
@@ -174,7 +146,8 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     ]);
     if (r[0].error) throw r[0].error; if (r[1].error) throw r[1].error;
     if (r[2] && !r[2].error) roles = r[2].data.slice().sort(function (a, b) { return b.rank - a.rank; });
-    forms = r[0].data.sort(function (a, b) { return a.sort - b.sort || a.id - b.id; });
+    // Public forms (like the Alliance form) are filled in on their own public page; members only see them here if they manage forms.
+    forms = r[0].data.filter(function (f) { return canEdit || !f.public; }).sort(function (a, b) { return a.sort - b.sort || a.id - b.id; });
     mine = {}; counts = {};
     r[1].data.forEach(function (x) { counts[x.form_id] = (counts[x.form_id] || 0) + 1; if (x.user_id === me.id) mine[x.form_id] = x; });
   }
@@ -202,6 +175,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
         var sig = (f.questions || []).some(function (q) { return q.type === 'signature'; });
         chips.appendChild(mineR ? A.el('small', 'chip ok', (sig ? 'Signed ' : 'Sent ') + A.date(mineR.updated_at)) : A.el('small', 'chip', sig ? 'Not signed' : 'Not filled in'));
         if (!f.open) chips.appendChild(A.el('small', 'chip', 'Closed'));
+        if (f.public) chips.appendChild(A.el('small', 'chip', 'Public'));
         var who = A.seenBy(roles, f.visible_to); if (who) chips.appendChild(A.el('small', 'chip lock', who));
         sum.appendChild(chips);
         det.appendChild(sum); det.appendChild(inn);
@@ -253,7 +227,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     var signed = !!mineR && (f.questions || []).some(function (q) { return q.type === 'signature'; });
     var ans = (mineR && mineR.answers) || {}, locked = !f.open || signed;
     if (signed) { var note = A.el('p', 'msg ok', 'Signed ' + A.date(mineR.created_at) + '. Signed forms are final and can\'t be changed.'); p.appendChild(note); }
-    (f.questions || []).forEach(function (q) { form.appendChild(question(q, ans[q.id], locked)); });
+    (f.questions || []).forEach(function (q) { form.appendChild(FormKit.question(q, ans[q.id], locked, { free: f.public })); });
     if (!locked && (f.questions || []).some(function (q) { return q.type !== 'info'; })) {
       var row = A.el('div', 'sendrow'), send = A.el('button', 'btn', mineR ? 'Update my answers' : 'Send'); send.type = 'submit';
       row.appendChild(send); row.appendChild(A.el('span', 'muted', 'Sent as ' + (me.display_name || 'you') + '.'));
@@ -262,102 +236,8 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     form.onsubmit = function (e) { e.preventDefault(); submit(f, form); };
     p.appendChild(form);
   }
-  function question(q, val, locked) {
-    var box = A.el('div', 'q' + (q.type === 'info' ? ' info' : '')); box.dataset.q = q.id;
-    if (q.type === 'info') {
-      if (q.label) box.appendChild(A.el('h3', null, q.label));
-      if (q.help) box.appendChild(A.richText(q.help));
-      return box;
-    }
-    var name = 'q_' + q.id;
-    if (q.type === 'agree') {
-      var l = A.el('label', 'agree'), c = A.el('input'); c.type = 'checkbox'; c.name = name; c.checked = val === true; c.disabled = locked;
-      var tx = A.el('span', null, q.label || 'I agree'); if (q.required) tx.appendChild(A.el('span', 'req', ' *'));
-      l.appendChild(c); l.appendChild(tx);
-      box.appendChild(l);
-      if (q.help) box.appendChild(A.el('p', 'qh', q.help));
-      return box;
-    }
-    var lab = A.el('label', 'ql', q.label || 'Question'); lab.htmlFor = name;
-    if (q.required) lab.appendChild(A.el('span', 'req', '*'));
-    box.appendChild(lab);
-    if (q.help) box.appendChild(A.el('p', 'qh', q.help));
-    if (q.type === 'signature') { box.appendChild(signature(q, val, locked)); return box; }
-    if (q.type === 'text' || q.type === 'long') {
-      var i = A.el(q.type === 'long' ? 'textarea' : 'input'); i.id = i.name = name; i.maxLength = q.type === 'long' ? 4000 : 300;
-      i.value = typeof val === 'string' ? val : ''; i.disabled = locked; box.appendChild(i);
-    } else {
-      var opts = A.el('div', 'opts'), have = Array.isArray(val) ? val : val != null ? [val] : [];
-      (q.options || []).forEach(function (o) {
-        var l2 = A.el('label'), c2 = A.el('input'); c2.type = q.type === 'choice' ? 'radio' : 'checkbox'; c2.name = name; c2.value = o;
-        c2.checked = have.indexOf(o) >= 0; c2.disabled = locked; l2.appendChild(c2); l2.appendChild(document.createTextNode(o)); opts.appendChild(l2);
-      });
-      box.appendChild(opts);
-    }
-    return box;
-  }
-  // Signature: the member's callsign (checked the same way as on sign-up) and a drawn signature.
-  function signature(q, val, locked) {
-    val = val && typeof val === 'object' ? val : {};
-    var w = A.el('div', 'sig'), name = 'q_' + q.id;
-    var lab = A.el('label', 'f'), inp = A.el('input'), hint = A.el('span', 'hint', A.callsignHelp);
-    lab.appendChild(document.createTextNode('Callsign')); inp.name = name; inp.maxLength = 40; inp.autocapitalize = 'off'; inp.spellcheck = false;
-    inp.placeholder = 'CT-1234 "Nickname"'; inp.value = val.name || ''; inp.disabled = locked;
-    lab.appendChild(inp); lab.appendChild(hint); w.appendChild(lab);
-    if (!locked) A.watchCallsign(inp, hint); else hint.hidden = true;
-    var pad = A.el('div', 'pad'), cv = A.el('canvas'); pad.appendChild(cv); pad.appendChild(A.el('div', 'line')); pad.appendChild(A.el('span', 'ph', 'Sign here with your finger or mouse'));
-    var bar = A.el('div', 'padbar'); bar.appendChild(A.el('span', 'label', 'Drawn signature'));
-    var clr = btn('Clear', function () { clear(); }); clr.className = 'btn ghost small'; if (!locked) bar.appendChild(clr);
-    w.appendChild(bar); w.appendChild(pad);
-    var ctx = cv.getContext('2d'), drawing = false, last = null, inked = false;
-    function size() {
-      var r = pad.getBoundingClientRect(), d = Math.min(window.devicePixelRatio || 1, 2), keep = inked ? cv.toDataURL() : null;
-      cv.width = Math.max(1, Math.round(r.width * d)); cv.height = Math.max(1, Math.round(r.height * d));
-      ctx.setTransform(d, 0, 0, d, 0, 0); ctx.lineWidth = 2.4; ctx.lineCap = ctx.lineJoin = 'round'; ctx.strokeStyle = '#111';
-      if (keep) paint(keep);
-    }
-    function paint(src) { var im = new Image(); im.onload = function () { var r = pad.getBoundingClientRect(); ctx.drawImage(im, 0, 0, r.width, r.height); }; im.src = src; }
-    function clear() { ctx.clearRect(0, 0, cv.width, cv.height); inked = false; pad.classList.remove('done'); }
-    function pt(e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
-    if (!locked) {
-      cv.addEventListener('pointerdown', function (e) { drawing = true; last = pt(e); cv.setPointerCapture(e.pointerId); ctx.beginPath(); ctx.arc(last.x, last.y, 1.1, 0, 7); ctx.fillStyle = '#111'; ctx.fill(); inked = true; pad.classList.add('done'); e.preventDefault(); });
-      cv.addEventListener('pointermove', function (e) { if (!drawing) return; var p = pt(e); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; e.preventDefault(); });
-      ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { cv.addEventListener(t, function () { drawing = false; }); });
-    }
-    requestAnimationFrame(function () { size(); if (val.drawing) { inked = true; pad.classList.add('done'); paint(val.drawing); } });
-    var rt; addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(size, 150); });
-    w._value = function () {
-      var nm = A.callsign(inp.value) || '';
-      if (nm) inp.value = nm;
-      // Trim the drawing to a small image so answers stay light.
-      var out = '';
-      if (inked) { var c2 = document.createElement('canvas'), r = pad.getBoundingClientRect(); c2.width = 600; c2.height = Math.round(600 * r.height / r.width);
-        var x = c2.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c2.width, c2.height); x.drawImage(cv, 0, 0, c2.width, c2.height); out = c2.toDataURL('image/jpeg', 0.7); }
-      return { name: nm, typed: inp.value.trim(), drawing: out };
-    };
-    box_sig[q.id] = w;
-    return w;
-  }
-  var box_sig = {};
-
   async function submit(f, form) {
-    var ans = {}, missing = null;
-    form.querySelectorAll('.q.bad').forEach(function (x) { x.classList.remove('bad'); });
-    (f.questions || []).forEach(function (q) {
-      if (q.type === 'info') return;
-      var name = 'q_' + q.id, v;
-      if (q.type === 'agree') v = form.querySelector('[name="' + name + '"]').checked;
-      else if (q.type === 'text' || q.type === 'long') v = form.querySelector('[name="' + name + '"]').value.trim();
-      else if (q.type === 'signature') { var sv = box_sig[q.id]._value(); v = { name: sv.name, drawing: sv.drawing };
-        if (q.required && (!sv.name || !sv.drawing)) { if (!missing) missing = { id: q.id, label: !sv.name ? 'Signature: your callsign, like CT-1234 "Nickname"' : 'Signature: draw your signature in the box' }; form.querySelector('[data-q="' + q.id + '"]').classList.add('bad'); }
-        ans[q.id] = v; return; }
-      else if (q.type === 'choice') { var c = form.querySelector('[name="' + name + '"]:checked'); v = c ? c.value : ''; }
-      else v = Array.prototype.map.call(form.querySelectorAll('[name="' + name + '"]:checked'), function (x) { return x.value; });
-      var empty = v === false || v === '' || (Array.isArray(v) && !v.length);
-      if (q.required && empty && !missing) missing = q;
-      if (q.required && empty) form.querySelector('[data-q="' + q.id + '"]').classList.add('bad');
-      ans[q.id] = v;
-    });
+    var got = FormKit.collect(f, form), ans = got.answers, missing = got.missing;
     if (missing) { say('Please answer: ' + (missing.label || 'the marked questions').replace(/[.?!]+$/, '') + '.'); form.querySelector('[data-q="' + missing.id + '"]').scrollIntoView({ block: 'center' }); return; }
     var had = mine[f.id], r = had
       ? await sb.from('form_responses').update({ answers: ans }).eq('id', had.id)
@@ -471,7 +351,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
   function build(f, cat) {
     editing = f; var F = $('bform');
     $('bdlg-h').textContent = f ? 'Edit form' : 'New form';
-    F.title.value = f ? f.title : ''; F.description.value = f ? f.description || '' : ''; F.open.checked = f ? f.open : true;
+    F.title.value = f ? f.title : ''; F.description.value = f ? f.description || '' : ''; F.open.checked = f ? f.open : true; F.public.checked = !!(f && f.public);
     F.category.value = f ? f.category || '' : cat || 'Arma 3';
     var dl = $('cats'); dl.textContent = ''; groups().forEach(function (c) { var o = A.el('option'); o.value = c; dl.appendChild(o); });
     F.see.textContent = '';
@@ -499,7 +379,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     var qs = Array.prototype.map.call($('qlist').querySelectorAll('.qed'), function (b) { return b._get(); });
     var bad = qs.find(function (q) { return (q.type === 'choice' || q.type === 'checks') && !(q.options || []).length; });
     if (bad) return alert('"' + (bad.label || 'A question') + '" needs at least one choice.');
-    var row = { title: F.title.value.trim(), description: F.description.value.replace(/\s+$/, ''), visible_to: see, open: F.open.checked, questions: qs, category: F.category.value.trim() }, r;
+    var row = { title: F.title.value.trim(), description: F.description.value.replace(/\s+$/, ''), visible_to: see, open: F.open.checked, questions: qs, category: F.category.value.trim(), public: F.public.checked }, r;
     if (editing) r = await sb.from('forms').update(row).eq('id', editing.id);
     else { row.sort = forms.length ? Math.max.apply(null, forms.map(function (x) { return x.sort; })) + 1 : 0; r = await sb.from('forms').insert(row).select('id').single(); }
     if (r.error) return A.fail(msg, r.error);
@@ -509,7 +389,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
   };
   async function copyForm(f) {
     var t = prompt('Name for the copy', f.title + ' (copy)'); if (!t || !t.trim()) return;
-    var row = { title: t.trim(), description: f.description, visible_to: f.visible_to, open: false, questions: f.questions, category: f.category || '',
+    var row = { title: t.trim(), description: f.description, visible_to: f.visible_to, open: false, questions: f.questions, category: f.category || '', public: !!f.public,
       sort: Math.max.apply(null, forms.map(function (x) { return x.sort; })) + 1 };
     var r = await sb.from('forms').insert(row).select('id').single();
     if (r.error) return A.fail(msg, r.error);

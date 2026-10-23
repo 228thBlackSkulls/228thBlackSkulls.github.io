@@ -542,6 +542,9 @@ create table if not exists public.form_responses (
   updated_at timestamptz not null default now(),
   unique (form_id, user_id)
 );
+-- public: anyone can fill it in without logging in (the Alliance page). Their answers are filed with no account.
+alter table public.forms add column if not exists public boolean not null default false;
+alter table public.form_responses alter column user_id drop not null;
 -- category groups forms on the page: Arma 3 first, then VRChat, then any others.
 alter table public.forms add column if not exists category text not null default '';
 update public.forms set category = 'Arma 3' where category = '' and title ilike 'Arma 3%';
@@ -577,6 +580,15 @@ language plpgsql security definer set search_path = public as $$
 begin
   new.user_id = auth.uid();
   new.name = (select display_name from profiles where id = auth.uid());
+  if new.user_id is null then
+    -- Visitors with no account: public forms only, a modest size, and a cap per hour so the form can't be flooded.
+    if tg_op <> 'INSERT' or not exists (select 1 from forms where id = new.form_id and public and open) then raise exception 'This form isn''t open to the public.'; end if;
+    if length(new.answers::text) > 120000 then raise exception 'That answer is too long.'; end if;
+    if (select count(*) from form_responses where user_id is null and created_at > now() - interval '1 hour') >= 15 then
+      raise exception 'Too many forms sent in the last hour. Please try again later.';
+    end if;
+    new.name = left(coalesce(nullif(trim(new.answers->'signature'->>'name'), ''), nullif(trim(new.answers->>'unit'), ''), 'Visitor'), 80);
+  end if;
   new.updated_at = now();
   if tg_op = 'INSERT' then new.created_at = now(); else new.form_id = old.form_id; new.created_at = old.created_at; end if;
   return new;
@@ -588,6 +600,8 @@ alter table public.forms          enable row level security;
 alter table public.form_responses enable row level security;
 revoke all on public.forms, public.form_responses from anon, authenticated;
 grant select, insert, update, delete on public.forms, public.form_responses to authenticated;
+grant select on public.forms to anon;
+grant insert on public.form_responses to anon;
 drop policy if exists forms_read        on public.forms;
 drop policy if exists forms_manage      on public.forms;
 drop policy if exists responses_read    on public.form_responses;
@@ -595,9 +609,13 @@ drop policy if exists responses_send    on public.form_responses;
 drop policy if exists responses_change  on public.form_responses;
 drop policy if exists responses_delete  on public.form_responses;
 create policy forms_read       on public.forms for select to authenticated using (form_ok(id));
+drop policy if exists forms_public on public.forms;
+create policy forms_public     on public.forms for select to anon, authenticated using (public and open);
 create policy forms_manage     on public.forms for all    to authenticated using (has_perm('forms')) with check (has_perm('forms'));
 create policy responses_read   on public.form_responses for select to authenticated using (user_id = auth.uid() or has_perm('forms'));
 create policy responses_send   on public.form_responses for insert to authenticated with check (form_open(form_id));
+drop policy if exists responses_public on public.form_responses;
+create policy responses_public on public.form_responses for insert to anon with check (user_id is null);
 create policy responses_change on public.form_responses for update to authenticated using (user_id = auth.uid() and form_open(form_id) and not form_signed(form_id)) with check (form_open(form_id));
 create policy responses_delete on public.form_responses for delete to authenticated using (has_perm('forms') or (user_id = auth.uid() and not form_signed(form_id)));
 
@@ -612,6 +630,14 @@ begin
   insert into public.forms (title, description, questions, sort, category) values
     ('Arma 3 Terms of Service Agreement', '228th Black Skulls Corps™ – Terms of Service Agreement', q, 0, 'Arma 3'),
     ('VRChat Terms of Service Agreement', '228th Black Skulls Corps™ – Terms of Service Agreement', q, 1, 'VRChat');
+end $$;
+
+-- First run only: the public Alliance Agreement (shown on the Alliance page). Edit it on the Forms page.
+do $$
+begin
+  if exists (select 1 from public.forms where category = 'Alliance') then return; end if;
+  insert into public.forms (title, description, questions, sort, category, public) values
+    ('Alliance Agreement', '228th Black Skulls Corps – Alliance Agreement Form', $a$[{"id": "sec1", "type": "info", "label": "Section I: Expectations, Protocols, and Operational Conduct", "help": "The 228th Black Skulls Corps maintains a high standard of professionalism, order, and mutual respect across all operations and alliances. The following points outline our expectations from any unit or organization seeking formal alliance with the 228th. Acceptance of these conditions is mandatory for alliance status.\n\n### I.1 – Respect and Discipline\n- Drama-Free Zone: Alliances are expected to operate free of drama, toxicity, and immature conduct. Disagreements must be handled through appropriate command channels.\n- Chain of Command: Members of allied units are to follow their own internal chain of command and resolve issues through leadership, not public confrontation.\n- Mutual Discipline: Allies must uphold a culture of discipline and responsibility. Any form of rule-breaking, trolling, or targeted harassment will not be tolerated.\n\n### I.2 – Guest Conduct Policy\n- Host Rules Apply: When members of one ally are present in the server or events of the other ally, they are to abide by the host unit’s rules without exception.\n- Reporting Issues: If a guest member feels mistreated or disagrees with an enforcement, they are to report the issue to their own high command. That command may then engage in discussion with the host’s leadership to resolve the matter diplomatically.\n- No Direct Confrontation: Guests are not to argue or challenge the host’s moderators or staff. All concerns go through proper leadership channels.\n\n### I.3 – Operational Alignment\n- Independent Command Structure: In joint operations, each allied unit will retain its own internal command structure. Troopers are not to take direct orders from another unit’s officers unless cleared by their own command.\n- Order Relay Protocol: Orders from the host command will be relayed to the guest unit’s high command, who will then distribute those orders to their own personnel. This ensures discipline and unity of command. This same protocol applies in reverse when the guest becomes the host.\n- Unified Objectives: While operational independence is respected, allied units are expected to work toward common mission objectives, support each other, and coordinate effectively.\n- Training and Events: Joint trainings and operations should be planned with mutual communication and respect for each unit’s roles and structure.\n- Rank Recognition: Members should respect each other’s ranks and positions, but not assume authority over another unit’s personnel without prior arrangement.\n\n### I.4 – Internal Affairs and Boundaries\n- Autonomy: The 228th will not interfere with the internal structure, punishments, or promotions of allied units, and expects the same respect in return.\n- Conflict Resolution: If a dispute arises between members of allied units, it must be handled between high commands only — not member-to-member unless instructed otherwise.\n- Member Transfers: If a member of one unit wishes to join the other, both parties’ leadership will be notified. Poaching is strictly forbidden.\n\n### I.5 – Communication & Activity\n- Leadership Contact: A line of communication between high commands must be maintained. Both parties will identify at least one command-level contact for alliance matters.\n- Status Checks: The alliance may be reviewed periodically to ensure activity, relevance, and mutual benefit.\n- Termination Clause: Either party may dissolve the alliance at any time, with or without cause. A courtesy notice is expected if possible.\n\nBy entering into alliance with the 228th Black Skulls Corps, you acknowledge that you have read and understood all policies listed above."}, {"id": "sec2", "type": "info", "label": "Section II: Alliance Questionnaire", "help": "Please fill out the following form below. Answers should be honest and complete."}, {"id": "unit", "type": "text", "label": "Unit name", "required": true}, {"id": "leader", "type": "text", "label": "Your name and rank in your unit", "required": true}, {"id": "discord", "type": "text", "label": "Your Discord username", "required": true}, {"id": "server", "type": "text", "label": "Your unit's Discord server invite"}, {"id": "games", "type": "text", "label": "Games or platforms your unit plays", "required": true}, {"id": "size", "type": "text", "label": "About how many active members do you have?"}, {"id": "about", "type": "long", "label": "Tell us about your unit", "required": true}, {"id": "why", "type": "long", "label": "Why do you want to ally with the 228th?", "required": true}, {"id": "agree", "type": "agree", "label": "On behalf of my unit, I have read and understood all policies listed above.", "required": true}, {"id": "signature", "type": "signature", "label": "Signature", "help": "Sign with your name, then sign in the box with your finger or mouse.", "required": true}]$a$::jsonb, 0, 'Alliance', true);
 end $$;
 
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)
