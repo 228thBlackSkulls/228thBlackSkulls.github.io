@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610220340";
+(function(){var v="202610231142";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
-<title>Org Chart · 228th Black Skulls Corps</title>
+<title>Unit Organization · 228th Black Skulls Corps</title>
 <meta name="theme-color" content="#0a0a0b">
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,7 +35,7 @@
   <div class="org-head">
     <div class="head">
       <p class="label"><b>//</b> Order of battle</p>
-      <h1>Org chart</h1>
+      <h1>Unit Organization</h1>
       <p class="muted" id="lede">Every unit in the Corps, the positions in it and who fills them.</p>
     </div>
     <div class="tally" id="tally" aria-label="Totals"></div>
