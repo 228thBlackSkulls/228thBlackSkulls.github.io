@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610231757";
+(function(){var v="202610231758";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -287,7 +287,7 @@
       var name = A.el('input'); name.value = role.raw; name.maxLength = 40; name.setAttribute('aria-label', 'Role name');
       w.appendChild(name);
       if (role.name === 'admin') w.appendChild(A.el('small', null, 'Can do everything'));
-      if (role.divider) w.appendChild(A.el('small', null, 'Rank group: give it to everyone in this group. It never shows as their rank.'));
+      if (role.divider) w.appendChild(A.el('small', null, 'Rank group: everyone whose rank sits under it gets it automatically. Tick what it can do.'));
       else {
         var pf = A.el('div', 'perm-picks');
         A.PERMS.forEach(function (pm) {
@@ -400,7 +400,7 @@
       var chips = A.el('div', 'rolechips');
       roles.filter(function (r) { return mine.indexOf(r.name) >= 0; }).forEach(function (r) {
         var c = A.el('span', 'chip' + (r.name === p.role ? ' red' : r.divider ? ' grp' : ''), r.label);
-        if (!(self && r.name === 'admin') && (r.name !== 'admin' || A.isAdmin(me))) {
+        if (!r.divider && !(self && r.name === 'admin') && (r.name !== 'admin' || A.isAdmin(me))) {
           var x2 = A.el('button', null, '×'); x2.type = 'button'; x2.setAttribute('aria-label', 'Remove ' + r.label);
           x2.onclick = function () { setRoles(p, mine.filter(function (n) { return n !== r.name; }), r.label + ' removed.'); };
           c.appendChild(x2);
@@ -409,7 +409,7 @@
       });
       var add = A.el('select'); add.setAttribute('aria-label', 'Add a role');
       var first = A.el('option', null, '+ Add role'); first.value = ''; add.appendChild(first);
-      roles.forEach(function (r) { if (mine.indexOf(r.name) < 0 && (r.name !== 'admin' || A.isAdmin(me))) { var o = A.el('option', null, r.divider ? '▸ ' + r.label.toUpperCase() + ' (group)' : r.label); o.value = r.name; add.appendChild(o); } });
+      roles.forEach(function (r) { if (!r.divider && mine.indexOf(r.name) < 0 && (r.name !== 'admin' || A.isAdmin(me))) { var o = A.el('option', null, r.label); o.value = r.name; add.appendChild(o); } });
       add.onchange = function () { if (add.value) setRoles(p, mine.concat(add.value), labelOf(add.value) + ' added.'); };
       chips.appendChild(add);
       x.acts.appendChild(chips);
