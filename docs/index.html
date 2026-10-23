@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
+   version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
+(function(){var v="202610231159";
+  var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
+  fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
+    if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
+<title>Documents · 228th Black Skulls Corps</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@600;800&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../auth/auth.css?v=11">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
+<script src="../auth/config.js?v=3"></script>
+<script src="../auth/auth.js?v=21"></script>
+<script src="../auth/fx.js?v=6"></script>
+<style>
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 22px}
+.toolbar input{flex:1 1 240px;width:auto}
+.toolbar .spacer{flex:1 1 0}
+.dtree{border-top:1px solid var(--line)}
+.dtree summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:14px}
+.dtree summary::-webkit-details-marker{display:none}
+.dtree summary::after{content:"+";margin-left:auto;flex:none;font:500 1.2rem var(--mono);color:var(--accent);width:1.2em;text-align:center}
+.dtree details[open]>summary::after{content:"\2013"}
+.dtree summary:hover .t{color:var(--accent)}
+.dtree .t{transition:color .2s;min-width:0;overflow-wrap:anywhere}
+.dtree summary small{font:500 .68rem var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.dtree .lock{color:var(--accent);border-color:rgba(226,51,59,.45)}
+/* Top folders: big numbered rows */
+.f0{border-bottom:1px solid var(--line)}
+.f0>summary{padding:24px 0}
+.f0>summary .n{font:500 .8rem var(--mono);color:var(--accent);letter-spacing:.08em;flex:none}
+.f0>summary .t{font:800 clamp(1.6rem,6vw,2.6rem)/1 var(--display);text-transform:uppercase;letter-spacing:.01em}
+.f0>.in{padding:0 0 28px}
+/* Second level: panels */
+.f1{border:1px solid var(--line);background:var(--panel);margin:0 0 10px}
+.f1>summary{padding:16px 18px}
+.f1>summary .t{font:800 1.4rem/1.05 var(--display);text-transform:uppercase}
+.f1>.in{padding:0 18px 18px}
+/* Deeper: lined sub-folders */
+.f2{border-top:1px solid var(--line)}
+.f2>summary{padding:14px 0}
+.f2>summary .t{font:600 .82rem var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.f2>.in{padding:0 0 16px 14px;border-left:2px solid var(--accent-deep);margin-left:2px}
+/* Documents */
+.doc{border-bottom:1px solid var(--line)}
+.doc:last-child{border-bottom:0}
+.doc>summary{padding:13px 0}
+.doc>summary .t{font:600 1.02rem var(--body)}
+.doc>summary .ic{flex:none;width:14px;height:17px;border:1.5px solid var(--muted);border-radius:1px;position:relative}
+.doc>summary .ic::after{content:"";position:absolute;left:2px;right:2px;top:4px;height:6px;border-top:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted)}
+.doc>.in{padding:2px 0 18px}
+.doc-text{max-width:72ch;color:var(--soft)}
+.doc-text p{margin:0 0 1em;white-space:pre-line;line-height:1.7}
+.doc-text h4{font:600 .78rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--fg);margin:1.4em 0 .5em}
+.doc-text ul{margin:0 0 1em;padding-left:1.2em}
+.doc-text li{margin:.25em 0}
+.doc-text a{color:var(--accent);overflow-wrap:anywhere}
+.doc-meta{font:500 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.none{color:var(--muted);font-size:.92rem;margin:6px 0 10px}
+.hit>summary .t{color:var(--accent)}
+/* Edit mode */
+.ed{display:none;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.editing .ed{display:flex}
+.ed .btn{padding:.5em .7em;font-size:.66rem}
+.ed .del{color:var(--muted)}
+.ed .del:hover{color:var(--accent)}
+.edit-note{display:none}
+.editing .edit-note{display:block}
+dialog.form{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-top:2px solid var(--accent-deep);border-radius:2px;padding:22px;width:min(94vw,640px);max-height:92vh}
+dialog.form::backdrop{background:rgba(0,0,0,.72)}
+dialog.form form{display:grid;gap:14px}
+dialog.form textarea[name=body]{min-height:42vh;font:400 .98rem/1.55 var(--body)}
+dialog.form .row{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
+dialog.form .row>*{flex:1 1 200px}
+dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../"><img src="../images/logo-nav.webp" alt="">228th <span>Black Skulls</span></a>
+  <nav id="acct-nav" aria-label="Account"></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="msg" id="msg" role="status"></div>
+
+  <div class="center panel stack" id="out" hidden>
+    <h2>Members only</h2>
+    <p class="muted" id="out-text">Log in to see the unit's documents.</p>
+    <a class="btn" href="../login/" id="out-btn">Log in</a>
+  </div>
+
+  <div id="page" hidden>
+    <div class="head">
+      <p class="label"><b>//</b> Archives</p>
+      <h1>Documents</h1>
+      <p class="muted">SOPs, guides and reference for the Corps, from 228th wide down to each MOS and qualification. You only see the folders your roles allow.</p>
+    </div>
+
+    <div class="toolbar">
+      <input type="search" id="find" placeholder="Find a document" aria-label="Find a document">
+      <button class="btn ghost small" type="button" id="open-all">Expand all</button>
+      <button class="btn ghost small" type="button" id="close-all">Collapse all</button>
+      <button class="btn small" type="button" id="edit-btn" hidden>Edit</button>
+    </div>
+    <p class="msg ok edit-note" id="edit-note">Editing. Open a folder to add documents or folders inside it, change who can see it, or reorder it. Members don't see these buttons.</p>
+    <div class="ed" id="root-ed"><button class="btn ghost" type="button" id="add-top">+ Top folder</button></div>
+
+    <div class="dtree" id="tree"><p class="empty">Loading documents…</p></div>
+  </div>
+</main>
+
+<dialog class="form" id="fdlg" aria-labelledby="fdlg-h">
+  <form method="dialog" id="fform">
+    <h3 id="fdlg-h">Folder</h3>
+    <label class="f">Name<input name="title" maxlength="80" required></label>
+    <label class="f">Inside<select name="parent"></select></label>
+    <div class="row">
+      <label class="f">Who can see it<select name="see"></select></label>
+      <label class="check"><input type="checkbox" name="andup"> This role and up</label>
+    </div>
+    <p class="hint muted" style="margin:0;font-size:.88rem">Folders inside this one are hidden from anyone who can't see this one. Members with the docs permission see everything.</p>
+    <div class="acts"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit">Save</button></div>
+  </form>
+</dialog>
+
+<dialog class="form" id="ddlg" aria-labelledby="ddlg-h">
+  <form method="dialog" id="dform">
+    <h3 id="ddlg-h">Document</h3>
+    <label class="f">Title<input name="title" maxlength="120" required></label>
+    <label class="f">Folder<select name="folder"></select></label>
+    <label class="f">Text<textarea name="body" maxlength="50000"></textarea>
+      <span class="hint">Leave a blank line between paragraphs. Start a line with ### for a heading or - for a bullet. Links starting with https:// become clickable.</span></label>
+    <div class="acts"><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="submit">Save</button></div>
+  </form>
+</dialog>
+
+<script>
+(async function () {
+  var A = window.Auth, $ = function (id) { return document.getElementById(id); }, msg = $('msg');
+  function ok(t) { msg.className = 'msg ok'; msg.textContent = t; }
+  function out(text) { A.header(me, 'docs'); if (text) $('out-text').textContent = text; $('out').hidden = false; }
+
+  var me = null;
+  if (!A.sb) return out('Documents are being set up. Check back soon.');
+  try { me = await A.me(); } catch (e) { return out(); }
+  if (!me) return out();
+  if (!A.isApproved(me)) { out('Your account is waiting for approval.'); $('out-btn').href = '../members/'; $('out-btn').textContent = 'Check status'; return; }
+  A.header(me, 'docs');
+  $('page').hidden = false;
+
+  var canEdit = A.can(me, 'docs'), sb = A.sb, folders = [], docs = [], roles = [], kids = {}, docsIn = {}, byId = {};
+  var tree = $('tree');
+
+  async function load() {
+    var r = await Promise.all([sb.from('doc_folders').select('*'), sb.from('docs').select('*'), roles.length ? null : sb.from('roles').select('name,label,rank')]);
+    if (r[0].error) throw r[0].error; if (r[1].error) throw r[1].error;
+    if (r[2] && !r[2].error) roles = r[2].data.slice().sort(function (a, b) { return b.rank - a.rank; });
+    var order = function (a, b) { return a.sort - b.sort || a.id - b.id; };
+    folders = r[0].data.sort(order); docs = r[1].data.sort(order);
+    kids = {}; docsIn = {}; byId = {};
+    folders.forEach(function (f) { byId[f.id] = f; });
+    // A folder whose parent this member can't see is left out with it.
+    folders.forEach(function (f) { var k = f.parent_id && byId[f.parent_id] ? f.parent_id : f.parent_id ? -1 : 0; (kids[k] = kids[k] || []).push(f); });
+    docs.forEach(function (d) { (docsIn[d.folder_id] = docsIn[d.folder_id] || []).push(d); });
+  }
+
+  // Who a folder is for, in words.
+  function labelOf(name) { var r = roles.find(function (x) { return x.name === name; }); return r ? r.label : name; }
+  function seenBy(list) {
+    if (!list || !list.length) return '';
+    var at = roles.findIndex(function (r) { return list.indexOf(r.name) < 0; });
+    if (at < 0) at = roles.length;
+    if (at > 1 && list.length === at) return roles[at - 1].label + ' and up';
+    return list.map(labelOf).join(', ');
+  }
+
+  // Document text: blank line = paragraph, ### = heading, - or • = bullet, https:// links.
+  function inline(el, text) {
+    text.split(/(https?:\/\/[^\s<>"']+)/).forEach(function (part, i) {
+      if (i % 2) { var a = A.el('a', null, part); a.href = part; a.target = '_blank'; a.rel = 'noopener'; el.appendChild(a); }
+      else if (part) el.appendChild(document.createTextNode(part));
+    });
+    return el;
+  }
+  function renderText(body) {
+    var box = A.el('div', 'doc-text');
+    if (!(body || '').trim()) { box.appendChild(A.el('p', 'none', 'Nothing written yet.')); return box; }
+    body.replace(/\r/g, '').split(/\n\s*\n/).forEach(function (blk) {
+      var lines = blk.split('\n'), ul = null, para = [];
+      function flush() { if (para.length) { box.appendChild(inline(A.el('p'), para.join('\n'))); para = []; } }
+      lines.forEach(function (ln) {
+        var t = ln.trim();
+        if (/^###\s*/.test(t)) { flush(); ul = null; box.appendChild(A.el('h4', null, t.replace(/^###\s*/, ''))); }
+        else if (/^([-•*])\s+/.test(t)) { flush(); if (!ul) { ul = A.el('ul'); box.appendChild(ul); } ul.appendChild(inline(A.el('li'), t.replace(/^([-•*])\s+/, ''))); }
+        else if (t) { ul = null; para.push(ln); }
+      });
+      flush();
+    });
+    return box;
+  }
+
+  function btn(text, fn, cls) { var b = A.el('button', 'btn ghost' + (cls ? ' ' + cls : ''), text); b.type = 'button'; b.onclick = function (e) { e.preventDefault(); fn(); }; return b; }
+
+  function renderFolder(f, depth, n) {
+    var det = A.el('details', 'folder f' + Math.min(depth, 2)); det.dataset.folder = f.id;
+    var sum = A.el('summary');
+    if (depth === 0) sum.appendChild(A.el('span', 'n', (n < 9 ? '0' : '') + (n + 1)));
+    sum.appendChild(A.el('span', 't', f.title));
+    var who = seenBy(f.visible_to);
+    if (who) { var c = A.el('small', 'chip lock', who); c.title = 'Only these roles can see this folder'; sum.appendChild(c); }
+    det.appendChild(sum);
+    var inn = A.el('div', 'in');
+    if (canEdit) {
+      var ed = A.el('div', 'ed');
+      ed.appendChild(btn('+ Document', function () { editDoc(null, f.id); }));
+      ed.appendChild(btn('+ Folder', function () { editFolder(null, f.id); }));
+      ed.appendChild(btn('Edit folder', function () { editFolder(f); }));
+      ed.appendChild(btn('↑', function () { move(folders, f, -1, 'doc_folders', 'parent_id'); }));
+      ed.appendChild(btn('↓', function () { move(folders, f, 1, 'doc_folders', 'parent_id'); }));
+      ed.appendChild(btn('Delete', function () { delFolder(f); }, 'del'));
+      inn.appendChild(ed);
+    }
+    var ks = kids[f.id] || [], ds = docsIn[f.id] || [];
+    ks.forEach(function (k, i) { inn.appendChild(renderFolder(k, depth + 1, i)); });
+    ds.forEach(function (d) { inn.appendChild(renderDoc(d)); });
+    if (!ks.length && !ds.length) inn.appendChild(A.el('p', 'none', 'No documents yet.'));
+    det.appendChild(inn);
+    return det;
+  }
+  function renderDoc(d) {
+    var det = A.el('details', 'doc'); det.dataset.doc = d.id;
+    var sum = A.el('summary'); sum.appendChild(A.el('span', 'ic')); sum.appendChild(A.el('span', 't', d.title));
+    det.appendChild(sum);
+    var inn = A.el('div', 'in');
+    if (canEdit) {
+      var ed = A.el('div', 'ed');
+      ed.appendChild(btn('Edit', function () { editDoc(d); }));
+      ed.appendChild(btn('↑', function () { move(docs, d, -1, 'docs', 'folder_id'); }));
+      ed.appendChild(btn('↓', function () { move(docs, d, 1, 'docs', 'folder_id'); }));
+      ed.appendChild(btn('Delete', function () { delDoc(d); }, 'del'));
+      inn.appendChild(ed);
+    }
+    if (d.updated_at) inn.appendChild(A.el('p', 'doc-meta', 'Updated ' + A.date(d.updated_at)));
+    inn.appendChild(renderText(d.body));
+    det.appendChild(inn);
+    return det;
+  }
+
+  function draw() {
+    var open = {}; tree.querySelectorAll('details[open]').forEach(function (x) { open[(x.dataset.folder ? 'f' : 'd') + (x.dataset.folder || x.dataset.doc)] = 1; });
+    tree.textContent = '';
+    var top = kids[0] || [];
+    if (!top.length) tree.appendChild(A.el('p', 'empty', canEdit ? 'No folders yet. Press Edit, then + Top folder.' : 'No documents have been shared with you yet.'));
+    top.forEach(function (f, i) { tree.appendChild(renderFolder(f, 0, i)); });
+    tree.querySelectorAll('details').forEach(function (x) { if (open[(x.dataset.folder ? 'f' : 'd') + (x.dataset.folder || x.dataset.doc)]) x.open = true; });
+  }
+  async function refresh() { try { await load(); draw(); } catch (e) { A.fail(msg, e); } }
+
+  try { await load(); } catch (e) { tree.textContent = ''; return A.fail(msg, e); }
+  draw();
+
+  $('open-all').onclick = function () { tree.querySelectorAll('details.folder').forEach(function (x) { x.open = true; }); };
+  $('close-all').onclick = function () { tree.querySelectorAll('details').forEach(function (x) { x.open = false; }); };
+
+  // Search titles and text; open the folders around each match.
+  $('find').oninput = function () {
+    var q = this.value.trim().toLowerCase(), first = null;
+    tree.querySelectorAll('.hit').forEach(function (x) { x.classList.remove('hit'); });
+    if (q.length < 2) return;
+    function openUp(el) { var s = el.parentNode.closest('details'); while (s) { s.open = true; s = s.parentNode.closest('details'); } }
+    folders.forEach(function (f) { if (f.title.toLowerCase().indexOf(q) >= 0) { var el = tree.querySelector('[data-folder="' + f.id + '"]'); if (el) { el.classList.add('hit'); openUp(el); first = first || el; } } });
+    docs.forEach(function (d) {
+      if ((d.title + ' ' + (d.body || '')).toLowerCase().indexOf(q) >= 0) { var el = tree.querySelector('[data-doc="' + d.id + '"]'); if (el) { el.classList.add('hit'); openUp(el); first = first || el; } }
+    });
+    if (first) first.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  };
+
+  if (!canEdit) return;
+
+  // ---- Editing (docs permission) ----
+  $('edit-btn').hidden = false;
+  $('edit-btn').onclick = function () {
+    var on = document.body.classList.toggle('editing');
+    this.textContent = on ? 'Done' : 'Edit';
+  };
+  $('add-top').onclick = function () { editFolder(null, null); };
+  document.querySelectorAll('dialog [data-close]').forEach(function (b) { b.onclick = function () { b.closest('dialog').close(); }; });
+  document.querySelectorAll('dialog').forEach(function (d) { d.addEventListener('click', function (e) { if (e.target === d) d.close(); }); });
+
+  function pathOf(f) { var p = [], x = f, guard = 0; while (x && guard++ < 20) { p.unshift(x.title); x = byId[x.parent_id]; } return p.join(' › '); }
+  function under(id, maybeChild) { var x = byId[maybeChild], guard = 0; while (x && guard++ < 20) { if (x.id === id) return true; x = byId[x.parent_id]; } return false; }
+  function folderOptions(sel, current, skip, withTop) {
+    sel.textContent = '';
+    if (withTop) { var o = A.el('option', null, '(Top level)'); o.value = ''; sel.appendChild(o); }
+    folders.filter(function (f) { return !skip || !under(skip, f.id); }).map(function (f) { return [pathOf(f), f.id]; })
+      .sort(function (a, b) { return a[0].localeCompare(b[0]); })
+      .forEach(function (x) { var o = A.el('option', null, x[0]); o.value = x[1]; if (String(x[1]) === String(current || '')) o.selected = true; sel.appendChild(o); });
+  }
+  function nextSort(list, key, val) { var s = list.filter(function (x) { return (x[key] || null) === (val || null); }).map(function (x) { return x.sort; }); return s.length ? Math.max.apply(null, s) + 1 : 0; }
+
+  var editingFolder = null, editingDoc = null;
+  function editFolder(f, parent) {
+    editingFolder = f; var F = $('fform');
+    $('fdlg-h').textContent = f ? 'Edit folder' : 'New folder';
+    F.title.value = f ? f.title : '';
+    folderOptions(F.parent, f ? f.parent_id : parent, f && f.id, true);
+    F.see.textContent = '';
+    var all = A.el('option', null, 'Every member'); all.value = ''; F.see.appendChild(all);
+    roles.forEach(function (r) { var o = A.el('option', null, r.label); o.value = r.name; F.see.appendChild(o); });
+    var v = (f && f.visible_to) || [], who = seenBy(v);
+    F.andup.checked = / and up$/.test(who);
+    F.see.value = !v.length ? '' : F.andup.checked ? v[v.length - 1] : v[0];
+    if (F.andup.checked) { var low = roles.filter(function (r) { return v.indexOf(r.name) >= 0; }).pop(); if (low) F.see.value = low.name; }
+    F.andup.disabled = !F.see.value;
+    F.see.onchange = function () { F.andup.disabled = !F.see.value; if (!F.see.value) F.andup.checked = false; };
+    $('fdlg').showModal(); F.title.focus();
+  }
+  $('fform').onsubmit = async function (e) {
+    e.preventDefault();
+    var F = this, see = [], parent = F.parent.value ? +F.parent.value : null;
+    if (F.see.value) {
+      var at = roles.findIndex(function (r) { return r.name === F.see.value; });
+      see = F.andup.checked ? roles.slice(0, at + 1).map(function (r) { return r.name; }) : [F.see.value];
+    }
+    var row = { title: F.title.value.trim(), parent_id: parent, visible_to: see }, r;
+    if (editingFolder) {
+      if ((editingFolder.parent_id || null) !== parent) row.sort = nextSort(folders, 'parent_id', parent);
+      r = await sb.from('doc_folders').update(row).eq('id', editingFolder.id);
+    } else { row.sort = nextSort(folders, 'parent_id', parent); r = await sb.from('doc_folders').insert(row); }
+    if (r.error) return A.fail(msg, r.error);
+    $('fdlg').close(); ok(editingFolder ? 'Folder saved.' : 'Folder added.');
+    await refresh(); openFolder(parent);
+  };
+  function openFolder(id) { var el = id && tree.querySelector('[data-folder="' + id + '"]'); while (el) { el.open = true; el = el.parentNode.closest('details'); } }
+
+  function editDoc(d, folder) {
+    editingDoc = d; var F = $('dform');
+    $('ddlg-h').textContent = d ? 'Edit document' : 'New document';
+    F.title.value = d ? d.title : ''; F.body.value = d ? d.body || '' : '';
+    folderOptions(F.folder, d ? d.folder_id : folder, null, false);
+    $('ddlg').showModal(); F.title.focus();
+  }
+  $('dform').onsubmit = async function (e) {
+    e.preventDefault();
+    var F = this, folder = +F.folder.value, row = { title: F.title.value.trim(), body: F.body.value, folder_id: folder }, r;
+    if (editingDoc) {
+      if (editingDoc.folder_id !== folder) row.sort = nextSort(docs, 'folder_id', folder);
+      r = await sb.from('docs').update(row).eq('id', editingDoc.id);
+    } else { row.sort = nextSort(docs, 'folder_id', folder); r = await sb.from('docs').insert(row); }
+    if (r.error) return A.fail(msg, r.error);
+    $('ddlg').close(); ok(editingDoc ? 'Document saved.' : 'Document added.');
+    var id = editingDoc && editingDoc.id;
+    await refresh(); openFolder(folder);
+    if (id) { var el = tree.querySelector('[data-doc="' + id + '"]'); if (el) el.open = true; }
+  };
+
+  // Reorder: number the siblings in order, swap two, save the ones that changed.
+  async function move(list, item, dir, table, key) {
+    var sib = list.filter(function (x) { return (x[key] || null) === (item[key] || null); });
+    var i = sib.indexOf(item), j = i + dir; if (j < 0 || j >= sib.length) return;
+    var t = sib[i]; sib[i] = sib[j]; sib[j] = t;
+    var jobs = sib.map(function (x, k) { return x.sort === k ? null : sb.from(table).update({ sort: k }).eq('id', x.id); }).filter(Boolean);
+    var res = await Promise.all(jobs), bad = res.find(function (x) { return x.error; });
+    if (bad) return A.fail(msg, bad.error);
+    await refresh();
+  }
+  async function delFolder(f) {
+    var n = docs.filter(function (d) { return under(f.id, d.folder_id); }).length;
+    if (!confirm('Delete the folder "' + f.title + '"' + (n ? ' and the ' + n + ' document' + (n === 1 ? '' : 's') + ' inside it' : '') + '? This can\'t be undone.')) return;
+    var r = await sb.from('doc_folders').delete().eq('id', f.id);
+    if (r.error) return A.fail(msg, r.error); ok('Folder deleted.'); refresh();
+  }
+  async function delDoc(d) {
+    if (!confirm('Delete "' + d.title + '"? This can\'t be undone.')) return;
+    var r = await sb.from('docs').delete().eq('id', d.id);
+    if (r.error) return A.fail(msg, r.error); ok('Document deleted.'); refresh();
+  }
+})();
+</script>
+</body>
+</html>

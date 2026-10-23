@@ -118,7 +118,7 @@
     if (e.persisted && box) { box.classList.remove('on'); busy = false; }
   });
 
-  var NAMES = { '': '228th Black Skulls Corps', 'login/': 'Log in', 'members/': 'Dashboard', 'account/': 'My account', 'org/': 'Unit Organization', 'org/manage/': 'Org manager', 'dashboard/': 'Command Center' };
+  var NAMES = { '': '228th Black Skulls Corps', 'login/': 'Log in', 'members/': 'Dashboard', 'account/': 'My account', 'org/': 'Unit Organization', 'org/manage/': 'Org manager', 'docs/': 'Documents', 'dashboard/': 'Command Center' };
   function pageOf(u) { var p = u.pathname.slice(ROOT.pathname.length); return p.replace(/index\.html$/, ''); }
   FX.nameOf = function (url) { try { return NAMES[pageOf(new URL(url, location.href))] || ''; } catch (e) { return ''; } };
   function labelFor(a, u) {

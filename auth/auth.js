@@ -25,15 +25,15 @@
     if (!r.data) return { status: 'pending', user: s.user, missing: true, perms: [] };
     var me = Object.assign(r.data, { user: s.user, perms: [] });
     // What this person's roles let them do (set per role on the Dashboard). Admin can do everything.
-    if (me.status === 'approved') { var pr = await A.sb.rpc('my_perms'); me.perms = (!pr.error && pr.data) || (me.role === 'admin' ? ['events', 'briefings', 'bios', 'members', 'roles'] : []); }
+    if (me.status === 'approved') { var pr = await A.sb.rpc('my_perms'); me.perms = (!pr.error && pr.data) || (me.role === 'admin' ? ['events', 'briefings', 'bios', 'members', 'docs', 'roles'] : []); }
     return me;
   };
   A.isApproved = function (p) { return !!p && p.status === 'approved'; };
   A.isAdmin = function (p) { return A.isApproved(p) && p.role === 'admin'; };
   A.can = function (p, perm) { return A.isApproved(p) && (p.perms || []).indexOf(perm) >= 0; };
-  A.canDash = function (p) { return A.isApproved(p) && (p.perms || []).length > 0; };
+  A.canDash = function (p) { return A.isApproved(p) && (p.perms || []).some(function (x) { return x !== 'docs'; }); };
   // The permissions a role can be given, in the order the Dashboard lists them.
-  A.PERMS = [['events', 'Create, edit and delete events and timers'], ['briefings', 'Post and delete briefings'], ['bios', 'Edit anyone\'s bio'], ['members', 'Approve sign-ups and change members\' roles']];
+  A.PERMS = [['events', 'Create, edit and delete events and timers'], ['briefings', 'Post and delete briefings'], ['bios', 'Edit anyone\'s bio'], ['members', 'Approve sign-ups and change members\' roles'], ['docs', 'Add, edit and delete documents and choose who can see them']];
 
   // Go to another page of the site, behind the pixel wipe when the page effects are loaded.
   A.go = function (url) {
@@ -245,6 +245,7 @@
     if (p) {
       go('members/', 'Dashboard', 'members');
       go('org/', 'Unit Organization', 'org');
+      go('docs/', 'Documents', 'docs');
       if (A.canDash(p)) go('dashboard/', 'Command Center', 'dashboard');
       var out = A.el('button', 'out', 'Log out'); out.type = 'button'; out.onclick = A.signOut; item(out);
     } else {

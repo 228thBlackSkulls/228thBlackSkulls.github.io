@@ -109,6 +109,7 @@ $$;
 --   briefings = post and delete briefings
 --   bios      = edit anyone's bio
 --   members   = approve sign-ups and change members' roles (never the Admin role)
+--   docs      = add, edit and delete documents and choose who can see each folder
 do $$ begin
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'roles' and column_name = 'perms') then
     alter table public.roles add column perms text[] not null default '{}';
@@ -117,7 +118,7 @@ do $$ begin
   end if;
 end $$;
 alter table public.roles drop constraint if exists roles_perms_check;
-alter table public.roles add constraint roles_perms_check check (perms <@ array['events', 'briefings', 'bios', 'members']);
+alter table public.roles add constraint roles_perms_check check (perms <@ array['events', 'briefings', 'bios', 'members', 'docs']);
 
 create or replace function public.has_perm(p text) returns boolean
 language sql stable security definer set search_path = public as $$
@@ -125,7 +126,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 create or replace function public.my_perms() returns text[]
 language sql stable security definer set search_path = public as $$
-  select case when is_admin() then array['events', 'briefings', 'bios', 'members', 'roles']
+  select case when is_admin() then array['events', 'briefings', 'bios', 'members', 'docs', 'roles']
     else coalesce((select array_agg(distinct x) from roles r, unnest(r.perms) x where r.name = any(my_roles())), '{}') end;
 $$;
 revoke execute on function public.has_perm(text), public.my_perms() from public, anon;
@@ -169,6 +170,8 @@ begin
   update profiles set all_roles = array_remove(all_roles, old.name) where old.name = any(all_roles);
   -- A briefing only that role could see falls back to Admin only, never to everyone.
   update posts set visible_to = case when visible_to = array[old.name] then array['admin'] else array_remove(visible_to, old.name) end
+  where old.name = any(visible_to);
+  update doc_folders set visible_to = case when visible_to = array[old.name] then array['admin'] else array_remove(visible_to, old.name) end
   where old.name = any(visible_to);
   return old;
 end $$;
@@ -423,6 +426,90 @@ drop policy if exists schedule_read   on public.schedule;
 drop policy if exists schedule_manage on public.schedule;
 create policy schedule_read   on public.schedule for select to anon, authenticated using (true);
 create policy schedule_manage on public.schedule for all to authenticated using (has_perm('events')) with check (has_perm('events'));
+
+-- Documents: the members-only Documents page. Folders nest (228th Wide > Divisions > MOS > Qualifications, and so on)
+-- and each folder picks which roles can see it (empty = every approved member). A folder inside a hidden folder is hidden too.
+-- The docs permission (High-Com starts with it) adds, edits and deletes folders and documents and sees all of them.
+do $$ begin
+  if to_regclass('public.doc_folders') is null then
+    update public.roles set perms = array_append(perms, 'docs') where name = 'high-com' and not ('docs' = any(perms));
+  end if;
+end $$;
+create table if not exists public.doc_folders (
+  id         bigint generated always as identity primary key,
+  parent_id  bigint references public.doc_folders on delete cascade,
+  title      text not null,
+  sort       int not null default 0,
+  visible_to text[] not null default '{}',
+  created_at timestamptz not null default now()
+);
+create table if not exists public.docs (
+  id         bigint generated always as identity primary key,
+  folder_id  bigint not null references public.doc_folders on delete cascade,
+  title      text not null,
+  body       text,
+  sort       int not null default 0,
+  updated_at timestamptz not null default now(),
+  updated_by uuid default auth.uid()
+);
+alter table public.doc_folders drop constraint if exists doc_folders_fields_check;
+alter table public.doc_folders add constraint doc_folders_fields_check check (length(trim(title)) between 1 and 80 and parent_id is distinct from id);
+alter table public.docs drop constraint if exists docs_fields_check;
+alter table public.docs add constraint docs_fields_check check (length(trim(title)) between 1 and 120 and coalesce(length(body), 0) <= 50000);
+
+create or replace function public.doc_touch() returns trigger
+language plpgsql as $$
+begin new.updated_at = now(); new.updated_by = auth.uid(); return new; end $$;
+drop trigger if exists docs_touch on public.docs;
+create trigger docs_touch before update on public.docs for each row execute function public.doc_touch();
+
+-- Can I see this folder? Every folder above it must allow one of my roles too.
+create or replace function public.doc_folder_ok(fid bigint) returns boolean
+language sql stable security definer set search_path = public as $$
+  with recursive up as (
+    select id, parent_id, visible_to, 1 as depth from doc_folders where id = fid
+    union all
+    select f.id, f.parent_id, f.visible_to, up.depth + 1 from doc_folders f join up on f.id = up.parent_id where up.depth < 20
+  )
+  select my_roles() is not null and (has_perm('docs')
+    or not exists (select 1 from up where cardinality(visible_to) > 0 and not (visible_to && my_roles())));
+$$;
+revoke execute on function public.doc_folder_ok(bigint) from public, anon;
+grant  execute on function public.doc_folder_ok(bigint) to authenticated;
+
+alter table public.doc_folders enable row level security;
+alter table public.docs        enable row level security;
+revoke all on public.doc_folders, public.docs from anon, authenticated;
+grant select, insert, update, delete on public.doc_folders, public.docs to authenticated;
+drop policy if exists doc_folders_read   on public.doc_folders;
+drop policy if exists doc_folders_manage on public.doc_folders;
+drop policy if exists docs_read          on public.docs;
+drop policy if exists docs_manage        on public.docs;
+create policy doc_folders_read   on public.doc_folders for select to authenticated using (doc_folder_ok(id));
+create policy doc_folders_manage on public.doc_folders for all    to authenticated using (has_perm('docs')) with check (has_perm('docs'));
+create policy docs_read          on public.docs        for select to authenticated using (doc_folder_ok(folder_id));
+create policy docs_manage        on public.docs        for all    to authenticated using (has_perm('docs')) with check (has_perm('docs'));
+
+-- First run only: starter folders. Rename, move or delete any of them on the Documents page.
+do $$
+declare top bigint; i int := 0; t text;
+begin
+  if exists (select 1 from public.doc_folders) then return; end if;
+  insert into public.doc_folders (title, sort) values ('228th Wide', 0);
+  insert into public.doc_folders (title, sort) values ('Divisions & Branches', 1) returning id into top;
+  insert into public.doc_folders (parent_id, title, sort) values (top, 'Arma 3', 0), (top, 'VRChat', 1);
+  insert into public.doc_folders (title, sort) values ('MOS', 2) returning id into top;
+  foreach t in array array['Conventional', 'ARC', 'ARF', 'Airborne', 'Armored', 'BARC', 'Commando', 'Combat Engineer', 'Marine',
+    'Combat Medic', 'Pilot', 'Scuba', 'Spec Ops', 'Echelon'] loop
+    insert into public.doc_folders (parent_id, title, sort) values (top, t, i); i := i + 1;
+  end loop;
+  i := 0;
+  insert into public.doc_folders (title, sort) values ('Qualifications', 3) returning id into top;
+  foreach t in array array['Anti-Tank', 'Breacher', 'Medic', 'Stealth', 'EOD', 'RTO', 'Light Weaponry', 'Heavy Weaponry', 'Jetpack',
+    'Marksman', 'Piloting', 'Riot', 'SAR', 'SERE'] loop
+    insert into public.doc_folders (parent_id, title, sort) values (top, t, i); i := i + 1;
+  end loop;
+end $$;
 
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)
 -- to make yourself the first admin. Everything after that is done from the dashboard.
