@@ -563,8 +563,13 @@ create or replace function public.form_open(fid bigint) returns boolean
 language sql stable security definer set search_path = public as $$
   select form_ok(fid) and exists (select 1 from forms where id = fid and open);
 $$;
-revoke execute on function public.form_ok(bigint), public.form_open(bigint) from public, anon;
-grant  execute on function public.form_ok(bigint), public.form_open(bigint) to authenticated;
+-- A form with a signature question is final once sent: the member can't change or withdraw it (Command can delete it).
+create or replace function public.form_signed(fid bigint) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from forms where id = fid and questions @> '[{"type":"signature"}]');
+$$;
+revoke execute on function public.form_ok(bigint), public.form_open(bigint), public.form_signed(bigint) from public, anon;
+grant  execute on function public.form_ok(bigint), public.form_open(bigint), public.form_signed(bigint) to authenticated;
 
 -- Answers are always filed under the member who sent them, with their callsign at the time.
 create or replace function public.form_response_stamp() returns trigger
@@ -593,8 +598,8 @@ create policy forms_read       on public.forms for select to authenticated using
 create policy forms_manage     on public.forms for all    to authenticated using (has_perm('forms')) with check (has_perm('forms'));
 create policy responses_read   on public.form_responses for select to authenticated using (user_id = auth.uid() or has_perm('forms'));
 create policy responses_send   on public.form_responses for insert to authenticated with check (form_open(form_id));
-create policy responses_change on public.form_responses for update to authenticated using (user_id = auth.uid() and form_open(form_id)) with check (form_open(form_id));
-create policy responses_delete on public.form_responses for delete to authenticated using (user_id = auth.uid() or has_perm('forms'));
+create policy responses_change on public.form_responses for update to authenticated using (user_id = auth.uid() and form_open(form_id) and not form_signed(form_id)) with check (form_open(form_id));
+create policy responses_delete on public.form_responses for delete to authenticated using (has_perm('forms') or (user_id = auth.uid() and not form_signed(form_id)));
 
 -- First run only: a Terms of Service agreement for each division. Edit them on the Forms page.
 -- (Also swaps in the real terms if the early placeholder version is still there.)

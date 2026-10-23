@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610231223";
+(function(){var v="202610231231";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -117,7 +117,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     <div class="head">
       <p class="label"><b>//</b> Paperwork</p>
       <h1>Forms</h1>
-      <p class="muted">Fill these in once. Your answers are saved to your account, and only High Command can read them. You can come back and change them any time.</p>
+      <p class="muted">Fill these in once. Your answers are saved to your account, and only High Command can read them. Forms without a signature can be changed later; once you sign a form, it's final.</p>
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin:0 0 6px">
       <button class="btn ghost small" type="button" id="new-btn" hidden>+ New form</button>
@@ -199,7 +199,8 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
         var det = A.el('details', 'f1'), sum = A.el('summary'), inn = A.el('div', 'in'); det.dataset.form = f.id;
         sum.appendChild(A.el('span', 't', f.title));
         var chips = A.el('span', 'chips'), mineR = mine[f.id];
-        chips.appendChild(mineR ? A.el('small', 'chip ok', 'Sent ' + A.date(mineR.updated_at)) : A.el('small', 'chip', 'Not filled in'));
+        var sig = (f.questions || []).some(function (q) { return q.type === 'signature'; });
+        chips.appendChild(mineR ? A.el('small', 'chip ok', (sig ? 'Signed ' : 'Sent ') + A.date(mineR.updated_at)) : A.el('small', 'chip', sig ? 'Not signed' : 'Not filled in'));
         if (!f.open) chips.appendChild(A.el('small', 'chip', 'Closed'));
         var who = A.seenBy(roles, f.visible_to); if (who) chips.appendChild(A.el('small', 'chip lock', who));
         sum.appendChild(chips);
@@ -249,7 +250,9 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     var mineR = mine[f.id];
     if ((f.description || '').trim()) p.appendChild(A.richText(f.description));
     var form = A.el('form', 'fill'); form.noValidate = true;
-    var ans = (mineR && mineR.answers) || {}, locked = !f.open;
+    var signed = !!mineR && (f.questions || []).some(function (q) { return q.type === 'signature'; });
+    var ans = (mineR && mineR.answers) || {}, locked = !f.open || signed;
+    if (signed) { var note = A.el('p', 'msg ok', 'Signed ' + A.date(mineR.created_at) + '. Signed forms are final and can\'t be changed.'); p.appendChild(note); }
     (f.questions || []).forEach(function (q) { form.appendChild(question(q, ans[q.id], locked)); });
     if (!locked && (f.questions || []).some(function (q) { return q.type !== 'info'; })) {
       var row = A.el('div', 'sendrow'), send = A.el('button', 'btn', mineR ? 'Update my answers' : 'Send'); send.type = 'submit';
@@ -301,7 +304,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     lab.appendChild(document.createTextNode('Callsign')); inp.name = name; inp.maxLength = 40; inp.autocapitalize = 'off'; inp.spellcheck = false;
     inp.placeholder = 'CT-1234 "Nickname"'; inp.value = val.name || ''; inp.disabled = locked;
     lab.appendChild(inp); lab.appendChild(hint); w.appendChild(lab);
-    if (!locked) A.watchCallsign(inp, hint);
+    if (!locked) A.watchCallsign(inp, hint); else hint.hidden = true;
     var pad = A.el('div', 'pad'), cv = A.el('canvas'); pad.appendChild(cv); pad.appendChild(A.el('div', 'line')); pad.appendChild(A.el('span', 'ph', 'Sign here with your finger or mouse'));
     var bar = A.el('div', 'padbar'); bar.appendChild(A.el('span', 'label', 'Drawn signature'));
     var clr = btn('Clear', function () { clear(); }); clr.className = 'btn ghost small'; if (!locked) bar.appendChild(clr);
