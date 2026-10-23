@@ -536,6 +536,30 @@ begin
   end loop;
 end $$;
 
+-- Raid Rules for the VRChat division (from Flanker 2026-10-23). Added once; edit it on the Documents page.
+do $$
+declare fid bigint;
+begin
+  if exists (select 1 from public.docs where title = 'Raid Rules') then return; end if;
+  select f.id into fid from public.doc_folders f left join public.doc_folders p on p.id = f.parent_id
+    where f.title = 'VRChat' order by (p.title = 'Divisions & Branches') desc nulls last, f.id limit 1;
+  if fid is null then select id into fid from public.doc_folders where title = '228th Wide' and parent_id is null limit 1; end if;
+  if fid is null then return; end if;
+  insert into public.docs (folder_id, title, body, sort) values (fid, 'Raid Rules', $b$Each rule here gets one warning. If the same rule is broken again, that person will be kicked. Rules marked instant kick get no warning.
+
+- No participating in raiding while a member of the 228th.
+- No exploiting, like using OVR or shooting guns through walls. (If Raiders break this, it is an instant kick.)
+- No blocking 228th Troopers' accounts. (If Raiders break this, it is an instant kick.)
+- No spawn camping.
+- No holstering more than 2 primary weapons. Only 1 primary and 1 secondary weapon are allowed. Exceptions may only apply to 228th Troopers.
+- No abusing avatar height (minimum 1.89m and maximum 2.60m).
+- No unauthorized flight abilities and avatar toggles (dashes, teleport seats, GoGo Loco, or invisibility).
+- No killing unarmed civilians or unarmed troopers outside base.
+- Raiders are only allowed to "spin glitch" through doors, not walls. This includes no spin glitching to seats in the offices.
+- No killing anyone trying to train new recruits in the training room.
+- No false recruiting. (This is an instant kick.)$b$, 0);
+end $$;
+
 -- Forms: the members-only Forms page (like Google Forms, but answers stay on the site). Each member fills a form in once
 -- and can change their answers later. The forms permission (High-Com starts with it) builds forms and reads every answer.
 -- questions is a list of {id, type, label, help, options, required}; type is text, long, choice, checks, agree or info.
@@ -670,6 +694,17 @@ revoke all on public.response_notes from anon, authenticated;
 grant select, insert, update, delete on public.response_notes to authenticated;
 drop policy if exists notes_command on public.response_notes;
 create policy notes_command on public.response_notes for all to authenticated using (has_perm('forms')) with check (has_perm('forms'));
+
+-- The public 228th Dossier (Lore on the main page) lists every approved member by callsign, highest rank first.
+-- Callsigns only: no emails, pictures or anything else.
+create or replace function public.public_dossier()
+returns table (name text) language sql stable security definer set search_path = public as $$
+  select p.display_name from profiles p join roles r on r.name = p.role
+  where p.status = 'approved' and p.display_name is not null
+  order by r.rank desc, p.approved_at nulls last, p.display_name;
+$$;
+revoke execute on function public.public_dossier() from public;
+grant  execute on function public.public_dossier() to anon, authenticated;
 
 -- First run only: a Terms of Service agreement for each division. Edit them on the Forms page.
 -- (Also swaps in the real terms if the early placeholder version is still there.)
