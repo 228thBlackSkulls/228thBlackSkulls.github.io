@@ -738,15 +738,42 @@ grant select, insert, update, delete on public.response_notes to authenticated;
 drop policy if exists notes_command on public.response_notes;
 create policy notes_command on public.response_notes for all to authenticated using (has_perm('forms')) with check (has_perm('forms'));
 
--- The public 228th Dossier (Lore on the main page) lists every approved member by callsign, highest rank first.
+-- The public 228th Dossier (Lore on the main page). Everyone approved is written in here and stays for good, even after
+-- they leave, are removed or delete their account; while they're an approved member their entry follows their callsign and rank.
 -- Callsigns only: no emails, pictures or anything else.
+create table if not exists public.dossier (
+  member_id  uuid primary key,
+  name       text not null,
+  command    boolean not null default false,
+  rank       int not null default 0,
+  added_at   timestamptz not null default now()
+);
+alter table public.dossier enable row level security;
+revoke all on public.dossier from anon, authenticated;
+create or replace function public.dossier_track() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.status = 'approved' and new.display_name is not null then
+    insert into dossier (member_id, name, command, rank)
+    select new.id, new.display_name, r.rank >= coalesce((select rank from roles where name = 'second-lieutenant'), 1000), r.rank
+    from roles r where r.name = new.role
+    on conflict (member_id) do update set name = excluded.name, command = excluded.command, rank = excluded.rank;
+  end if;
+  return null;
+end $$;
+drop trigger if exists profiles_dossier on public.profiles;
+create trigger profiles_dossier after insert or update on public.profiles for each row execute function public.dossier_track();
+-- Everyone approved so far goes in now.
+insert into public.dossier (member_id, name, command, rank)
+select p.id, p.display_name, r.rank >= coalesce((select rank from public.roles where name = 'second-lieutenant'), 1000), r.rank
+from public.profiles p join public.roles r on r.name = p.role where p.status = 'approved' and p.display_name is not null
+on conflict (member_id) do update set name = excluded.name, command = excluded.command, rank = excluded.rank;
+
 drop function if exists public.public_dossier();
 create or replace function public.public_dossier()
 returns table (name text, command boolean) language sql stable security definer set search_path = public as $$
   -- command: Second Lieutenant and up (listed under Command); everyone else goes under Members.
-  select p.display_name, r.rank >= coalesce((select rank from roles where name = 'second-lieutenant'), 1000) from profiles p join roles r on r.name = p.role
-  where p.status = 'approved' and p.display_name is not null
-  order by r.rank desc, p.approved_at nulls last, p.display_name;
+  select d.name, d.command from dossier d order by d.rank desc, d.added_at, d.name;
 $$;
 revoke execute on function public.public_dossier() from public;
 grant  execute on function public.public_dossier() to anon, authenticated;
