@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610231430";
+(function(){var v="202610231432";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -21,6 +21,9 @@
 .grip{cursor:grab;touch-action:none;user-select:none;color:var(--muted);font-size:1.3rem;line-height:1;padding:6px 4px;background:none;border:0}
 .grip:active{cursor:grabbing}
 .row.dragging{opacity:.6;border-color:var(--accent)}
+.row.divider{border-color:rgba(200,30,30,.45)}
+.row.divider .who>input{color:var(--accent);font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.chip.grp{border-color:rgba(200,30,30,.45);color:var(--accent)}
 .rolechips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .rolechips .chip{display:inline-flex;gap:6px;align-items:center}
 .rolechips .chip button{background:none;border:0;color:inherit;cursor:pointer;padding:0;font:inherit;line-height:1}
@@ -147,6 +150,7 @@
       <form class="panel" id="role-form" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
         <label class="f" style="flex:1 1 180px">New role name<input name="label" maxlength="40" required placeholder="e.g. Recruiter"></label>
         <label class="f">Place it below<select name="below" id="role-below"></select></label>
+        <label class="check" style="padding-bottom:10px"><input type="checkbox" name="divider"> Rank group (divider)</label>
         <button class="btn" type="submit">Add role</button>
       </form>
     </section>
@@ -174,7 +178,7 @@
   function ok(text) { msg.className = 'msg ok'; msg.textContent = text; setTimeout(function () { if (msg.textContent === text) msg.textContent = ''; }, 4000); }
   function roleSelect(value) {
     var s = A.el('select'); s.setAttribute('aria-label', 'Role');
-    roles.forEach(function (r) { if (r.name !== 'admin' || A.isAdmin(me)) { var o = A.el('option', null, r.label); o.value = r.name; s.appendChild(o); } });
+    roles.forEach(function (r) { if (!r.divider && (r.name !== 'admin' || A.isAdmin(me))) { var o = A.el('option', null, r.label); o.value = r.name; s.appendChild(o); } });
     s.value = value || 'member';
     return s;
   }
@@ -265,7 +269,7 @@
     $('ov-roles').textContent = roles.length;
     var box = $('roles'); box.textContent = '';
     roles.forEach(function (role, i) {
-      var row = A.el('div', 'row'); row.style.gridTemplateColumns = '28px 1fr auto'; row.dataset.role = role.name;
+      var row = A.el('div', 'row' + (role.divider ? ' divider' : '')); row.style.gridTemplateColumns = '28px 1fr auto'; row.dataset.role = role.name;
       var grip = A.el('button', 'grip', role.name === 'admin' ? '' : '⠿'); grip.type = 'button';
       if (role.name !== 'admin') { grip.setAttribute('aria-label', 'Drag to reorder ' + role.label); dragHandle(grip, row); } else grip.disabled = true;
       row.appendChild(grip);
@@ -273,6 +277,7 @@
       var name = A.el('input'); name.value = role.raw; name.maxLength = 40; name.setAttribute('aria-label', 'Role name');
       w.appendChild(name);
       if (role.name === 'admin') w.appendChild(A.el('small', null, 'Can do everything'));
+      if (role.divider) w.appendChild(A.el('small', null, 'Rank group: give it to everyone in this group. It never shows as their rank.'));
       else {
         var pf = A.el('div', 'perm-picks');
         A.PERMS.forEach(function (pm) {
@@ -379,12 +384,12 @@
       var adminP = mine.indexOf('admin') >= 0;
       if (!can('members') || (adminP && !A.isAdmin(me))) {
         var ro = A.el('div', 'rolechips');
-        roles.filter(function (r) { return mine.indexOf(r.name) >= 0; }).forEach(function (r) { ro.appendChild(A.el('span', 'chip' + (r.name === p.role ? ' red' : ''), r.label)); });
+        roles.filter(function (r) { return mine.indexOf(r.name) >= 0; }).forEach(function (r) { ro.appendChild(A.el('span', 'chip' + (r.name === p.role ? ' red' : r.divider ? ' grp' : ''), r.label)); });
         x.acts.appendChild(ro); box.appendChild(x.row); return;
       }
       var chips = A.el('div', 'rolechips');
       roles.filter(function (r) { return mine.indexOf(r.name) >= 0; }).forEach(function (r) {
-        var c = A.el('span', 'chip' + (r.name === p.role ? ' red' : ''), r.label);
+        var c = A.el('span', 'chip' + (r.name === p.role ? ' red' : r.divider ? ' grp' : ''), r.label);
         if (!(self && r.name === 'admin') && (r.name !== 'admin' || A.isAdmin(me))) {
           var x2 = A.el('button', null, '×'); x2.type = 'button'; x2.setAttribute('aria-label', 'Remove ' + r.label);
           x2.onclick = function () { setRoles(p, mine.filter(function (n) { return n !== r.name; }), r.label + ' removed.'); };
@@ -394,7 +399,7 @@
       });
       var add = A.el('select'); add.setAttribute('aria-label', 'Add a role');
       var first = A.el('option', null, '+ Add role'); first.value = ''; add.appendChild(first);
-      roles.forEach(function (r) { if (mine.indexOf(r.name) < 0 && (r.name !== 'admin' || A.isAdmin(me))) { var o = A.el('option', null, r.label); o.value = r.name; add.appendChild(o); } });
+      roles.forEach(function (r) { if (mine.indexOf(r.name) < 0 && (r.name !== 'admin' || A.isAdmin(me))) { var o = A.el('option', null, r.divider ? '▸ ' + r.label.toUpperCase() + ' (group)' : r.label); o.value = r.name; add.appendChild(o); } });
       add.onchange = function () { if (add.value) setRoles(p, mine.concat(add.value), labelOf(add.value) + ' added.'); };
       chips.appendChild(add);
       x.acts.appendChild(chips);
@@ -603,7 +608,7 @@
     e.preventDefault();
     var f = this, label = f.label.value.trim(), name = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     if (!name) return;
-    var below = f.below.value, r = await sb.from('roles').insert({ name: name, label: label, rank: 1 });
+    var below = f.below.value, r = await sb.from('roles').insert({ name: name, label: label, rank: 1, divider: f.divider.checked });
     if (r.error) return A.fail(msg, r.error.code === '23505' ? { message: 'That role already exists.' } : r.error);
     var list = roles.slice(), at = list.findIndex(function (x) { return x.name === below; });
     list.splice(at + 1, 0, { name: name, rank: 1 });

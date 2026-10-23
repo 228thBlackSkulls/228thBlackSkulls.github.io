@@ -37,6 +37,27 @@ insert into public.roles (name, label, rank) values
   ('member', 'Recruit', 10)
 on conflict (name) do nothing;
 
+-- Rank groups: the red dividers on the rank list (Commanding Officer, Senior Officers...). They're roles too, so they can be
+-- given to people and carry permissions, but they're never shown as someone's rank. First run only: placed above their ranks.
+alter table public.roles add column if not exists divider boolean not null default false;
+do $$
+declare g record; ord text[]; i int;
+begin
+  if exists (select 1 from public.roles where divider) then return; end if;
+  select array_agg(name order by rank desc) into ord from public.roles where name <> 'admin';
+  for g in select * from (values ('commanding-officer', 'Commanding Officer', 'marshal-commander'), ('senior-officers', 'Senior Officers', 'senior-commander'),
+      ('junior-officers', 'Junior Officers', 'captain'), ('snco', 'SNCO', 'command-sergeant-major'), ('nco', 'NCO', 'staff-sergeant'),
+      ('junior-enlisted', 'Junior Enlisted', 'lance-corporal')) v(name, label, above) loop
+    if g.above = any(ord) and not exists (select 1 from public.roles where name = g.name) then
+      insert into public.roles (name, label, rank, divider) values (g.name, g.label, 1, true);
+      i := array_position(ord, g.above);
+      ord := ord[1:i-1] || g.name || ord[i:];
+    end if;
+  end loop;
+  -- Renumber everything in the new order (Admin stays at 100), the same way the Dashboard saves a drag.
+  for i in 1..cardinality(ord) loop update public.roles set rank = 100 - i where name = ord[i]; end loop;
+end $$;
+
 -- One profile per account. Everyone starts as pending until an admin approves them.
 create table if not exists public.profiles (
   id           uuid primary key references auth.users on delete cascade,
@@ -155,8 +176,9 @@ begin
     new.all_roles := array[new.role];
   end if;
   new.all_roles := coalesce((select array_agg(r.name order by r.rank desc) from roles r where r.name = any(new.all_roles)), '{}');
-  if cardinality(new.all_roles) = 0 then new.all_roles := array['member']; end if;
-  new.role := new.all_roles[1];
+  -- Rank groups (NCO, SNCO...) never count as someone's rank, so everyone also holds a real rank (Recruit if none).
+  if not exists (select 1 from roles r where r.name = any(new.all_roles) and not r.divider) then new.all_roles := new.all_roles || array['member']; end if;
+  new.role := (select r.name from roles r where r.name = any(new.all_roles) and not r.divider order by r.rank desc limit 1);
   return new;
 end $$;
 drop trigger if exists profiles_roles on public.profiles;
