@@ -542,9 +542,13 @@ create table if not exists public.form_responses (
   updated_at timestamptz not null default now(),
   unique (form_id, user_id)
 );
+-- category groups forms on the page: Arma 3 first, then VRChat, then any others.
+alter table public.forms add column if not exists category text not null default '';
+update public.forms set category = 'Arma 3' where category = '' and title ilike 'Arma 3%';
+update public.forms set category = 'VRChat' where category = '' and title ilike 'VRChat%';
 alter table public.forms drop constraint if exists forms_fields_check;
 alter table public.forms add constraint forms_fields_check check (
-  length(trim(title)) between 1 and 120 and coalesce(length(description), 0) <= 50000
+  length(trim(title)) between 1 and 120 and coalesce(length(description), 0) <= 50000 and length(category) <= 60
   and jsonb_typeof(questions) = 'array' and length(questions::text) <= 100000);
 alter table public.form_responses drop constraint if exists form_responses_fields_check;
 alter table public.form_responses add constraint form_responses_fields_check check (jsonb_typeof(answers) = 'object' and length(answers::text) <= 400000);
@@ -600,9 +604,9 @@ begin
   update public.forms set questions = q, description = '228th Black Skulls Corps™ – Terms of Service Agreement'
     where questions @> '[{"id":"terms","help":"Command: paste the terms here (Forms > Edit > Edit form)."}]';
   if exists (select 1 from public.forms) then return; end if;
-  insert into public.forms (title, description, questions, sort) values
-    ('Arma 3 Terms of Service Agreement', '228th Black Skulls Corps™ – Terms of Service Agreement', q, 0),
-    ('VRChat Terms of Service Agreement', '228th Black Skulls Corps™ – Terms of Service Agreement', q, 1);
+  insert into public.forms (title, description, questions, sort, category) values
+    ('Arma 3 Terms of Service Agreement', '228th Black Skulls Corps™ – Terms of Service Agreement', q, 0, 'Arma 3'),
+    ('VRChat Terms of Service Agreement', '228th Black Skulls Corps™ – Terms of Service Agreement', q, 1, 'VRChat');
 end $$;
 
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)

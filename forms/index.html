@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610231215";
+(function(){var v="202610231223";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -22,7 +22,24 @@
 <script src="../auth/auth.js?v=22"></script>
 <script src="../auth/fx.js?v=7"></script>
 <style>
-.tabs{flex-wrap:nowrap}
+.dtree{border-top:1px solid var(--line)}
+.dtree summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.dtree summary::-webkit-details-marker{display:none}
+.dtree summary::after{content:"+";margin-left:auto;flex:none;font:500 1.2rem var(--mono);color:var(--accent);width:1.2em;text-align:center}
+.dtree details[open]>summary::after{content:"\2013"}
+.dtree summary:hover .t{color:var(--accent)}
+.dtree .t{transition:color .2s;min-width:0;overflow-wrap:anywhere}
+.f0{border-bottom:1px solid var(--line)}
+.f0>summary{padding:24px 0}
+.f0>summary .n{font:500 .8rem var(--mono);color:var(--accent);letter-spacing:.08em;flex:none}
+.f0>summary .t{font:800 clamp(1.6rem,6vw,2.6rem)/1 var(--display);text-transform:uppercase;letter-spacing:.01em}
+.dtree summary .chips{display:flex;gap:6px;flex-wrap:wrap}
+.f0>.in{padding:0 0 30px}
+.f1{border:1px solid var(--line);background:var(--panel);margin:0 0 10px}
+.f1>summary{padding:16px 18px}
+.f1>summary .t{font:800 1.4rem/1.05 var(--display);text-transform:uppercase}
+.f1>.in{padding:0 18px 20px}
+.f1 .q{background:var(--bg)}
 .fhead{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin:6px 0 14px}
 .fhead h2{margin:0;font:800 clamp(1.7rem,6vw,2.6rem)/1.02 var(--display);text-transform:uppercase}
 .state{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
@@ -106,15 +123,17 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
       <button class="btn ghost small" type="button" id="new-btn" hidden>+ New form</button>
       <button class="btn small" type="button" id="edit-btn" hidden>Edit</button>
     </div>
-    <div class="tabs" role="tablist" id="tabs"></div>
-    <div id="pane"><p class="empty">Loading forms…</p></div>
+    <div class="dtree" id="pane"><p class="empty">Loading forms…</p></div>
   </div>
 </main>
 
 <dialog class="form" id="bdlg" aria-labelledby="bdlg-h">
   <form method="dialog" id="bform" novalidate>
     <h3 id="bdlg-h">Form</h3>
-    <label class="f">Title<input name="title" maxlength="120" required></label>
+    <div class="row">
+      <label class="f">Title<input name="title" maxlength="120" required></label>
+      <label class="f">Division<input name="category" maxlength="60" list="cats" placeholder="Arma 3"><datalist id="cats"></datalist></label>
+    </div>
     <label class="f">Intro<textarea name="description" maxlength="50000" style="min-height:80px"></textarea>
       <span class="hint">Shown at the top. Blank line = new paragraph, ### = heading, - = bullet.</span></label>
     <div class="row">
@@ -160,50 +179,74 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     r[1].data.forEach(function (x) { counts[x.form_id] = (counts[x.form_id] || 0) + 1; if (x.user_id === me.id) mine[x.form_id] = x; });
   }
 
-  function drawTabs() {
-    var t = $('tabs'); t.textContent = '';
-    forms.forEach(function (f) {
-      var b = A.el('button', null, f.title.replace(/ Agreement$/, '')); b.type = 'button'; b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', String(cur && cur.id === f.id));
-      b.onclick = function () { show(f.id, 'form'); };
-      t.appendChild(b);
+  var vOf = {};
+  // Divisions are the numbered drop-downs (Arma 3, then VRChat, then any others); each form is a panel inside one.
+  function groups() {
+    var g = ['Arma 3', 'VRChat'];
+    forms.forEach(function (f) { var c = f.category || 'Other'; if (g.indexOf(c) < 0) g.push(c); });
+    return g.filter(function (c) { return canEdit || forms.some(function (f) { return (f.category || 'Other') === c; }); });
+  }
+  function drawList(openId) {
+    var list = $('pane'); list.textContent = '';
+    if (!forms.length && !canEdit) { list.appendChild(A.el('p', 'empty', 'No forms have been shared with you yet.')); return; }
+    groups().forEach(function (c, gi) {
+      var gd = A.el('details', 'f0'), gs = A.el('summary'), gin = A.el('div', 'in'); gd.dataset.group = c;
+      gs.appendChild(A.el('span', 'n', (gi < 9 ? '0' : '') + (gi + 1))); gs.appendChild(A.el('span', 't', c));
+      gd.appendChild(gs); gd.appendChild(gin); list.appendChild(gd);
+      var mineList = forms.filter(function (f) { return (f.category || 'Other') === c; });
+      if (!mineList.length) gin.appendChild(A.el('p', 'empty', 'No forms here yet. Press + New form to add one.'));
+      mineList.forEach(function (f) {
+        var det = A.el('details', 'f1'), sum = A.el('summary'), inn = A.el('div', 'in'); det.dataset.form = f.id;
+        sum.appendChild(A.el('span', 't', f.title));
+        var chips = A.el('span', 'chips'), mineR = mine[f.id];
+        chips.appendChild(mineR ? A.el('small', 'chip ok', 'Sent ' + A.date(mineR.updated_at)) : A.el('small', 'chip', 'Not filled in'));
+        if (!f.open) chips.appendChild(A.el('small', 'chip', 'Closed'));
+        var who = A.seenBy(roles, f.visible_to); if (who) chips.appendChild(A.el('small', 'chip lock', who));
+        sum.appendChild(chips);
+        det.appendChild(sum); det.appendChild(inn);
+        det.addEventListener('toggle', function () {
+          if (!det.open) return;
+          if (!inn.childNodes.length) fill(f, inn);
+          history.replaceState(null, '', '#f' + f.id + (vOf[f.id] === 'responses' ? '-answers' : ''));
+        });
+        gin.appendChild(det);
+        if (f.id === openId) { gd.open = true; det.open = true; }
+      });
     });
   }
+  function fill(f, inn) {
+    inn.textContent = '';
+    if (canEdit) inn.appendChild(tools(f));
+    if (vOf[f.id] === 'responses') drawResponses(inn, f); else drawForm(inn, f);
+  }
   function show(id, v) {
-    cur = forms.find(function (f) { return f.id === id; }) || forms[0] || null; view = v || 'form';
-    if (cur) history.replaceState(null, '', '#f' + cur.id + (view === 'responses' ? '-answers' : ''));
-    drawTabs(); msg.className = 'msg'; msg.textContent = '';
-    var p = $('pane'); p.textContent = '';
-    if (!cur) { p.appendChild(A.el('p', 'empty', canEdit ? 'No forms yet. Press + New form to build one.' : 'No forms have been shared with you yet.')); return; }
-    if (canEdit) p.appendChild(tools(cur));
-    if (view === 'responses') return drawResponses(p, cur);
-    drawForm(p, cur);
+    vOf[id] = v || 'form';
+    var f = forms.find(function (x) { return x.id === id; }), det = $('pane').querySelector('[data-form="' + id + '"]');
+    if (!f || !det) return;
+    msg.className = 'msg'; msg.textContent = '';
+    fill(f, det.querySelector(':scope>.in')); det.open = true;
+    history.replaceState(null, '', '#f' + id + (vOf[id] === 'responses' ? '-answers' : ''));
   }
 
   function btn(text, fn, cls) { var b = A.el('button', 'btn ghost' + (cls ? ' ' + cls : ''), text); b.type = 'button'; b.onclick = fn; return b; }
   function tools(f) {
     var wrap = A.el('div', 'sendrow'), ed = A.el('div', 'ed');
     wrap.style.alignItems = 'flex-start';
-    var ans = btn(view === 'responses' ? 'Back to form' : 'Answers (' + (counts[f.id] || 0) + ')', function () { show(f.id, view === 'responses' ? 'form' : 'responses'); });
+    var resp = vOf[f.id] === 'responses';
+    var ans = btn(resp ? 'Back to form' : 'Answers (' + (counts[f.id] || 0) + ')', function () { show(f.id, resp ? 'form' : 'responses'); });
     ans.className = 'btn small'; ans.style.marginBottom = '16px';
     wrap.appendChild(ans); wrap.appendChild(ed);
     ed.appendChild(btn('Edit form', function () { build(f); }));
     ed.appendChild(btn('Copy', function () { copyForm(f); }));
-    ed.appendChild(btn('←', function () { move(f, -1); }));
-    ed.appendChild(btn('→', function () { move(f, 1); }));
+    ed.appendChild(btn('↑', function () { move(f, -1); }));
+    ed.appendChild(btn('↓', function () { move(f, 1); }));
     ed.appendChild(btn('Delete', function () { delForm(f); }, 'del'));
     return wrap;
   }
 
   // ---- Filling in ----
   function drawForm(p, f) {
-    var head = A.el('div', 'fhead'); head.appendChild(A.el('h2', null, f.title)); p.appendChild(head);
-    var st = A.el('div', 'state'), mineR = mine[f.id];
-    if (mineR) st.appendChild(A.el('span', 'chip ok', 'Sent ' + A.date(mineR.updated_at)));
-    else st.appendChild(A.el('span', 'chip', 'Not filled in yet'));
-    if (!f.open) st.appendChild(A.el('span', 'chip', 'Closed'));
-    var who = A.seenBy(roles, f.visible_to); if (who) st.appendChild(A.el('span', 'chip lock', who));
-    p.appendChild(st);
+    var mineR = mine[f.id];
     if ((f.description || '').trim()) p.appendChild(A.richText(f.description));
     var form = A.el('form', 'fill'); form.noValidate = true;
     var ans = (mineR && mineR.answers) || {}, locked = !f.open;
@@ -330,7 +373,6 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     return v == null || v === '' ? '—' : String(v);
   }
   async function drawResponses(p, f) {
-    var head = A.el('div', 'fhead'); head.appendChild(A.el('h2', null, f.title + ': answers')); p.appendChild(head);
     var box = A.el('div', 'resp'); box.appendChild(A.el('p', 'empty', 'Loading answers…')); p.appendChild(box);
     var r = await sb.from('form_responses').select('*').eq('form_id', f.id);
     box.textContent = '';
@@ -373,18 +415,19 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
 
-  async function refresh(id, v) { try { await load(); } catch (e) { return A.fail(msg, e); } show(id, v); }
+  async function refresh(id, v) { try { await load(); } catch (e) { return A.fail(msg, e); } if (id) vOf[id] = v || 'form'; drawList(id); }
 
   try { await load(); } catch (e) { $('pane').textContent = ''; return A.fail(msg, e); }
   var m = location.hash.match(/^#f(\d+)(-answers)?/);
-  show(m ? +m[1] : forms[0] && forms[0].id, m && m[2] && canEdit ? 'responses' : 'form');
+  if (m) vOf[+m[1]] = m[2] && canEdit ? 'responses' : 'form';
+  drawList(m ? +m[1] : null);
 
   if (!canEdit) return;
 
   // ---- Building forms ----
   $('edit-btn').hidden = $('new-btn').hidden = false;
   $('edit-btn').onclick = function () { var on = document.body.classList.toggle('editing'); this.textContent = on ? 'Done' : 'Edit'; };
-  $('new-btn').onclick = function () { build(null); };
+  $('new-btn').onclick = function () { var g = $('pane').querySelector('details.f0[open]'); build(null, g ? g.dataset.group : 'Arma 3'); };
   document.querySelectorAll('dialog [data-close]').forEach(function (b) { b.onclick = function () { b.closest('dialog').close(); }; });
 
   var editing = null, qid = 0;
@@ -422,10 +465,12 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     return box;
   }
   function number() { $('qlist').querySelectorAll('.qed').forEach(function (b, i) { b.querySelector('.n').textContent = (i < 9 ? '0' : '') + (i + 1); }); }
-  function build(f) {
+  function build(f, cat) {
     editing = f; var F = $('bform');
     $('bdlg-h').textContent = f ? 'Edit form' : 'New form';
     F.title.value = f ? f.title : ''; F.description.value = f ? f.description || '' : ''; F.open.checked = f ? f.open : true;
+    F.category.value = f ? f.category || '' : cat || 'Arma 3';
+    var dl = $('cats'); dl.textContent = ''; groups().forEach(function (c) { var o = A.el('option'); o.value = c; dl.appendChild(o); });
     F.see.textContent = '';
     var all = A.el('option', null, 'Every member'); all.value = ''; F.see.appendChild(all);
     roles.forEach(function (r) { var o = A.el('option', null, r.label); o.value = r.name; F.see.appendChild(o); });
@@ -451,7 +496,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
     var qs = Array.prototype.map.call($('qlist').querySelectorAll('.qed'), function (b) { return b._get(); });
     var bad = qs.find(function (q) { return (q.type === 'choice' || q.type === 'checks') && !(q.options || []).length; });
     if (bad) return alert('"' + (bad.label || 'A question') + '" needs at least one choice.');
-    var row = { title: F.title.value.trim(), description: F.description.value.replace(/\s+$/, ''), visible_to: see, open: F.open.checked, questions: qs }, r;
+    var row = { title: F.title.value.trim(), description: F.description.value.replace(/\s+$/, ''), visible_to: see, open: F.open.checked, questions: qs, category: F.category.value.trim() }, r;
     if (editing) r = await sb.from('forms').update(row).eq('id', editing.id);
     else { row.sort = forms.length ? Math.max.apply(null, forms.map(function (x) { return x.sort; })) + 1 : 0; r = await sb.from('forms').insert(row).select('id').single(); }
     if (r.error) return A.fail(msg, r.error);
@@ -461,18 +506,18 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;
   };
   async function copyForm(f) {
     var t = prompt('Name for the copy', f.title + ' (copy)'); if (!t || !t.trim()) return;
-    var row = { title: t.trim(), description: f.description, visible_to: f.visible_to, open: false, questions: f.questions,
+    var row = { title: t.trim(), description: f.description, visible_to: f.visible_to, open: false, questions: f.questions, category: f.category || '',
       sort: Math.max.apply(null, forms.map(function (x) { return x.sort; })) + 1 };
     var r = await sb.from('forms').insert(row).select('id').single();
     if (r.error) return A.fail(msg, r.error);
     await refresh(r.data && r.data.id, 'form'); ok('Copied. It starts closed, so edit it and tick "Open for answers" when it\'s ready.');
   }
   async function move(f, dir) {
-    var list = forms.slice(), i = list.indexOf(f), j = i + dir; if (j < 0 || j >= list.length) return;
+    var list = forms.filter(function (x) { return (x.category || 'Other') === (f.category || 'Other'); }), i = list.indexOf(f), j = i + dir; if (j < 0 || j >= list.length) return;
     list[i] = list[j]; list[j] = f;
     var res = await Promise.all(list.map(function (x, k) { return x.sort === k ? null : sb.from('forms').update({ sort: k }).eq('id', x.id); }).filter(Boolean));
     var bad = res.find(function (x) { return x.error; }); if (bad) return A.fail(msg, bad.error);
-    refresh(f.id, view);
+    refresh(f.id, vOf[f.id]);
   }
   async function delForm(f) {
     if (!confirm('Delete "' + f.title + '" and all ' + (counts[f.id] || 0) + ' answers? This can\'t be undone.')) return;
