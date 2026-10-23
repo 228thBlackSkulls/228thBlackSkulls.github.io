@@ -25,15 +25,15 @@
     if (!r.data) return { status: 'pending', user: s.user, missing: true, perms: [] };
     var me = Object.assign(r.data, { user: s.user, perms: [] });
     // What this person's roles let them do (set per role on the Dashboard). Admin can do everything.
-    if (me.status === 'approved') { var pr = await A.sb.rpc('my_perms'); me.perms = (!pr.error && pr.data) || (me.role === 'admin' ? ['events', 'briefings', 'bios', 'members', 'docs', 'roles'] : []); }
+    if (me.status === 'approved') { var pr = await A.sb.rpc('my_perms'); me.perms = (!pr.error && pr.data) || (me.role === 'admin' ? ['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'roles'] : []); }
     return me;
   };
   A.isApproved = function (p) { return !!p && p.status === 'approved'; };
   A.isAdmin = function (p) { return A.isApproved(p) && p.role === 'admin'; };
   A.can = function (p, perm) { return A.isApproved(p) && (p.perms || []).indexOf(perm) >= 0; };
-  A.canDash = function (p) { return A.isApproved(p) && (p.perms || []).some(function (x) { return x !== 'docs'; }); };
+  A.canDash = function (p) { return A.isApproved(p) && (p.perms || []).some(function (x) { return x !== 'docs' && x !== 'forms'; }); };
   // The permissions a role can be given, in the order the Dashboard lists them.
-  A.PERMS = [['events', 'Create, edit and delete events and timers'], ['briefings', 'Post and delete briefings'], ['bios', 'Edit anyone\'s bio'], ['members', 'Approve sign-ups and change members\' roles'], ['docs', 'Add, edit and delete documents and choose who can see them']];
+  A.PERMS = [['events', 'Create, edit and delete events and timers'], ['briefings', 'Post and delete briefings'], ['bios', 'Edit anyone\'s bio'], ['members', 'Approve sign-ups and change members\' roles'], ['docs', 'Add, edit and delete documents and choose who can see them'], ['forms', 'Build forms and read everyone\'s answers']];
 
   // Go to another page of the site, behind the pixel wipe when the page effects are loaded.
   A.go = function (url) {
@@ -185,6 +185,37 @@
     function run() { document.querySelectorAll('[data-until]').forEach(function (n) { var ms = +n.dataset.until - Date.now(); n.textContent = A.countdown(ms); n.classList.toggle('live', ms <= 0); }); }
     run(); if (!A._ticking) A._ticking = setInterval(run, 1000);
   };
+  // Who something is for, in words ("Sergeant and up", "VRChat, Medic"); empty list = everyone, returned as ''.
+  A.seenBy = function (roles, list) {
+    if (!list || !list.length) return '';
+    var at = roles.findIndex(function (r) { return list.indexOf(r.name) < 0; });
+    if (at < 0) at = roles.length;
+    if (at > 1 && list.length === at) return roles[at - 1].label + ' and up';
+    return list.map(function (n) { var r = roles.find(function (x) { return x.name === n; }); return r ? r.label : n; }).join(', ');
+  };
+  // Written text for documents and forms: blank line = paragraph, ### = heading, - or • = bullet, https:// links.
+  A.richText = function (body, cls) {
+    var box = A.el('div', cls || 'doc-text');
+    function inline(el, text) {
+      text.split(/(https?:\/\/[^\s<>"']+)/).forEach(function (part, i) {
+        if (i % 2) { var a = A.el('a', null, part); a.href = part; a.target = '_blank'; a.rel = 'noopener'; el.appendChild(a); }
+        else if (part) el.appendChild(document.createTextNode(part));
+      });
+      return el;
+    }
+    (body || '').replace(/\r/g, '').split(/\n\s*\n/).forEach(function (blk) {
+      var ul = null, para = [];
+      function flush() { if (para.length) { box.appendChild(inline(A.el('p'), para.join('\n'))); para = []; } }
+      blk.split('\n').forEach(function (ln) {
+        var t = ln.trim();
+        if (/^###\s*/.test(t)) { flush(); ul = null; box.appendChild(A.el('h4', null, t.replace(/^###\s*/, ''))); }
+        else if (/^[-•*]\s+/.test(t)) { flush(); if (!ul) { ul = A.el('ul'); box.appendChild(ul); } ul.appendChild(inline(A.el('li'), t.replace(/^[-•*]\s+/, ''))); }
+        else if (t) { ul = null; para.push(ln); }
+      });
+      flush();
+    });
+    return box;
+  };
   A.date = function (d) { return d ? new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; };
 
   // Fill the page header's nav for this person. `current` is 'members' | 'dashboard' | 'login' | 'account' | 'org'.
@@ -246,6 +277,7 @@
       go('members/', 'Dashboard', 'members');
       go('org/', 'Unit Organization', 'org');
       go('docs/', 'Documents', 'docs');
+      go('forms/', 'Forms', 'forms');
       if (A.canDash(p)) go('dashboard/', 'Command Center', 'dashboard');
       var out = A.el('button', 'out', 'Log out'); out.type = 'button'; out.onclick = A.signOut; item(out);
     } else {

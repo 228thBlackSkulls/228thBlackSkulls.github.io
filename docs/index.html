@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610231159";
+(function(){var v="202610231212";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -19,8 +19,8 @@
 <link rel="stylesheet" href="../auth/auth.css?v=11">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=21"></script>
-<script src="../auth/fx.js?v=6"></script>
+<script src="../auth/auth.js?v=22"></script>
+<script src="../auth/fx.js?v=7"></script>
 <style>
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 22px}
 .toolbar input{flex:1 1 240px;width:auto}
@@ -174,39 +174,10 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
     docs.forEach(function (d) { (docsIn[d.folder_id] = docsIn[d.folder_id] || []).push(d); });
   }
 
-  // Who a folder is for, in words.
-  function labelOf(name) { var r = roles.find(function (x) { return x.name === name; }); return r ? r.label : name; }
-  function seenBy(list) {
-    if (!list || !list.length) return '';
-    var at = roles.findIndex(function (r) { return list.indexOf(r.name) < 0; });
-    if (at < 0) at = roles.length;
-    if (at > 1 && list.length === at) return roles[at - 1].label + ' and up';
-    return list.map(labelOf).join(', ');
-  }
-
-  // Document text: blank line = paragraph, ### = heading, - or • = bullet, https:// links.
-  function inline(el, text) {
-    text.split(/(https?:\/\/[^\s<>"']+)/).forEach(function (part, i) {
-      if (i % 2) { var a = A.el('a', null, part); a.href = part; a.target = '_blank'; a.rel = 'noopener'; el.appendChild(a); }
-      else if (part) el.appendChild(document.createTextNode(part));
-    });
-    return el;
-  }
+  function seenBy(list) { return A.seenBy(roles, list); }
   function renderText(body) {
-    var box = A.el('div', 'doc-text');
-    if (!(body || '').trim()) { box.appendChild(A.el('p', 'none', 'Nothing written yet.')); return box; }
-    body.replace(/\r/g, '').split(/\n\s*\n/).forEach(function (blk) {
-      var lines = blk.split('\n'), ul = null, para = [];
-      function flush() { if (para.length) { box.appendChild(inline(A.el('p'), para.join('\n'))); para = []; } }
-      lines.forEach(function (ln) {
-        var t = ln.trim();
-        if (/^###\s*/.test(t)) { flush(); ul = null; box.appendChild(A.el('h4', null, t.replace(/^###\s*/, ''))); }
-        else if (/^([-•*])\s+/.test(t)) { flush(); if (!ul) { ul = A.el('ul'); box.appendChild(ul); } ul.appendChild(inline(A.el('li'), t.replace(/^([-•*])\s+/, ''))); }
-        else if (t) { ul = null; para.push(ln); }
-      });
-      flush();
-    });
-    return box;
+    if (!(body || '').trim()) { var box = A.el('div', 'doc-text'); box.appendChild(A.el('p', 'none', 'Nothing written yet.')); return box; }
+    return A.richText(body);
   }
 
   function btn(text, fn, cls) { var b = A.el('button', 'btn ghost' + (cls ? ' ' + cls : ''), text); b.type = 'button'; b.onclick = function (e) { e.preventDefault(); fn(); }; return b; }

@@ -110,6 +110,7 @@ $$;
 --   bios      = edit anyone's bio
 --   members   = approve sign-ups and change members' roles (never the Admin role)
 --   docs      = add, edit and delete documents and choose who can see each folder
+--   forms     = build forms, choose who can fill them in, and read everyone's answers
 do $$ begin
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'roles' and column_name = 'perms') then
     alter table public.roles add column perms text[] not null default '{}';
@@ -118,7 +119,7 @@ do $$ begin
   end if;
 end $$;
 alter table public.roles drop constraint if exists roles_perms_check;
-alter table public.roles add constraint roles_perms_check check (perms <@ array['events', 'briefings', 'bios', 'members', 'docs']);
+alter table public.roles add constraint roles_perms_check check (perms <@ array['events', 'briefings', 'bios', 'members', 'docs', 'forms']);
 
 create or replace function public.has_perm(p text) returns boolean
 language sql stable security definer set search_path = public as $$
@@ -126,7 +127,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 create or replace function public.my_perms() returns text[]
 language sql stable security definer set search_path = public as $$
-  select case when is_admin() then array['events', 'briefings', 'bios', 'members', 'docs', 'roles']
+  select case when is_admin() then array['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'roles']
     else coalesce((select array_agg(distinct x) from roles r, unnest(r.perms) x where r.name = any(my_roles())), '{}') end;
 $$;
 revoke execute on function public.has_perm(text), public.my_perms() from public, anon;
@@ -172,6 +173,8 @@ begin
   update posts set visible_to = case when visible_to = array[old.name] then array['admin'] else array_remove(visible_to, old.name) end
   where old.name = any(visible_to);
   update doc_folders set visible_to = case when visible_to = array[old.name] then array['admin'] else array_remove(visible_to, old.name) end
+  where old.name = any(visible_to);
+  update forms set visible_to = case when visible_to = array[old.name] then array['admin'] else array_remove(visible_to, old.name) end
   where old.name = any(visible_to);
   return old;
 end $$;
@@ -509,6 +512,97 @@ begin
     'Marksman', 'Piloting', 'Riot', 'SAR', 'SERE'] loop
     insert into public.doc_folders (parent_id, title, sort) values (top, t, i); i := i + 1;
   end loop;
+end $$;
+
+-- Forms: the members-only Forms page (like Google Forms, but answers stay on the site). Each member fills a form in once
+-- and can change their answers later. The forms permission (High-Com starts with it) builds forms and reads every answer.
+-- questions is a list of {id, type, label, help, options, required}; type is text, long, choice, checks, agree or info.
+do $$ begin
+  if to_regclass('public.forms') is null then
+    update public.roles set perms = array_append(perms, 'forms') where name = 'high-com' and not ('forms' = any(perms));
+  end if;
+end $$;
+create table if not exists public.forms (
+  id          bigint generated always as identity primary key,
+  title       text not null,
+  description text,
+  questions   jsonb not null default '[]',
+  visible_to  text[] not null default '{}',
+  open        boolean not null default true,
+  sort        int not null default 0,
+  created_at  timestamptz not null default now()
+);
+create table if not exists public.form_responses (
+  id         bigint generated always as identity primary key,
+  form_id    bigint not null references public.forms on delete cascade,
+  user_id    uuid not null default auth.uid() references public.profiles on delete cascade,
+  name       text,
+  answers    jsonb not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (form_id, user_id)
+);
+alter table public.forms drop constraint if exists forms_fields_check;
+alter table public.forms add constraint forms_fields_check check (
+  length(trim(title)) between 1 and 120 and coalesce(length(description), 0) <= 50000
+  and jsonb_typeof(questions) = 'array' and length(questions::text) <= 100000);
+alter table public.form_responses drop constraint if exists form_responses_fields_check;
+alter table public.form_responses add constraint form_responses_fields_check check (jsonb_typeof(answers) = 'object' and length(answers::text) <= 50000);
+
+-- Can I fill in (or see) this form?
+create or replace function public.form_ok(fid bigint) returns boolean
+language sql stable security definer set search_path = public as $$
+  select my_roles() is not null and (has_perm('forms') or exists (select 1 from forms f where f.id = fid
+    and (cardinality(f.visible_to) = 0 or f.visible_to && my_roles())));
+$$;
+create or replace function public.form_open(fid bigint) returns boolean
+language sql stable security definer set search_path = public as $$
+  select form_ok(fid) and exists (select 1 from forms where id = fid and open);
+$$;
+revoke execute on function public.form_ok(bigint), public.form_open(bigint) from public, anon;
+grant  execute on function public.form_ok(bigint), public.form_open(bigint) to authenticated;
+
+-- Answers are always filed under the member who sent them, with their callsign at the time.
+create or replace function public.form_response_stamp() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  new.user_id = auth.uid();
+  new.name = (select display_name from profiles where id = auth.uid());
+  new.updated_at = now();
+  if tg_op = 'INSERT' then new.created_at = now(); else new.form_id = old.form_id; new.created_at = old.created_at; end if;
+  return new;
+end $$;
+drop trigger if exists form_responses_stamp on public.form_responses;
+create trigger form_responses_stamp before insert or update on public.form_responses for each row execute function public.form_response_stamp();
+
+alter table public.forms          enable row level security;
+alter table public.form_responses enable row level security;
+revoke all on public.forms, public.form_responses from anon, authenticated;
+grant select, insert, update, delete on public.forms, public.form_responses to authenticated;
+drop policy if exists forms_read        on public.forms;
+drop policy if exists forms_manage      on public.forms;
+drop policy if exists responses_read    on public.form_responses;
+drop policy if exists responses_send    on public.form_responses;
+drop policy if exists responses_change  on public.form_responses;
+drop policy if exists responses_delete  on public.form_responses;
+create policy forms_read       on public.forms for select to authenticated using (form_ok(id));
+create policy forms_manage     on public.forms for all    to authenticated using (has_perm('forms')) with check (has_perm('forms'));
+create policy responses_read   on public.form_responses for select to authenticated using (user_id = auth.uid() or has_perm('forms'));
+create policy responses_send   on public.form_responses for insert to authenticated with check (form_open(form_id));
+create policy responses_change on public.form_responses for update to authenticated using (user_id = auth.uid() and form_open(form_id)) with check (form_open(form_id));
+create policy responses_delete on public.form_responses for delete to authenticated using (user_id = auth.uid() or has_perm('forms'));
+
+-- First run only: a Terms of Service agreement for each division. Paste the real terms in on the Forms page.
+do $$
+declare q jsonb := '[
+  {"id":"terms","type":"info","label":"Terms of Service","help":"Command: paste the terms here (Forms > Edit > Edit form)."},
+  {"id":"agree","type":"agree","label":"I have read and agree to the 228th Black Skulls Corps Terms of Service.","required":true}
+]';
+begin
+  if exists (select 1 from public.forms) then return; end if;
+  insert into public.forms (title, description, questions, sort) values
+    ('Arma 3 Terms of Service Agreement', 'Every Arma 3 division member reads and signs this.', q, 0),
+    ('VRChat Terms of Service Agreement', 'Every VRChat division member reads and signs this.', q, 1);
 end $$;
 
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)
