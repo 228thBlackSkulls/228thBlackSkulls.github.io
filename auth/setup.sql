@@ -547,7 +547,7 @@ alter table public.forms add constraint forms_fields_check check (
   length(trim(title)) between 1 and 120 and coalesce(length(description), 0) <= 50000
   and jsonb_typeof(questions) = 'array' and length(questions::text) <= 100000);
 alter table public.form_responses drop constraint if exists form_responses_fields_check;
-alter table public.form_responses add constraint form_responses_fields_check check (jsonb_typeof(answers) = 'object' and length(answers::text) <= 50000);
+alter table public.form_responses add constraint form_responses_fields_check check (jsonb_typeof(answers) = 'object' and length(answers::text) <= 400000);
 
 -- Can I fill in (or see) this form?
 create or replace function public.form_ok(fid bigint) returns boolean
@@ -592,17 +592,17 @@ create policy responses_send   on public.form_responses for insert to authentica
 create policy responses_change on public.form_responses for update to authenticated using (user_id = auth.uid() and form_open(form_id)) with check (form_open(form_id));
 create policy responses_delete on public.form_responses for delete to authenticated using (user_id = auth.uid() or has_perm('forms'));
 
--- First run only: a Terms of Service agreement for each division. Paste the real terms in on the Forms page.
+-- First run only: a Terms of Service agreement for each division. Edit them on the Forms page.
+-- (Also swaps in the real terms if the early placeholder version is still there.)
 do $$
-declare q jsonb := '[
-  {"id":"terms","type":"info","label":"Terms of Service","help":"Command: paste the terms here (Forms > Edit > Edit form)."},
-  {"id":"agree","type":"agree","label":"I have read and agree to the 228th Black Skulls Corps Terms of Service.","required":true}
-]';
+declare q jsonb := $j$[{"id": "terms", "type": "info", "label": "Effective Immediately | Subject to Update at Any Time", "help": "By accepting a leadership, staff, or management role within any division of the 228th Black Skulls Corps, you agree to abide by the following Terms of Service. These terms exist to maintain the integrity, structure, and vision of the 228th across all platforms and games, including—but not limited to—VRChat, ARMA 3, Rec Room, Battlefront, and any future divisions.\n\n### 1. Rules & Regulations\nAll members and leaders are expected to follow the official 228th Rules and Regulations as outlined by High Command. These rules may be updated or amended at any time.\n\nIf an issue arises that is not currently addressed in the rules, Marshal Commander Flanker & High-Com holds full authority to make a final decision on how the matter will be handled and may issue immediate or retroactive updates to the rules as needed.\n\n### 2. Autonomy of Divisions\nLeaders will be granted significant freedom to operate and manage their individual divisions. High Command will intervene as little as possible to ensure organic growth, cohesion, and long-term success. However, oversight will still be maintained to ensure alignment with the 228th’s values and standards.\n\n### 3. Ownership & Final Authority\nThe 228th Black Skulls Corps is solely owned by Marshal Commander Flanker. As the creator and primary authority of the Corps, Flanker reserves the right to:\n- Step in and alter leadership structures, operations, or policies if deemed necessary\n- Overrule or reverse decisions made by other High Command members\n- Implement or block any major changes to the unit or its divisions\n\nNo other High Command member may authorize major changes to the 228th without Flanker’s direct approval.\n\n### 4. Division Control\nAll present and future divisions (e.g., VRChat, ARMA 3, Rec Room, Battlefront) exist at the discretion of Flanker.\nHe holds the right to:\n- Approve or deny the creation of new divisions\n- Disband or dissolve existing divisions at any time, with or without prior notice\n- Determine when divisions are opened, closed, or placed on hold\n\n### 5. Leadership Appointments\nFlanker reserves the right to promote or demote division leaders at any time, based on performance, conduct, activity, or alignment with the 228th’s core directives.\n\nNo position is guaranteed, and all leadership roles operate under the continued trust and confidence of Flanker.\n\n### 6. Acknowledgment of Terms\nBy continuing to serve or lead within the 228th Black Skulls Corps, you acknowledge that:\n- These terms are binding and subject to change\n- Your position is subject to review at any time\n- Violations or disputes will be handled at the discretion of Flanker and may result in removal or reassignment\n\n### 7. Ownership Protection Clause\nBy signing this agreement, you confirm and agree that you will never attempt to create, rebrand, restart, or open any group, server, unit, community, or organization under the name \"228th\" by itself or in conjunction with “Black Skulls” or any variation thereof without the express written permission of Marshal Commander Flanker.\n\nDoing so constitutes a direct violation of this agreement. You further agree that if you attempt to start or replicate any 228th-based group without authorization, you accept full responsibility for the consequences, which may include removal from all affiliated communities, public notice of the breach, and any necessary legal action taken to protect the integrity of the 228th brand and identity.\n\n228th Black Skulls Corps™ | Always Stalking ~ Always Lurking | For the Republic"}, {"id": "signature", "type": "signature", "label": "Signature", "help": "Sign with your CT-#### \"Nickname\", then sign in the box with your finger or mouse.", "required": true}, {"id": "discord", "type": "text", "label": "Discord ID / username", "required": true}]$j$;
 begin
+  update public.forms set questions = q, description = '228th Black Skulls Corps™ – Terms of Service Agreement'
+    where questions @> '[{"id":"terms","help":"Command: paste the terms here (Forms > Edit > Edit form)."}]';
   if exists (select 1 from public.forms) then return; end if;
   insert into public.forms (title, description, questions, sort) values
-    ('Arma 3 Terms of Service Agreement', 'Every Arma 3 division member reads and signs this.', q, 0),
-    ('VRChat Terms of Service Agreement', 'Every VRChat division member reads and signs this.', q, 1);
+    ('Arma 3 Terms of Service Agreement', '228th Black Skulls Corps™ – Terms of Service Agreement', q, 0),
+    ('VRChat Terms of Service Agreement', '228th Black Skulls Corps™ – Terms of Service Agreement', q, 1);
 end $$;
 
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)
