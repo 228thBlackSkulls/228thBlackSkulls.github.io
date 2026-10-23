@@ -188,6 +188,12 @@ begin
   elsif tg_op = 'INSERT' and cardinality(new.all_roles) = 0 then
     new.all_roles := array[new.role];
   end if;
+  -- Rank groups are automatic: the member gets the group their rank sits under (a Senior Commander gets Senior Officers),
+  -- and loses it when their rank moves to another group. Admin and High-Com sit above every group, so they don't count.
+  new.all_roles := array(select x from unnest(new.all_roles) x where not exists (select 1 from roles d where d.name = x and d.divider))
+    || coalesce((select array[d.name] from roles d, lateral (select r.rank from roles r where r.name = any(new.all_roles) and not r.divider
+          and exists (select 1 from roles t where t.divider and t.rank > r.rank) order by r.rank desc limit 1) k
+        where d.divider and d.rank > k.rank order by d.rank asc limit 1), '{}');
   new.all_roles := coalesce((select array_agg(r.name order by r.rank desc) from roles r where r.name = any(new.all_roles)), '{}');
   -- Rank groups (NCO, SNCO...) never count as someone's rank, so everyone also holds a real rank (Recruit if none).
   if not exists (select 1 from roles r where r.name = any(new.all_roles) and not r.divider) then new.all_roles := new.all_roles || array['member']; end if;
