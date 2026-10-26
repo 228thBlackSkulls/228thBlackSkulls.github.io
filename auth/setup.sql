@@ -94,7 +94,7 @@ update public.roles r set abbr = v.abbr from (values ('flankers-assistant', 'FA'
   ('sergeant-major', 'CSM'), ('master-sergeant', 'CMS'), ('sergeant-first-class', 'CFC'), ('staff-sergeant', 'CSS'), ('sergeant', 'CS'),
   ('senior-corporal', 'SCP'), ('corporal', 'CP'), ('lance-corporal', 'CLC'), ('specialist', 'SPC'), ('trooper-1st-class', 'T1C'),
   ('trooper-2nd-class', 'T2C'), ('trooper-3rd-class', 'T3C'), ('shiny', 'CT'), ('cadet', 'CR-C')) v(name, abbr)
-  where r.name = v.name and r.abbr = '';
+  where r.name = v.name and coalesce(r.abbr, '') = '';
 
 -- One profile per account. Everyone starts as pending until an admin approves them.
 create table if not exists public.profiles (
