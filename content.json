@@ -1526,6 +1526,11 @@
     },
     {
       "group": "Senior Officers",
+      "abbr": "FA",
+      "name": "Flanker's Assistant"
+    },
+    {
+      "group": "Senior Officers",
       "abbr": "CC",
       "name": "Senior Commander"
     },

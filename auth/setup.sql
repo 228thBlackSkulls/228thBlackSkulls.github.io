@@ -89,7 +89,7 @@ do $$ begin
 end $$;
 alter table public.roles drop constraint if exists roles_abbr_check;
 alter table public.roles add constraint roles_abbr_check check (abbr = '' or abbr ~ '^[A-Z][A-Z0-9]{1,3}(-[A-Z])?$');
-update public.roles r set abbr = v.abbr from (values ('senior-commander', 'CC'), ('battalion-commander', 'CC'), ('commander', 'CC'),
+update public.roles r set abbr = v.abbr from (values ('flankers-assistant', 'FA'), ('senior-commander', 'CC'), ('battalion-commander', 'CC'), ('commander', 'CC'),
   ('major', 'CM'), ('captain', 'CPT'), ('first-lieutenant', 'C1L'), ('second-lieutenant', 'C2L'), ('command-sergeant-major', 'CCM'),
   ('sergeant-major', 'CSM'), ('master-sergeant', 'CMS'), ('sergeant-first-class', 'CFC'), ('staff-sergeant', 'CSS'), ('sergeant', 'CS'),
   ('senior-corporal', 'SCP'), ('corporal', 'CP'), ('lance-corporal', 'CLC'), ('specialist', 'SPC'), ('trooper-1st-class', 'T1C'),
