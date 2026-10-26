@@ -25,15 +25,17 @@
     if (!r.data) return { status: 'pending', user: s.user, missing: true, perms: [] };
     var me = Object.assign(r.data, { user: s.user, perms: [] });
     // What this person's roles let them do (set per role on the Dashboard). Admin can do everything.
-    if (me.status === 'approved') { var pr = await A.sb.rpc('my_perms'); me.perms = (!pr.error && pr.data) || (me.role === 'admin' ? ['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'roles'] : []); }
+    if (me.status === 'approved') { var pr = await A.sb.rpc('my_perms'); me.perms = (!pr.error && pr.data) || (me.role === 'admin' ? ['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'selfroles', 'roles'] : []); }
     return me;
   };
   A.isApproved = function (p) { return !!p && p.status === 'approved'; };
   A.isAdmin = function (p) { return A.isApproved(p) && p.role === 'admin'; };
   A.can = function (p, perm) { return A.isApproved(p) && (p.perms || []).indexOf(perm) >= 0; };
-  A.canDash = function (p) { return A.isApproved(p) && (p.perms || []).some(function (x) { return x !== 'docs' && x !== 'forms'; }); };
+  A.canDash = function (p) { return A.isApproved(p) && (p.perms || []).some(function (x) { return x !== 'docs' && x !== 'forms' && x !== 'selfroles'; }); };
   // The permissions a role can be given, in the order the Dashboard lists them.
-  A.PERMS = [['events', 'Create, edit and delete events and timers'], ['briefings', 'Post and delete briefings'], ['bios', 'Edit anyone\'s bio'], ['members', 'Approve sign-ups and change members\' roles'], ['docs', 'Add, edit and delete documents and choose who can see them'], ['forms', 'Build forms and read everyone\'s answers']];
+  A.PERMS = [['events', 'Create, edit and delete events and timers'], ['briefings', 'Post and delete briefings'], ['bios', 'Edit anyone\'s bio'], ['members', 'Approve sign-ups and change members\' roles'], ['docs', 'Add, edit and delete documents and choose who can see them'], ['forms', 'Build forms and read everyone\'s answers'], ['selfroles', 'Add and remove their own roles (not ranks)']];
+  // Roles someone with selfroles can pick for themselves (the database checks this too).
+  A.selfRoleOk = function (r) { return !!r && !r.divider && !r.abbr && ['admin', 'high-com', 'marshal-commander', 'member'].indexOf(r.name) < 0; };
 
   // Go to another page of the site, behind the pixel wipe when the page effects are loaded.
   A.go = function (url) {

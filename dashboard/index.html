@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610262048";
+(function(){var v="202610262103";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -23,6 +23,7 @@
 .row.dragging{opacity:.6;border-color:var(--accent)}
 .row.divider{border-color:rgba(200,30,30,.45)}
 .row.divider .who>input{color:var(--accent);font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.xperms summary{cursor:pointer;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:6px 0}
 .chip.grp{border-color:rgba(200,30,30,.45);color:var(--accent)}
 .rolechips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .rolechips .chip{display:inline-flex;gap:6px;align-items:center}
@@ -30,7 +31,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=22"></script>
+<script src="../auth/auth.js?v=23"></script>
 <script src="../auth/fx.js?v=8"></script>
 </head>
 <body>
@@ -413,6 +414,21 @@
       add.onchange = function () { if (add.value) setRoles(p, mine.concat(add.value), labelOf(add.value) + ' added.'); };
       chips.appendChild(add);
       x.acts.appendChild(chips);
+      // Admin only: permissions for this one person, on top of what their roles give.
+      if (A.isAdmin(me) && !adminP) {
+        var ex = A.el('details', 'xperms'), sm = A.el('summary', null, 'Extra permissions' + ((p.perms || []).length ? ' (' + p.perms.length + ')' : '')), pf = A.el('div', 'perm-picks');
+        A.PERMS.forEach(function (pm) {
+          var l = A.el('label', 'check'), c = A.el('input'); c.type = 'checkbox'; c.checked = (p.perms || []).indexOf(pm[0]) >= 0;
+          c.onchange = async function () {
+            var list = A.PERMS.map(function (k) { return k[0]; }).filter(function (k) { return k === pm[0] ? c.checked : (p.perms || []).indexOf(k) >= 0; });
+            var r = await sb.rpc('set_member_perms', { target: p.id, new_perms: list });
+            if (r.error) { c.checked = !c.checked; return A.fail(msg, r.error); }
+            p.perms = list; sm.textContent = 'Extra permissions' + (list.length ? ' (' + list.length + ')' : ''); ok((p.display_name || 'Member') + ': permissions saved.');
+          };
+          l.appendChild(c); l.appendChild(document.createTextNode(' ' + pm[1])); pf.appendChild(l);
+        });
+        ex.appendChild(sm); ex.appendChild(pf); x.acts.appendChild(ex);
+      }
       if (!self) x.acts.appendChild(btn('Remove access', 'ghost', function () { if (confirm('Remove ' + (p.display_name || 'this member') + '\'s access?')) setMember(p, 'denied', p.role, 'Access removed.'); }));
       box.appendChild(x.row);
     });

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202610262048";
+(function(){var v="202610262103";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="../auth/auth.css?v=13">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=22"></script>
+<script src="../auth/auth.js?v=23"></script>
 <script src="../auth/fx.js?v=8"></script>
 <style>
 .me{display:grid;grid-template-columns:120px 1fr;gap:24px;align-items:center}
@@ -33,6 +33,10 @@ dialog.crop::backdrop{background:rgba(0,0,0,.75)}
 .stage .ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.85);box-shadow:0 0 0 9999px rgba(10,10,11,.62);pointer-events:none}
 .zoom{display:flex;gap:10px;align-items:center;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .zoom input{flex:1;padding:0;accent-color:var(--accent)}
+.rolechips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.rolechips .chip{display:inline-flex;gap:6px;align-items:center}
+.rolechips .chip button{background:none;border:0;color:inherit;cursor:pointer;padding:0;font:inherit;line-height:1}
+.rolechips select{max-width:260px}
 </style>
 </head>
 <body>
@@ -67,6 +71,12 @@ dialog.crop::backdrop{background:rgba(0,0,0,.75)}
             <button class="btn ghost small" type="button" id="remove" hidden>Remove picture</button>
           </div>
         </div>
+      </section>
+
+      <section class="panel stack" id="myroles" aria-labelledby="myroles-h" hidden>
+        <h3 id="myroles-h">My roles</h3>
+        <p class="muted" style="font-size:.9rem">Add or remove roles on your own account. Ranks stay with Command.</p>
+        <div class="rolechips" id="myroles-list"></div>
       </section>
 
       <form class="panel stack" id="bio-form" aria-labelledby="bio-h">
@@ -123,6 +133,34 @@ dialog.crop::backdrop{background:rgba(0,0,0,.75)}
   await A.loadPrefixes();
   $('email').textContent = me.email || (me.user && me.user.email) || '';
   show();
+
+  // Members with the selfroles permission pick their own roles (never ranks, rank groups, Admin or High-Com).
+  async function drawMyRoles() {
+    if (!A.can(me, 'selfroles')) return;
+    var rr = await sb.from('roles').select('*').order('rank', { ascending: false });
+    if (rr.error) return A.fail(msg, rr.error);
+    var mine = me.all_roles || [me.role], box = $('myroles-list'); box.textContent = ''; $('myroles').hidden = false;
+    var pick = rr.data.filter(A.selfRoleOk), held = pick.filter(function (r) { return mine.indexOf(r.name) >= 0; });
+    async function save(list, done) {
+      var r = await sb.rpc('set_my_roles', { new_roles: list });
+      if (r.error) return A.fail(msg, r.error);
+      me = await A.me(); ok(done); drawMyRoles();
+    }
+    held.forEach(function (r) {
+      var c = A.el('span', 'chip', r.label), x = A.el('button', null, '×'); x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + r.label);
+      x.onclick = function () { save(held.filter(function (h) { return h !== r; }).map(function (h) { return h.name; }), r.label + ' removed.'); };
+      c.appendChild(x); box.appendChild(c);
+    });
+    var left = pick.filter(function (r) { return mine.indexOf(r.name) < 0; });
+    if (!left.length && !held.length) box.appendChild(A.el('p', 'empty', 'There are no roles to pick yet.'));
+    if (left.length) {
+      var s = A.el('select'); s.setAttribute('aria-label', 'Add a role'); var o0 = A.el('option', null, '+ Add role'); o0.value = ''; s.appendChild(o0);
+      left.forEach(function (r) { var o = A.el('option', null, r.label); o.value = r.name; s.appendChild(o); });
+      s.onchange = function () { if (s.value) save(held.map(function (h) { return h.name; }).concat(s.value), s.options[s.selectedIndex].textContent + ' added.'); };
+      box.appendChild(s);
+    }
+  }
+  drawMyRoles();
 
   $('bio-form').bio.value = me.note || '';
   $('bio-form').onsubmit = async function (e) {

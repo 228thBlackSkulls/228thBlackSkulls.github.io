@@ -62,11 +62,15 @@ end $$;
 -- CT-1234 "Nick" becomes CP-1234 "Nick". The Dashboard keeps these in step with the rank list on the edit page.
 alter table public.roles add column if not exists abbr text not null default '';
 -- The org chart add-on (auth/org.sql) calls the rank ladder is_rank. Rank groups are never on the ladder.
+-- Only real ranks are on it: ones with letters, plus Marshal Commander and Recruit. Custom roles (Recruiter...) aren't.
 create or replace function public.role_divider_not_rank() returns trigger
-language plpgsql as $$ begin if new.divider then new.is_rank := false; end if; return new; end $$;
+language plpgsql as $$ begin
+  new.is_rank := not new.divider and (coalesce(new.abbr, '') <> '' or new.name in ('marshal-commander', 'member'));
+  return new;
+end $$;
 do $$ begin
   if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'roles' and column_name = 'is_rank') then
-    update public.roles set is_rank = false where divider and is_rank;
+    update public.roles set is_rank = false where is_rank and (divider or (coalesce(abbr, '') = '' and name not in ('marshal-commander', 'member')));
     drop trigger if exists roles_divider_not_rank on public.roles;
     create trigger roles_divider_not_rank before insert or update on public.roles for each row execute function public.role_divider_not_rank();
   end if;
@@ -154,6 +158,8 @@ $$;
 --   members   = approve sign-ups and change members' roles (never the Admin role)
 --   docs      = add, edit and delete documents and choose who can see each folder
 --   forms     = build forms, choose who can fill them in, and read everyone's answers
+--   selfroles = add and remove roles on their own account (never ranks, rank groups, Admin or High-Com)
+-- Admin can also give any of these to one person (profiles.perms), on top of what their roles give.
 do $$ begin
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'roles' and column_name = 'perms') then
     alter table public.roles add column perms text[] not null default '{}';
@@ -162,16 +168,22 @@ do $$ begin
   end if;
 end $$;
 alter table public.roles drop constraint if exists roles_perms_check;
-alter table public.roles add constraint roles_perms_check check (perms <@ array['events', 'briefings', 'bios', 'members', 'docs', 'forms']);
+alter table public.roles add constraint roles_perms_check check (perms <@ array['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'selfroles']);
+alter table public.profiles add column if not exists perms text[] not null default '{}';
+alter table public.profiles drop constraint if exists profiles_perms_check;
+alter table public.profiles add constraint profiles_perms_check check (perms <@ array['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'selfroles']);
 
 create or replace function public.has_perm(p text) returns boolean
 language sql stable security definer set search_path = public as $$
-  select is_admin() or exists (select 1 from roles where name = any(my_roles()) and p = any(perms));
+  select is_admin() or exists (select 1 from roles where name = any(my_roles()) and p = any(perms))
+    or exists (select 1 from profiles where id = auth.uid() and status = 'approved' and p = any(perms));
 $$;
 create or replace function public.my_perms() returns text[]
 language sql stable security definer set search_path = public as $$
-  select case when is_admin() then array['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'roles']
-    else coalesce((select array_agg(distinct x) from roles r, unnest(r.perms) x where r.name = any(my_roles())), '{}') end;
+  select case when is_admin() then array['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'selfroles', 'roles']
+    else coalesce((select array_agg(distinct x) from (
+      select unnest(r.perms) x from roles r where r.name = any(my_roles())
+      union select unnest(p.perms) from profiles p where p.id = auth.uid() and p.status = 'approved') t), '{}') end;
 $$;
 revoke execute on function public.has_perm(text), public.my_perms() from public, anon;
 grant  execute on function public.has_perm(text), public.my_perms() to authenticated;
@@ -363,6 +375,34 @@ begin
 end $$;
 revoke execute on function public.set_roles(uuid, text[]) from public, anon;
 grant  execute on function public.set_roles(uuid, text[]) to authenticated;
+
+-- Admin action: permissions for one person, on top of what their roles give.
+create or replace function public.set_member_perms(target uuid, new_perms text[])
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'Only an Admin can give permissions to one person'; end if;
+  update profiles set perms = coalesce((select array_agg(distinct x) from unnest(new_perms) x), '{}') where id = target;
+end $$;
+revoke execute on function public.set_member_perms(uuid, text[]) from public, anon;
+grant  execute on function public.set_member_perms(uuid, text[]) to authenticated;
+
+-- Roles someone can pick for themselves: anything but ranks, rank groups, Admin and High-Com.
+create or replace function public.self_role_ok(n text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from roles r where r.name = n and not r.divider and coalesce(r.abbr, '') = ''
+    and r.name not in ('admin', 'high-com', 'marshal-commander', 'member'));
+$$;
+-- With the selfroles permission: add or remove those roles on your own account. Everything else stays as it was.
+create or replace function public.set_my_roles(new_roles text[])
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not has_perm('selfroles') then raise exception 'You don''t have permission to change your own roles'; end if;
+  update profiles set all_roles = array(select x from unnest(all_roles) x where not self_role_ok(x))
+    || array(select x from unnest(new_roles) x where self_role_ok(x))
+  where id = auth.uid();
+end $$;
+revoke execute on function public.self_role_ok(text), public.set_my_roles(text[]) from public, anon;
+grant  execute on function public.self_role_ok(text), public.set_my_roles(text[]) to authenticated;
 
 -- Roster for approved members: names, roles and pictures only (no emails).
 drop function if exists public.member_roster();
