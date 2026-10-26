@@ -85,7 +85,7 @@
   };
   O.canAnything = function (d) {
     var a = d.access;
-    return !!(a && a.approved && (a.admin || (a.grants || []).length));
+    return !!(a && a.approved && (a.admin || a.self_roles || (a.grants || []).length));
   };
   O.myRank = function (d) { return (d.access && d.access.rank) || 0; };
 

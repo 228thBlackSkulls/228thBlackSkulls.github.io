@@ -420,8 +420,14 @@ begin
   select * into q from quals where id = p_qual;
   if not found then raise exception 'That qualification no longer exists'; end if;
   if not exists (select 1 from profiles where id = p_member and status = 'approved') then raise exception 'That member isn''t approved'; end if;
-  perform org_need(org_can_member(actor, 'quals.set', p_member), 'give or remove qualifications for ' || org_name(p_member));
-  if actor = p_member and not org_is_admin(actor) then raise exception 'You can''t give or remove your own qualifications and medals'; end if;
+  -- Your own MOS, quals and medals: Admin, or anyone with "Add roles to themselves" (selfroles).
+  if actor = p_member then
+    if not (org_is_admin(actor) or (actor = auth.uid() and self_roles_allowed())) then
+      raise exception 'You can''t give or remove your own qualifications and medals';
+    end if;
+  else
+    perform org_need(org_can_member(actor, 'quals.set', p_member), 'give or remove qualifications for ' || org_name(p_member));
+  end if;
   had := exists (select 1 from member_quals where member = p_member and qual = p_qual);
   if p_on = had then return; end if;
   if p_on then
@@ -575,6 +581,7 @@ begin
   return jsonb_build_object(
     'signed_in', true, 'approved', me.status = 'approved', 'admin', admin, 'owner', org_is_admin(me.id), 'id', me.id,
     'linked', me.discord_id is not null, 'rank', org_rank_of(me.id),
+    'self_roles', me.status = 'approved' and me.id = auth.uid() and self_roles_allowed(),
     'grants', case when me.status <> 'approved' then '[]'::jsonb else coalesce((
       select jsonb_agg(distinct jsonb_build_object('perm', perm, 'unit_id', unit_id)) from (
         select g.perm, g.unit_id from org_grants g where g.member = me.id or g.role = any(me.all_roles)

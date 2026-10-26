@@ -58,6 +58,18 @@ begin
   for i in 1..cardinality(ord) loop update public.roles set rank = 100 - i where name = ord[i]; end loop;
 end $$;
 
+-- First run only: Flanker's Assistant, placed right above Senior Commander (Flanker 2026-10-26). Rename or move it on the Dashboard.
+do $$
+declare ord text[]; i int;
+begin
+  if exists (select 1 from public.roles where name = 'flankers-assistant') or not exists (select 1 from public.roles where name = 'senior-commander') then return; end if;
+  insert into public.roles (name, label, rank) values ('flankers-assistant', 'Flanker''s Assistant', 1);
+  select array_agg(name order by rank desc) into ord from public.roles where name not in ('admin', 'flankers-assistant');
+  i := array_position(ord, 'senior-commander');
+  ord := ord[1:i-1] || 'flankers-assistant'::text || ord[i:];
+  for i in 1..cardinality(ord) loop update public.roles set rank = 100 - i where name = ord[i]; end loop;
+end $$;
+
 -- Rank designation letters (CC, CPT, T2C, CR-C...). A member's callsign follows their rank: promote a CT to Corporal and
 -- CT-1234 "Nick" becomes CP-1234 "Nick". The Dashboard keeps these in step with the rank list on the edit page.
 alter table public.roles add column if not exists abbr text not null default '';
@@ -214,6 +226,7 @@ begin
   -- and loses it when their rank moves to another group. Admin and High-Com sit above every group, so they don't count.
   new.all_roles := array(select x from unnest(new.all_roles) x where not exists (select 1 from roles d where d.name = x and d.divider))
     || coalesce((select array[d.name] from roles d, lateral (select r.rank from roles r where r.name = any(new.all_roles) and not r.divider
+          and (coalesce(r.abbr, '') <> '' or r.name in ('marshal-commander', 'member'))
           and exists (select 1 from roles t where t.divider and t.rank > r.rank) order by r.rank desc limit 1) k
         where d.divider and d.rank > k.rank order by d.rank asc limit 1), '{}');
   new.all_roles := coalesce((select array_agg(r.name order by r.rank desc) from roles r where r.name = any(new.all_roles)), '{}');
@@ -407,8 +420,10 @@ grant  execute on function public.self_roles_allowed() to authenticated;
 -- Roles someone can pick for themselves: anything but ranks, rank groups, Admin and High-Com.
 create or replace function public.self_role_ok(n text) returns boolean
 language sql stable security definer set search_path = public as $$
+  -- ...and never one placed above your own rank (so a Corporal can't take Flanker's Assistant).
   select exists (select 1 from roles r where r.name = n and not r.divider and coalesce(r.abbr, '') = ''
-    and r.name not in ('admin', 'high-com', 'marshal-commander', 'member'));
+    and r.name not in ('admin', 'high-com', 'marshal-commander', 'member')
+    and r.rank < coalesce((select x.rank from profiles p join roles x on x.name = p.role where p.id = auth.uid()), 0));
 $$;
 -- With the selfroles permission: add or remove those roles on your own account. Everything else stays as it was.
 create or replace function public.set_my_roles(new_roles text[])
