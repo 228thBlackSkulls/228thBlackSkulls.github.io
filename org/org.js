@@ -6,7 +6,8 @@
     { perm: 'positions.assign', label: 'Fill positions', scoped: true },
     { perm: 'ranks.set', label: 'Promote and demote', scoped: true },
     { perm: 'quals.set', label: 'Give qualifications and medals', scoped: true },
-    { perm: 'org.edit', label: 'Edit the structure', scoped: true }
+    { perm: 'org.edit', label: 'Edit the structure', scoped: true },
+    { perm: 'roles.self', label: 'Add roles to themselves', scoped: false, onPosition: true }
   ];
   O.permLabel = function (p) { var x = O.PERMS.find(function (y) { return y.perm === p; }); return x ? x.label : p; };
   O.KINDS = ['corps', 'command', 'division', 'smu', 'socom', 'battalion', 'company', 'platoon', 'troop', 'squad', 'team', 'section', 'unit'];

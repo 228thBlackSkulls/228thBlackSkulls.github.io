@@ -83,10 +83,14 @@ create table if not exists public.org_grants (
   id      bigint generated always as identity primary key,
   member  uuid references public.profiles on delete cascade,
   role    text references public.roles(name) on update cascade on delete cascade,
-  perm    text not null check (perm in ('members.approve', 'ranks.set', 'quals.set', 'positions.assign', 'org.edit')),
+  perm    text not null,
   unit_id bigint references public.org_units on delete cascade,
   check ((member is null) <> (role is null))
 );
+
+-- roles.self: add and remove their own non-rank roles (My account). It isn't tied to a unit.
+alter table public.org_grants drop constraint if exists org_grants_perm_check;
+alter table public.org_grants add constraint org_grants_perm_check check (perm in ('members.approve', 'ranks.set', 'quals.set', 'positions.assign', 'org.edit', 'roles.self'));
 
 -- Every change, newest first.
 create table if not exists public.org_log (
@@ -293,7 +297,7 @@ begin
   p_title := btrim(coalesce(p_title, ''));
   if p_title = '' then raise exception 'Give the position a title'; end if;
   p_grants := coalesce(p_grants, '{}');
-  if exists (select 1 from unnest(p_grants) g where g not in ('members.approve', 'ranks.set', 'quals.set', 'positions.assign', 'org.edit')) then
+  if exists (select 1 from unnest(p_grants) g where g not in ('members.approve', 'ranks.set', 'quals.set', 'positions.assign', 'org.edit', 'roles.self')) then
     raise exception 'Unknown access type';
   end if;
   select name into uname from org_units where id = p_unit;
@@ -516,6 +520,7 @@ begin
   perform org_note(auth.uid(), 'site', 'Access given', who || ' can now **' || case p_perm
     when 'members.approve' then 'approve sign-ups' when 'ranks.set' then 'promote and demote'
     when 'quals.set' then 'give qualifications and medals' when 'positions.assign' then 'fill positions'
+    when 'roles.self' then 'add roles to themselves'
     else 'edit the structure' end || '** ' || coalesce('in ' || uname, 'everywhere'), 5793266);
 end $$;
 create or replace function public.org_grant_remove(p_id bigint) returns void

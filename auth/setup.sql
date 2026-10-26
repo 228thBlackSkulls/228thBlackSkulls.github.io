@@ -386,6 +386,24 @@ end $$;
 revoke execute on function public.set_member_perms(uuid, text[]) from public, anon;
 grant  execute on function public.set_member_perms(uuid, text[]) to authenticated;
 
+-- Can I pick my own roles? The selfroles permission (a role or just me), or "Add roles to themselves" on the org page
+-- (given to me, one of my roles, or a position I hold).
+create or replace function public.self_roles_allowed() returns boolean
+language plpgsql stable security definer set search_path = public as $$
+declare ok boolean := false;
+begin
+  if has_perm('selfroles') then return true; end if;
+  if to_regclass('public.org_grants') is not null then
+    execute 'select exists (select 1 from org_grants g join profiles p on p.id = $1 and p.status = ''approved''
+        where g.perm = ''roles.self'' and (g.member = $1 or g.role = any(p.all_roles)))
+      or exists (select 1 from org_positions o join profiles p on p.id = o.holder and p.status = ''approved''
+        where o.holder = $1 and ''roles.self'' = any(o.grants))' into ok using auth.uid();
+  end if;
+  return coalesce(ok, false);
+end $$;
+revoke execute on function public.self_roles_allowed() from public, anon;
+grant  execute on function public.self_roles_allowed() to authenticated;
+
 -- Roles someone can pick for themselves: anything but ranks, rank groups, Admin and High-Com.
 create or replace function public.self_role_ok(n text) returns boolean
 language sql stable security definer set search_path = public as $$
@@ -396,7 +414,7 @@ $$;
 create or replace function public.set_my_roles(new_roles text[])
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if not has_perm('selfroles') then raise exception 'You don''t have permission to change your own roles'; end if;
+  if not self_roles_allowed() then raise exception 'You don''t have permission to change your own roles'; end if;
   update profiles set all_roles = array(select x from unnest(all_roles) x where not self_role_ok(x))
     || array(select x from unnest(new_roles) x where self_role_ok(x))
   where id = auth.uid();
