@@ -47,7 +47,14 @@
     Object.keys(d.posOf).forEach(function (k) { d.posOf[k].sort(bySort); });
     d.people.forEach(function (p) { d.person[p.id] = p; });
     d.ranks.forEach(function (r) { d.rank[r.name] = r; });
-    d.quals.forEach(function (q) { d.qual[q.id] = q; });
+    // Qualifications read A to Z everywhere (Flanker); MOS and medals keep their set order.
+    d.quals.sort(function (a, b) {
+      var k = ['mos', 'qual', 'medal'], ka = k.indexOf(a.kind), kb = k.indexOf(b.kind);
+      if (ka !== kb) return ka - kb;
+      return a.kind === 'qual' ? String(a.name).localeCompare(String(b.name)) : (a.sort - b.sort) || (a.id - b.id);
+    });
+    d.quals.forEach(function (q, i) { d.qual[q.id] = q; q._at = i; });
+    d.people.forEach(function (p) { if (p.quals) p.quals.sort(function (a, b) { return ((d.qual[a] || {})._at || 0) - ((d.qual[b] || {})._at || 0); }); });
     d.ladder = d.ranks.filter(function (r) { return r.is_rank; });
   };
 

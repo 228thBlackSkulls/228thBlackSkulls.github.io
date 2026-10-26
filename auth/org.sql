@@ -12,6 +12,12 @@
 alter table public.roles add column if not exists is_rank boolean not null default true;
 alter table public.roles add column if not exists abbr text;
 update public.roles set is_rank = false where name in ('admin', 'high-com');
+-- Rank groups (the red dividers: Senior Officers, NCO...) are roles but not ranks, so they never show as someone's rank here.
+do $$ begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'roles' and column_name = 'divider') then
+    update public.roles set is_rank = false where divider and is_rank;
+  end if;
+end $$;
 update public.roles r set abbr = v.abbr from (values
   ('marshal-commander',''),('senior-commander','CC'),('battalion-commander','CC'),('commander','CC'),('major','CM'),
   ('captain','CPT'),('first-lieutenant','C1L'),('second-lieutenant','C2L'),('command-sergeant-major','CCM'),

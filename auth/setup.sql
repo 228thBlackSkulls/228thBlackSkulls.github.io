@@ -61,6 +61,16 @@ end $$;
 -- Rank designation letters (CC, CPT, T2C, CR-C...). A member's callsign follows their rank: promote a CT to Corporal and
 -- CT-1234 "Nick" becomes CP-1234 "Nick". The Dashboard keeps these in step with the rank list on the edit page.
 alter table public.roles add column if not exists abbr text not null default '';
+-- The org chart add-on (auth/org.sql) calls the rank ladder is_rank. Rank groups are never on the ladder.
+create or replace function public.role_divider_not_rank() returns trigger
+language plpgsql as $$ begin if new.divider then new.is_rank := false; end if; return new; end $$;
+do $$ begin
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'roles' and column_name = 'is_rank') then
+    update public.roles set is_rank = false where divider and is_rank;
+    drop trigger if exists roles_divider_not_rank on public.roles;
+    create trigger roles_divider_not_rank before insert or update on public.roles for each row execute function public.role_divider_not_rank();
+  end if;
+end $$;
 alter table public.roles drop constraint if exists roles_abbr_check;
 alter table public.roles add constraint roles_abbr_check check (abbr = '' or abbr ~ '^[A-Z][A-Z0-9]{1,3}(-[A-Z])?$');
 update public.roles r set abbr = v.abbr from (values ('senior-commander', 'CC'), ('battalion-commander', 'CC'), ('commander', 'CC'),
