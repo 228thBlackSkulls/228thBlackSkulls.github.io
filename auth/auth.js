@@ -31,7 +31,9 @@
   A.isApproved = function (p) { return !!p && p.status === 'approved'; };
   A.isAdmin = function (p) { return A.isApproved(p) && p.role === 'admin'; };
   A.can = function (p, perm) { return A.isApproved(p) && (p.perms || []).indexOf(perm) >= 0; };
-  A.canDash = function (p) { return A.isApproved(p) && (p.perms || []).some(function (x) { return x !== 'docs' && x !== 'forms' && x !== 'selfroles'; }); };
+  // Admin and Marshal Commander also see merch Store Requests there (the database checks this too).
+  A.canStore = function (p) { return A.isAdmin(p) || (A.isApproved(p) && (p.all_roles || [p.role]).indexOf('marshal-commander') >= 0); };
+  A.canDash = function (p) { return A.isApproved(p) && ((p.perms || []).some(function (x) { return x !== 'docs' && x !== 'forms' && x !== 'selfroles'; }) || A.canStore(p)); };
   // The permissions a role can be given, in the order the Dashboard lists them.
   A.PERMS = [['events', 'Create, edit and delete events and timers'], ['briefings', 'Post and delete briefings'], ['bios', 'Edit anyone\'s bio'], ['members', 'Approve sign-ups and change members\' roles'], ['docs', 'Add, edit and delete documents and choose who can see them'], ['forms', 'Build forms and read everyone\'s answers'], ['selfroles', 'Add and remove their own roles (not ranks)']];
   // Roles someone with selfroles can pick for themselves (the database checks this too).

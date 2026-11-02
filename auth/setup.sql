@@ -897,3 +897,61 @@ update public.forms set questions = $q$[{"id": "trooper", "type": "text", "label
 -- AFTER you log in on the site for the first time, run this one line (with your email or Discord name)
 -- to make yourself the first admin. Everything after that is done from the dashboard.
 -- update public.profiles set status = 'approved', role = 'admin' where email = 'YOUR-EMAIL-HERE';
+
+-- Merch store requests (Flanker 2026-11-02): anyone can suggest an item from the Gear Up section on the main site,
+-- with or without an account. Only Admin and Marshal Commander can read them (Command Center > Store Requests).
+create table if not exists public.store_requests (
+  id         bigint generated always as identity primary key,
+  item       text not null,
+  details    text,
+  link       text,
+  contact    text,
+  name       text,
+  user_id    uuid references auth.users on delete set null,
+  status     text not null default 'new' check (status in ('new', 'considering', 'added', 'declined')),
+  notes      text,
+  created_at timestamptz not null default now()
+);
+create or replace function public.store_ok() returns boolean
+language sql stable security definer set search_path = public as $$
+  select is_admin() or 'marshal-commander' = any(my_roles());
+$$;
+revoke execute on function public.store_ok() from public, anon;
+grant  execute on function public.store_ok() to authenticated;
+-- New requests: filed under the account if signed in, sizes capped, and a limit per hour so the box can't be flooded.
+-- After that, Command can only change the status and notes.
+create or replace function public.store_request_stamp() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'INSERT' then
+    new.item = left(trim(coalesce(new.item, '')), 120);
+    if new.item = '' then raise exception 'Tell us what item you''d like.'; end if;
+    new.details = nullif(left(trim(coalesce(new.details, '')), 2000), '');
+    new.link = nullif(left(trim(coalesce(new.link, '')), 500), '');
+    new.contact = nullif(left(trim(coalesce(new.contact, '')), 120), '');
+    new.user_id = auth.uid();
+    new.name = (select display_name from profiles where id = auth.uid() and status = 'approved');
+    new.status = 'new'; new.notes = null; new.created_at = now();
+    if (select count(*) from store_requests where created_at > now() - interval '1 hour') >= 20 then
+      raise exception 'Lots of requests came in this hour. Please try again later.';
+    end if;
+  else
+    new.item = old.item; new.details = old.details; new.link = old.link; new.contact = old.contact;
+    new.name = old.name; new.user_id = old.user_id; new.created_at = old.created_at;
+  end if;
+  return new;
+end $$;
+drop trigger if exists store_requests_stamp on public.store_requests;
+create trigger store_requests_stamp before insert or update on public.store_requests for each row execute function public.store_request_stamp();
+alter table public.store_requests enable row level security;
+revoke all on public.store_requests from anon, authenticated;
+grant insert on public.store_requests to anon, authenticated;
+grant select, update, delete on public.store_requests to authenticated;
+drop policy if exists store_send   on public.store_requests;
+drop policy if exists store_read   on public.store_requests;
+drop policy if exists store_change on public.store_requests;
+drop policy if exists store_delete on public.store_requests;
+create policy store_send   on public.store_requests for insert to anon, authenticated with check (true);
+create policy store_read   on public.store_requests for select to authenticated using (store_ok());
+create policy store_change on public.store_requests for update to authenticated using (store_ok()) with check (store_ok());
+create policy store_delete on public.store_requests for delete to authenticated using (store_ok());

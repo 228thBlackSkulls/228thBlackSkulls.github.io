@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202611010145";
+(function(){var v="202611021437";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);try{sessionStorage.setItem("228th-vreload","1");}catch(e){}location.replace(u.href);}).catch(function(){});})();</script>
@@ -300,6 +300,19 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 .product .pic{aspect-ratio:1;background:var(--panel) center/cover no-repeat;border-bottom:1px solid var(--line)}
 .product .pic.empty{background:var(--panel) url("logo.png") center/55% no-repeat;opacity:.5}
 .product .meta{padding:16px 18px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.mreq{margin-top:44px;border:1px solid var(--line);background:var(--panel);padding:clamp(20px,4vw,32px);display:grid;gap:16px;max-width:720px}
+.mreq h3{font-size:1.4rem}
+.mreq p{color:var(--soft)}
+.mreq .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:600px){.mreq .row2{grid-template-columns:1fr}}
+.mreq label{display:grid;gap:6px;font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.mreq input,.mreq textarea{width:100%;font:400 1rem var(--body);letter-spacing:0;text-transform:none;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:2px;padding:.7em .8em}
+.mreq textarea{min-height:110px;resize:vertical}
+.mreq input:focus,.mreq textarea:focus{outline:none;border-color:var(--accent)}
+.mreq .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.mreq .mreq-msg{font:500 .85rem var(--mono);color:var(--soft);min-height:1.2em}
+.mreq .mreq-msg.bad{color:var(--accent)}
+.mreq button{justify-self:start}
 .product h3{font-size:1.05rem}
 .product .price{font:500 .85rem var(--mono);color:var(--accent);white-space:nowrap}
 [hidden]{display:none!important}
@@ -1187,6 +1200,20 @@ He left behind a holotape warning that the op had been a setup, with final order
       </div>
       <div class="products" id="c-products"></div>
       <a class="btn" id="shop-btn" href="#" target="_blank" rel="noopener">Visit the store</a>
+      <form class="mreq reveal" id="mreq" novalidate>
+        <p class="label">Request an item</p>
+        <h3>Want something we don't carry?</h3>
+        <p>If there's an item you wish we made, tell us here. Command reviews every request and will work to see if we can get it added to the store.</p>
+        <label>What item?<input name="item" maxlength="120" required placeholder="e.g. Black Skulls hoodie, patch, mug"></label>
+        <label>Details (optional)<textarea name="details" maxlength="2000" placeholder="Colors, design ideas, sizes, anything that helps"></textarea></label>
+        <div class="row2">
+          <label>Your name or Discord (optional)<input name="contact" maxlength="120" placeholder="So we can follow up"></label>
+          <label>Example link (optional)<input name="link" type="url" maxlength="500" placeholder="https://"></label>
+        </div>
+        <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="btn" type="submit">Send request</button>
+        <p class="mreq-msg" id="mreq-msg" role="status"></p>
+      </form>
     </div>
   </section>
 
@@ -1856,6 +1883,32 @@ He left behind a holotape warning that the op had been a setup, with final order
 </script>
 <script src="auth/config.js?v=3"></script>
 <script>
+// Gear Up: merch item requests go to the Command Center (Store Requests). Anyone can send one; signed-in members get their name attached.
+(function(){
+  var f=document.getElementById('mreq'),out=document.getElementById('mreq-msg');if(!f)return;
+  function say(t,bad){out.textContent=t;out.className='mreq-msg'+(bad?' bad':'');}
+  f.onsubmit=async function(e){
+    e.preventDefault();
+    var C=window.SB_CONFIG||{};
+    if(/[?&]preview\b/.test(location.search))return say('Requests can\'t be sent from the edit page preview.',true);
+    if(f.website.value)return say('Thanks! Your request was sent to Command.');
+    var item=f.item.value.trim();if(!item){f.item.focus();return say('Tell us what item you\'d like.',true);}
+    var link=f.link.value.trim();if(link&&!/^https?:\/\//i.test(link))link='https://'+link;
+    if(!C.url||!C.anonKey)return say('Requests aren\'t open yet. Please try again later.',true);
+    var token=C.anonKey,ref=(C.url.match(/https:\/\/([^.]+)\./)||[])[1];
+    try{var t=JSON.parse(localStorage.getItem('sb-'+ref+'-auth-token')||'null');if(t&&t.access_token&&t.expires_at*1000>Date.now()+60000)token=t.access_token;}catch(x){}
+    var btn=f.querySelector('button');btn.disabled=true;say('Sending...');
+    try{
+      var r=await fetch(C.url+'/rest/v1/store_requests',{method:'POST',headers:{apikey:C.anonKey,Authorization:'Bearer '+token,'Content-Type':'application/json',Prefer:'return=minimal'},
+        body:JSON.stringify({item:item,details:f.details.value.trim()||null,contact:f.contact.value.trim()||null,link:link||null})});
+      if(!r.ok){var j={};try{j=await r.json();}catch(x){}throw new Error(j.message&&!/permission|policy|relation/i.test(j.message)?j.message:'That didn\'t go through. Please try again later.');}
+      f.reset();say('Thanks! Your request was sent to Command.');
+    }catch(err){say(err.message||'That didn\'t go through. Please try again later.',true);}
+    btn.disabled=false;
+  };
+})();
+</script>
+<script>
 // Member accounts: show Org and Log in, or Members (and Dashboard for admins) once signed in. Does nothing until auth/config.js is filled in.
 (function(){
   var C=window.SB_CONFIG||{};if(!C.url||!C.anonKey||/[?&]preview=1/.test(location.search))return;
@@ -1865,7 +1918,7 @@ He left behind a holotape warning that the op had been a setup, with final order
   try{has=!!localStorage.getItem('sb-'+ref+'-auth-token');}catch(e){}
   if(!has)return;
   function load(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s);}
-  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js',function(){load('auth/auth.js?v=23',async function(){
+  load('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js',function(){load('auth/auth.js?v=24',async function(){
     try{var me=await window.Auth.me();if(!me)return;
       links.forEach(function(a){a.textContent='Members';a.href='members/';});
       if(window.Auth.canDash(me))admin.forEach(function(a){a.hidden=false;});

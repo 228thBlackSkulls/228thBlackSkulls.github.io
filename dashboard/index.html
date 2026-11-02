@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202611010145";
+(function(){var v="202611021437";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -31,7 +31,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=23"></script>
+<script src="../auth/auth.js?v=24"></script>
 <script src="../auth/fx.js?v=9"></script>
 </head>
 <body>
@@ -64,6 +64,7 @@
       <button type="button" role="tab" aria-selected="false" data-tab="events">Events</button>
       <button type="button" role="tab" aria-selected="false" data-tab="calendar">Calendar</button>
       <button type="button" role="tab" aria-selected="false" data-tab="briefings">Briefings</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="store">Store Requests<span class="count" id="store-count"></span></button>
     </div>
 
     <section data-pane="overview" class="overview">
@@ -81,6 +82,12 @@
           <button type="button" class="ocard" data-go="events"><span class="label">Active timers</span><strong id="ov-ev">0</strong><small id="ov-ev-t">No events scheduled</small></button>
           <button type="button" class="ocard" data-go="calendar"><span class="label">Weekly calendar</span><strong id="ov-cal">0</strong><small>standing events, Sunday to Saturday</small></button>
           <button type="button" class="ocard" data-go="briefings"><span class="label">Briefings</span><strong id="ov-posts">0</strong><small id="ov-posts-t">No briefings yet</small></button>
+        </div>
+      </div>
+      <div class="stack" data-go-group="store">
+        <p class="label">Merch</p>
+        <div class="cards">
+          <button type="button" class="ocard" data-go="store"><span class="label">Store requests</span><strong id="ov-store">0</strong><small id="ov-store-t">nothing new</small></button>
         </div>
       </div>
     </section>
@@ -145,6 +152,17 @@
       <div class="rows" id="posts"></div>
     </section>
 
+    <section data-pane="store" class="stack" hidden>
+      <p class="muted" style="font-size:.92rem">Merch ideas sent from the Gear Up section on the main site. Only Admin and Marshal Commander can see these. Set a status as you work through them, and keep notes for yourself.</p>
+      <div class="radios" id="store-filter" role="group" aria-label="Show">
+        <label><input type="radio" name="sf" value="open" checked> Open</label>
+        <label><input type="radio" name="sf" value="added"> Added</label>
+        <label><input type="radio" name="sf" value="declined"> Declined</label>
+        <label><input type="radio" name="sf" value="all"> All</label>
+      </div>
+      <div class="rows" id="store"></div>
+    </section>
+
     <section data-pane="roles" class="stack" hidden>
       <p class="muted">Roles are listed from highest to lowest. Drag the ⠿ handle to reorder. Members can hold several roles, and each briefing chooses which roles can see it. Tick what each role is allowed to do on this Dashboard, like Discord. Admin can always do everything, and only Admin can change roles.</p>
       <div class="rows" id="roles"></div>
@@ -171,9 +189,9 @@
   $('dash').hidden = false;
   // Each tab and Overview card shows only if this person's roles allow it (Admin sees everything).
   var can = function (p) { return A.can(me, p); };
-  var allow = { requests: can('members'), members: can('members') || can('bios'), roles: can('roles'), events: can('events'), calendar: can('events'), briefings: can('briefings') };
+  var allow = { requests: can('members'), members: can('members') || can('bios'), roles: can('roles'), events: can('events'), calendar: can('events'), briefings: can('briefings'), store: A.canStore(me) };
   Object.keys(allow).forEach(function (k) {
-    document.querySelectorAll('[data-tab="' + k + '"],[data-go="' + k + '"]').forEach(function (n) { n.hidden = !allow[k]; });
+    document.querySelectorAll('[data-tab="' + k + '"],[data-go="' + k + '"],[data-go-group="' + k + '"]').forEach(function (n) { n.hidden = !allow[k]; });
   });
 
   function ok(text) { msg.className = 'msg ok'; msg.textContent = text; setTimeout(function () { if (msg.textContent === text) msg.textContent = ''; }, 4000); }
@@ -642,8 +660,58 @@
     f.reset(); ok('Role added.'); loadRoles();
   };
 
+  // Merch requests from the main site's Gear Up section (Admin and Marshal Commander only).
+  var STATUS = [['new', 'New'], ['considering', 'Considering'], ['added', 'Added to store'], ['declined', 'Declined']], reqs = [];
+  async function loadStore() {
+    var r = await sb.from('store_requests').select('*').order('created_at', { ascending: false });
+    if (r.error) return A.fail(msg, r.error);
+    reqs = r.data;
+    var fresh = reqs.filter(function (x) { return x.status === 'new'; }).length;
+    $('store-count').textContent = fresh ? fresh : '';
+    $('ov-store').textContent = fresh; $('ov-store-t').textContent = fresh ? 'new, not looked at yet' : (reqs.length ? 'nothing new' : 'no requests yet');
+    renderStore();
+  }
+  function renderStore() {
+    var show = document.querySelector('[name=sf]:checked').value, box = $('store'); box.textContent = '';
+    var list = reqs.filter(function (x) { return show === 'all' || (show === 'open' ? x.status === 'new' || x.status === 'considering' : x.status === show); });
+    if (!list.length) box.appendChild(A.el('p', 'empty', reqs.length ? 'Nothing here.' : 'No requests yet. They show up here when someone sends one from the Gear Up section.'));
+    list.forEach(function (q) {
+      var row = A.el('div', 'row'); row.style.gridTemplateColumns = '1fr auto';
+      var w = A.el('div', 'who'), m = A.el('div', 'meta'), st = STATUS.find(function (s) { return s[0] === q.status; });
+      m.appendChild(A.el('span', 'chip' + (q.status === 'new' ? ' red' : q.status === 'declined' ? ' warn' : ''), st ? st[1] : q.status));
+      w.appendChild(m); w.appendChild(A.el('b', null, q.item));
+      var who = [q.name ? 'Member: ' + q.name : '', q.contact ? 'Contact: ' + q.contact : '', A.date(q.created_at)].filter(Boolean);
+      if (!q.name && !q.contact) who.unshift('Visitor');
+      w.appendChild(A.el('small', null, who.join(' · ')));
+      if (q.details) w.appendChild(A.el('span', 'note', q.details));
+      if (q.link && /^https?:\/\//i.test(q.link)) { var a = A.el('a', null, q.link.length > 70 ? q.link.slice(0, 70) + '…' : q.link); a.href = q.link; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.wordBreak = 'break-all'; w.appendChild(a); }
+      var nt = A.el('textarea'); nt.maxLength = 2000; nt.value = q.notes || ''; nt.placeholder = 'Private notes (only Admin and Marshal Commander see these)'; nt.setAttribute('aria-label', 'Notes'); nt.style.marginTop = '8px'; nt.style.minHeight = '60px';
+      w.appendChild(nt);
+      var acts = A.el('div', 'acts'), sel = A.el('select'); sel.setAttribute('aria-label', 'Status');
+      STATUS.forEach(function (s) { var o = A.el('option', null, s[1]); o.value = s[0]; sel.appendChild(o); });
+      sel.value = q.status;
+      sel.onchange = async function () {
+        var u = await sb.from('store_requests').update({ status: sel.value }).eq('id', q.id);
+        if (u.error) { sel.value = q.status; return A.fail(msg, u.error); }
+        ok('"' + q.item + '" marked ' + STATUS.find(function (s) { return s[0] === sel.value; })[1].toLowerCase() + '.'); loadStore();
+      };
+      acts.appendChild(sel);
+      acts.appendChild(btn('Save notes', 'ghost', async function () {
+        var u = await sb.from('store_requests').update({ notes: nt.value.trim() || null }).eq('id', q.id);
+        if (u.error) return A.fail(msg, u.error); q.notes = nt.value.trim() || null; ok('Notes saved.');
+      }));
+      acts.appendChild(btn('Delete', 'ghost', async function () {
+        if (!confirm('Delete the request for "' + q.item + '"?')) return;
+        var d = await sb.from('store_requests').delete().eq('id', q.id);
+        if (d.error) return A.fail(msg, d.error); ok('Request deleted.'); loadStore();
+      }));
+      row.appendChild(w); row.appendChild(acts); box.appendChild(row);
+    });
+  }
+  document.querySelectorAll('[name=sf]').forEach(function (x) { x.onchange = renderStore; });
+
   await loadRoles();
-  await Promise.all([allow.members ? loadPeople() : null, allow.briefings ? loadPosts() : null, allow.events ? loadWeekly().then(loadEvents) : null, allow.calendar ? loadCalendar() : null]);
+  await Promise.all([allow.store ? loadStore() : null, allow.members ? loadPeople() : null, allow.briefings ? loadPosts() : null, allow.events ? loadWeekly().then(loadEvents) : null, allow.calendar ? loadCalendar() : null]);
 })();
 </script>
 </body>
