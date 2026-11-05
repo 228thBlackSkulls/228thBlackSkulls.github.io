@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202611051846";
+(function(){var v="202611051925";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);try{sessionStorage.setItem("228th-vreload","1");}catch(e){}location.replace(u.href);}).catch(function(){});})();</script>
@@ -308,9 +308,13 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 .armory-hint b{color:var(--accent);font-weight:500}
 .armory-stage.used .armory-hint{opacity:0}
 .armory-load{position:absolute;left:0;bottom:0;height:2px;background:var(--accent);width:0;transition:width .2s,opacity .4s}
+.armory-tabs{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 auto 18px}
+.armory-tabs button{font:500 .72rem var(--mono);letter-spacing:.16em;text-transform:uppercase;padding:.7em 1.1em;background:none;color:var(--muted);border:1px solid var(--line);cursor:pointer}
+.armory-tabs button:hover{color:var(--fg)}
+.armory-tabs button[aria-pressed=true]{color:var(--fg);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .armory-cap{text-align:center;margin-top:16px}
 .armory-cap h3{font-size:1.3rem}
-.armory-cap p{color:var(--soft);margin-top:4px}
+.armory-cap p{color:var(--soft);margin:4px auto 0}
 .mreq{margin-top:44px;border:1px solid var(--line);background:var(--panel);padding:clamp(20px,4vw,32px);display:grid;gap:16px;max-width:720px}
 .mreq h3{font-size:1.4rem}
 .mreq p{color:var(--soft)}
@@ -1209,12 +1213,16 @@ He left behind a holotape warning that the op had been a setup, with final order
         <h2>The Armory</h2>
         <p style="color:var(--soft)">The armor our troopers wear into the field. Drag to turn it around.</p>
       </div>
+      <div class="armory-tabs" id="armory-tabs" role="group" aria-label="Choose armor">
+        <button type="button" aria-pressed="true" data-src="armory/new-ct/" data-name="Phase II Standard" data-text="Standard issue trooper armor in Black Skulls camo.">Phase II Standard</button>
+        <button type="button" aria-pressed="false" data-src="armory/jungle/" data-name="Jungle Armor" data-text="Phase II armor in jungle camo.">Jungle Armor</button>
+      </div>
       <div class="armory-stage reveal" id="armory-stage" role="img" aria-label="228th Phase II Standard armor, rotating view" data-src="armory/new-ct/" data-frames="72">
         <img id="armory-img" src="armory/new-ct/00.webp" alt="" draggable="false" width="750" height="1000">
         <p class="armory-hint"><b>&#8596;</b> Drag to rotate</p>
         <i class="armory-load" id="armory-load"></i>
       </div>
-      <div class="armory-cap"><h3>Phase II Standard</h3><p>Standard issue trooper armor in Black Skulls camo.</p></div>
+      <div class="armory-cap"><h3 id="armory-name">Phase II Standard</h3><p id="armory-text">Standard issue trooper armor in Black Skulls camo.</p></div>
     </div>
   </section>
 
@@ -1914,23 +1922,31 @@ He left behind a holotape warning that the op had been a setup, with final order
 (function(){
   var st=document.getElementById('armory-stage'); if(!st)return;
   var img=document.getElementById('armory-img'), bar=document.getElementById('armory-load');
-  var base=st.getAttribute('data-src'), N=+st.getAttribute('data-frames'), fr=[], got=0, cur=0, loading=false;
-  function url(i){return base+(i<10?'0':'')+i+'.webp';}
-  function show(i){i=((Math.round(i)%N)+N)%N; if(i===cur)return; var f=fr[i]; if(f&&f.ok){img.src=f.src;cur=i;}}
-  function load(){ if(loading)return; loading=true;
-    for(var i=0;i<N;i++)(function(i){var im=new Image(); im.onload=function(){im.ok=1;got++;bar.style.width=(got/N*100)+'%';if(got===N){bar.style.opacity=0;spin();}}; im.src=url(i); fr[i]=im;})(i);}
-  if('IntersectionObserver' in window){var io=new IntersectionObserver(function(e){if(e[0].isIntersecting){load();io.disconnect();}},{rootMargin:'400px'});io.observe(st);}else load();
+  var N=+st.getAttribute('data-frames'), base=st.getAttribute('data-src'), fr=[], got=0, cur=0, near=false, gen=0;
+  function url(b,i){return b+(i<10?'0':'')+i+'.webp';}
+  function show(i){i=((Math.round(i)%N)+N)%N; var f=fr[i]; if(f&&f.ok){img.src=f.src;cur=i;}}
+  function load(){ var g=++gen; fr=[]; got=0; bar.style.opacity=1; bar.style.width='0';
+    for(var i=0;i<N;i++)(function(i){var im=new Image(); im.onload=function(){ if(g!==gen)return; im.ok=1;got++;bar.style.width=(got/N*100)+'%'; if(i===cur)img.src=im.src; if(got===N){bar.style.opacity=0;spin();}}; im.src=url(base,i); fr[i]=im;})(i);}
+  if('IntersectionObserver' in window){var io=new IntersectionObserver(function(e){if(e[0].isIntersecting){near=true;load();io.disconnect();}},{rootMargin:'400px'});io.observe(st);}else{near=true;load();}
   var auto=null, reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   function spin(){ if(reduce||auto||st.classList.contains('used'))return; var t0=null,s0=cur;
     function step(t){ if(!auto)return; if(t0===null)t0=t; show(s0-(t-t0)/110); auto=requestAnimationFrame(step);} auto=requestAnimationFrame(step);}
   function stop(){ if(auto){cancelAnimationFrame(auto);auto=null;} }
-  var x0=null, f0=0, px=Math.max(4,Math.min(10,st.clientWidth/N*1.6));
-  st.addEventListener('pointerdown',function(e){ if(e.button)return; stop(); load(); x0=e.clientX; f0=cur; px=Math.max(4,Math.min(10,st.clientWidth/N*1.6)); st.classList.add('drag','used'); try{st.setPointerCapture(e.pointerId);}catch(_){} });
+  var x0=null, f0=0, px=6;
+  st.addEventListener('pointerdown',function(e){ if(e.button)return; stop(); x0=e.clientX; f0=cur; px=Math.max(4,Math.min(10,st.clientWidth/N*1.6)); st.classList.add('drag','used'); try{st.setPointerCapture(e.pointerId);}catch(_){} });
   st.addEventListener('pointermove',function(e){ if(x0===null)return; show(f0-(e.clientX-x0)/px); });
   function up(){ x0=null; st.classList.remove('drag'); }
   st.addEventListener('pointerup',up); st.addEventListener('pointercancel',up);
   st.addEventListener('contextmenu',function(e){e.preventDefault();});
   st.tabIndex=0; st.addEventListener('keydown',function(e){ if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();stop();st.classList.add('used');show(cur+(e.key==='ArrowLeft'?1:-1)*2);} });
+  var tabs=document.getElementById('armory-tabs');
+  if(tabs)tabs.addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b||b.getAttribute('aria-pressed')==='true')return;
+    [].forEach.call(tabs.querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});
+    stop(); base=b.getAttribute('data-src'); img.src=url(base,cur);
+    document.getElementById('armory-name').textContent=b.getAttribute('data-name');
+    document.getElementById('armory-text').textContent=b.getAttribute('data-text');
+    st.setAttribute('aria-label','228th '+b.getAttribute('data-name')+', rotating view');
+    if(near)load(); });
 })();
 </script>
 <script src="auth/config.js?v=3"></script>
