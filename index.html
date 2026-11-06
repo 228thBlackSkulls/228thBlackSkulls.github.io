@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202611060155";
+(function(){var v="202611061032";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);try{sessionStorage.setItem("228th-vreload","1");}catch(e){}location.replace(u.href);}).catch(function(){});})();</script>
@@ -1224,7 +1224,7 @@ He left behind a holotape warning that the op had been a setup, with final order
       <div class="armory-tabs" id="armory-tabs" role="group" aria-label="Choose armor">
         <button type="button" aria-pressed="true" data-src="armory/new-ct/" data-gear="vest kama" data-name="Phase II Standard" data-text="Standard issue trooper armor in Black Skulls camo.">Phase II Standard</button>
         <button type="button" aria-pressed="false" data-src="armory/jungle/" data-gear="kama" data-name="Jungle Armor" data-text="Phase II armor in jungle camo.">Jungle Armor</button>
-        <button type="button" aria-pressed="false" data-src="armory/pilot/" data-gear="vest kama" data-name="Pilot" data-text="Pilot helmet with breathing tubes and chest module, in Black Skulls camo.">Pilot</button>
+        <button type="button" aria-pressed="false" data-src="armory/pilot/" data-gear="kama" data-name="Pilot" data-text="Pilot helmet with breathing tubes and chest module, in Black Skulls camo.">Pilot</button>
         <button type="button" aria-pressed="false" data-src="armory/pilot-jungle/" data-gear="kama" data-name="Jungle Pilot" data-text="Pilot helmet with breathing tubes and chest module, in jungle camo.">Jungle Pilot</button>
       </div>
       <div class="armory-gear" id="armory-gear" role="group" aria-label="Gear">
