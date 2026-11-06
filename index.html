@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202611052311";
+(function(){var v="202611061044";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);try{sessionStorage.setItem("228th-vreload","1");}catch(e){}location.replace(u.href);}).catch(function(){});})();</script>
@@ -312,6 +312,14 @@ section.block{padding-block:clamp(64px,9vw,112px);border-bottom:1px solid var(--
 .armory-tabs button{font:500 .72rem var(--mono);letter-spacing:.16em;text-transform:uppercase;padding:.7em 1.1em;background:none;color:var(--muted);border:1px solid var(--line);cursor:pointer}
 .armory-tabs button:hover{color:var(--fg)}
 .armory-tabs button[aria-pressed=true]{color:var(--fg);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.armory-gear{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin:-6px auto 18px}
+.armory-gear span{font:500 .66rem var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.armory-gear button{font:500 .68rem var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:.55em .95em;background:none;color:var(--muted);border:1px dashed var(--line);cursor:pointer}
+.armory-gear button::before{content:"+ ";color:var(--muted)}
+.armory-gear button:hover:not(:disabled){color:var(--fg)}
+.armory-gear button[aria-pressed=true]{color:var(--fg);border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.armory-gear button[aria-pressed=true]::before{content:"\2713  ";color:var(--accent)}
+.armory-gear button:disabled{opacity:.35;cursor:not-allowed}
 .armory-cap{text-align:center;margin-top:16px}
 .armory-cap h3{font-size:1.3rem}
 .armory-cap p{color:var(--soft);margin:4px auto 0}
@@ -1214,10 +1222,15 @@ He left behind a holotape warning that the op had been a setup, with final order
         <p style="color:var(--soft)">The armor our troopers wear into the field. Drag to turn it around.</p>
       </div>
       <div class="armory-tabs" id="armory-tabs" role="group" aria-label="Choose armor">
-        <button type="button" aria-pressed="true" data-src="armory/new-ct/" data-name="Phase II Standard" data-text="Standard issue trooper armor in Black Skulls camo.">Phase II Standard</button>
-        <button type="button" aria-pressed="false" data-src="armory/jungle/" data-name="Jungle Armor" data-text="Phase II armor in jungle camo.">Jungle Armor</button>
-        <button type="button" aria-pressed="false" data-src="armory/pilot/" data-name="Pilot" data-text="Pilot helmet with breathing tubes and chest module, in Black Skulls camo.">Pilot</button>
-        <button type="button" aria-pressed="false" data-src="armory/pilot-jungle/" data-name="Jungle Pilot" data-text="Pilot helmet with breathing tubes and chest module, in jungle camo.">Jungle Pilot</button>
+        <button type="button" aria-pressed="true" data-src="armory/new-ct/" data-gear="vest kama" data-name="Phase II Standard" data-text="Standard issue trooper armor in Black Skulls camo.">Phase II Standard</button>
+        <button type="button" aria-pressed="false" data-src="armory/jungle/" data-gear="kama" data-name="Jungle Armor" data-text="Phase II armor in jungle camo.">Jungle Armor</button>
+        <button type="button" aria-pressed="false" data-src="armory/pilot/" data-gear="kama" data-name="Pilot" data-text="Pilot helmet with breathing tubes and chest module, in Black Skulls camo.">Pilot</button>
+        <button type="button" aria-pressed="false" data-src="armory/pilot-jungle/" data-gear="kama" data-name="Jungle Pilot" data-text="Pilot helmet with breathing tubes and chest module, in jungle camo.">Jungle Pilot</button>
+      </div>
+      <div class="armory-gear" id="armory-gear" role="group" aria-label="Gear">
+        <span>Gear</span>
+        <button type="button" aria-pressed="false" data-gear="vest">Recon Vest</button>
+        <button type="button" aria-pressed="false" data-gear="kama">Kama</button>
       </div>
       <div class="armory-stage reveal" id="armory-stage" role="img" aria-label="228th Phase II Standard armor, rotating view" data-src="armory/new-ct/" data-frames="72">
         <img id="armory-img" src="armory/new-ct/00.webp" alt="" draggable="false" width="750" height="1000">
@@ -1941,14 +1954,21 @@ He left behind a holotape warning that the op had been a setup, with final order
   st.addEventListener('pointerup',up); st.addEventListener('pointercancel',up);
   st.addEventListener('contextmenu',function(e){e.preventDefault();});
   st.tabIndex=0; st.addEventListener('keydown',function(e){ if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();stop();st.classList.add('used');show(cur+(e.key==='ArrowLeft'?1:-1)*2);} });
-  var tabs=document.getElementById('armory-tabs');
-  if(tabs)tabs.addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b||b.getAttribute('aria-pressed')==='true')return;
-    [].forEach.call(tabs.querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});
-    stop(); base=b.getAttribute('data-src'); img.src=url(base,cur);
-    document.getElementById('armory-name').textContent=b.getAttribute('data-name');
+  var tabs=document.getElementById('armory-tabs'), gear=document.getElementById('armory-gear'), on={};
+  // Gear toggles: one attachment at a time; each armor x gear is its own pre-rendered set, e.g. armory/pilot-kama/
+  function apply(){ var b=tabs&&tabs.querySelector('button[aria-pressed=true]'); if(!b)return;
+    var have=(b.getAttribute('data-gear')||'').split(' '), suf='', names=[];
+    if(gear)[].forEach.call(gear.querySelectorAll('button'),function(g){ var k=g.getAttribute('data-gear'), ok=have.indexOf(k)>=0;
+      g.disabled=!ok; g.hidden=!ok; /* hide gear this armor can't wear */ var act=ok&&on[k]; g.setAttribute('aria-pressed',act?'true':'false'); if(act){suf+='-'+k;names.push(g.textContent);} });
+    var nb=b.getAttribute('data-src').replace(/\/$/,'')+suf+'/'; if(nb===base)return;
+    stop(); base=nb; img.src=url(base,cur);
+    document.getElementById('armory-name').textContent=b.getAttribute('data-name')+(names.length?' + '+names.join(' + '):'');
     document.getElementById('armory-text').textContent=b.getAttribute('data-text');
-    st.setAttribute('aria-label','228th '+b.getAttribute('data-name')+', rotating view');
-    if(near)load(); });
+    st.setAttribute('aria-label','228th '+b.getAttribute('data-name')+(names.length?' with '+names.join(' and '):'')+', rotating view');
+    if(near)load(); }
+  if(tabs)tabs.addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b||b.getAttribute('aria-pressed')==='true')return;
+    [].forEach.call(tabs.querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x===b?'true':'false');}); apply(); });
+  if(gear){ gear.addEventListener('click',function(e){ var g=e.target.closest('button'); if(!g||g.disabled)return; var k=g.getAttribute('data-gear'), v=!on[k]; on={}; on[k]=v; apply(); /* one attachment shown at a time */ }); apply(); }
 })();
 </script>
 <script src="auth/config.js?v=3"></script>
