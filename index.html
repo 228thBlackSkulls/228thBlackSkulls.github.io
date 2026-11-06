@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202611061032";
+(function(){var v="202611061044";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);try{sessionStorage.setItem("228th-vreload","1");}catch(e){}location.replace(u.href);}).catch(function(){});})();</script>
@@ -1959,7 +1959,7 @@ He left behind a holotape warning that the op had been a setup, with final order
   function apply(){ var b=tabs&&tabs.querySelector('button[aria-pressed=true]'); if(!b)return;
     var have=(b.getAttribute('data-gear')||'').split(' '), suf='', names=[];
     if(gear)[].forEach.call(gear.querySelectorAll('button'),function(g){ var k=g.getAttribute('data-gear'), ok=have.indexOf(k)>=0;
-      g.disabled=!ok; g.title=ok?'':'Coming soon for this armor'; var act=ok&&on[k]; g.setAttribute('aria-pressed',act?'true':'false'); if(act){suf+='-'+k;names.push(g.textContent);} });
+      g.disabled=!ok; g.hidden=!ok; /* hide gear this armor can't wear */ var act=ok&&on[k]; g.setAttribute('aria-pressed',act?'true':'false'); if(act){suf+='-'+k;names.push(g.textContent);} });
     var nb=b.getAttribute('data-src').replace(/\/$/,'')+suf+'/'; if(nb===base)return;
     stop(); base=nb; img.src=url(base,cur);
     document.getElementById('armory-name').textContent=b.getAttribute('data-name')+(names.length?' + '+names.join(' + '):'');
