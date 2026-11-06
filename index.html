@@ -6,7 +6,7 @@
 <title>228th Black Skulls Corps</title>
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202611061044";
+(function(){var v="202611061805";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);try{sessionStorage.setItem("228th-vreload","1");}catch(e){}location.replace(u.href);}).catch(function(){});})();</script>
@@ -958,7 +958,7 @@ html.intro-on,html.intro-on body{overflow:hidden}
       <div class="ranks reveal">
         <div class="ranks-head"><span class="label">Chain of command</span><p>Every rank in the Corps, highest first.</p></div>
         <div class="rk" id="c-ranks">
-          <div class="rk-g"><span class="label">Commanding Officer</span><ol><li><b></b><span>Marshal Commander</span></li></ol></div>
+          <div class="rk-g"><span class="label">Corps Commander</span><ol><li><b></b><span>Marshal Commander</span></li></ol></div>
           <div class="rk-g"><span class="label">Senior Officers</span><ol><li><b>CC</b><span>Senior Commander</span></li><li><b>CC</b><span>Battalion Commander</span></li><li><b>CC</b><span>Commander</span></li><li><b>CM</b><span>Major</span></li></ol></div>
           <div class="rk-g"><span class="label">Junior Officers</span><ol><li><b>CPT</b><span>Captain</span></li><li><b>C1L</b><span>First Lieutenant</span></li><li><b>C2L</b><span>Second Lieutenant</span></li></ol></div>
           <div class="rk-g"><span class="label">SNCO</span><ol><li><b>CCM</b><span>Command Sergeant Major</span></li><li><b>CSM</b><span>Sergeant Major</span></li><li><b>CMS</b><span>Master Sergeant</span></li><li><b>CFC</b><span>Sergeant First Class</span></li></ol></div>
