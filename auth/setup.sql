@@ -1169,5 +1169,17 @@ begin
     images = excluded.images, notes = excluded.notes, doc_id = excluded.doc_id, updated_at = now();
   return did;
 end $$;
-revoke execute on function public.trooper_ok(), public.trooper_folder(text), public.file_trooper_profile(text, text, text, text, text[], text[], text) from public, anon;
-grant  execute on function public.trooper_ok(), public.file_trooper_profile(text, text, text, text, text[], text[], text) to authenticated;
+-- Delete a profile and its document (Command Center > Trooper Profiles > Delete). Returns the screenshot paths so the
+-- page can remove the files too.
+create or replace function public.delete_trooper_profile(pid bigint) returns text[]
+language plpgsql security definer set search_path = public as $$
+declare t trooper_profiles;
+begin
+  if not trooper_ok() then raise exception 'Only Battalion Command and up can delete Trooper Profiles'; end if;
+  delete from trooper_profiles where id = pid returning * into t;
+  if t.id is null then raise exception 'That profile was already deleted'; end if;
+  if t.doc_id is not null then delete from docs where id = t.doc_id; end if;
+  return t.images;
+end $$;
+revoke execute on function public.trooper_ok(), public.trooper_folder(text), public.file_trooper_profile(text, text, text, text, text[], text[], text), public.delete_trooper_profile(bigint) from public, anon;
+grant  execute on function public.trooper_ok(), public.file_trooper_profile(text, text, text, text, text[], text[], text), public.delete_trooper_profile(bigint) to authenticated;

@@ -879,6 +879,14 @@
       if (p.roles.length) { var rc = A.el('div', 'rolechips'); p.roles.slice(0, 14).forEach(function (x) { rc.appendChild(A.el('span', 'chip', x)); }); if (p.roles.length > 14) rc.appendChild(A.el('span', 'muted', '+' + (p.roles.length - 14) + ' more')); w.appendChild(rc); }
       var acts = A.el('div', 'acts');
       if (p.doc_id) { var a = A.el('a', 'btn small ghost', 'Open in Documents'); a.href = A.url('docs/?doc=' + p.doc_id); acts.appendChild(a); }
+      acts.appendChild(btn('Delete', 'ghost', async function () {
+        var name = [p.trooper_id, p.nickname ? '"' + p.nickname + '"' : ''].filter(Boolean).join(' ') || 'this profile';
+        if (!confirm('Delete ' + name + '? This removes the profile, its document and its screenshots. It can\'t be undone.')) return;
+        var r = await sb.rpc('delete_trooper_profile', { pid: p.id });
+        if (r.error) return tpOut(/delete_trooper_profile/.test(r.error.message || '') ? 'Deleting needs the latest database update first.' : r.error);
+        if (r.data && r.data.length) await sb.storage.from('trooper-profiles').remove(r.data);
+        tpOut(name + ' deleted.', true); loadProfiles();
+      }));
       row.appendChild(w); row.appendChild(acts); box.appendChild(row);
     });
   }
