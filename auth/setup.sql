@@ -1111,8 +1111,8 @@ begin
   if top is null then
     insert into doc_folders (title, sort, key) values (div, (select coalesce(max(sort), 0) + 1 from doc_folders where parent_id is null), k) returning id into top;
   end if;
-  select array_agg(name order by rank desc) into see from roles where not divider
-    and rank >= (select rank from roles where name = 'battalion-commander');
+  select array_agg(name order by rank desc) into see from roles
+    where rank >= (select rank from roles where name = 'battalion-commander');
   insert into doc_folders (parent_id, title, sort, visible_to, key)
     values (top, 'Trooper Profiles', (select coalesce(max(sort), -1) + 1 from doc_folders where parent_id = top), coalesce(see, array['admin']), 'profiles-' || k)
     returning id into fid;
@@ -1169,5 +1169,17 @@ begin
     images = excluded.images, notes = excluded.notes, doc_id = excluded.doc_id, updated_at = now();
   return did;
 end $$;
-revoke execute on function public.trooper_ok(), public.trooper_folder(text), public.file_trooper_profile(text, text, text, text, text[], text[], text) from public, anon;
-grant  execute on function public.trooper_ok(), public.file_trooper_profile(text, text, text, text, text[], text[], text) to authenticated;
+-- Delete a profile and its document (Command Center > Trooper Profiles > Delete). Returns the screenshot paths so the
+-- page can remove the files too.
+create or replace function public.delete_trooper_profile(pid bigint) returns text[]
+language plpgsql security definer set search_path = public as $$
+declare t trooper_profiles;
+begin
+  if not trooper_ok() then raise exception 'Only Battalion Command and up can delete Trooper Profiles'; end if;
+  delete from trooper_profiles where id = pid returning * into t;
+  if t.id is null then raise exception 'That profile was already deleted'; end if;
+  if t.doc_id is not null then delete from docs where id = t.doc_id; end if;
+  return t.images;
+end $$;
+revoke execute on function public.trooper_ok(), public.trooper_folder(text), public.file_trooper_profile(text, text, text, text, text[], text[], text), public.delete_trooper_profile(bigint) from public, anon;
+grant  execute on function public.trooper_ok(), public.file_trooper_profile(text, text, text, text, text[], text[], text), public.delete_trooper_profile(bigint) to authenticated;

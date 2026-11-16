@@ -195,6 +195,12 @@
     var at = roles.findIndex(function (r) { return list.indexOf(r.name) < 0; });
     if (at < 0) at = roles.length;
     if (at > 1 && list.length === at) return roles[at - 1].label + ' and up';
+    // Same, ignoring the rank-group dividers (Senior Officers...) when the list skips them.
+    var real = roles.filter(function (r) { return !r.divider; }), divs = roles.filter(function (r) { return r.divider; }).map(function (r) { return r.name; });
+    var at2 = real.findIndex(function (r) { return list.indexOf(r.name) < 0; });
+    if (at2 < 0) at2 = real.length;
+    var n = list.filter(function (x) { return divs.indexOf(x) < 0; }).length;
+    if (divs.length && at2 > 1 && n === at2) return real[at2 - 1].label + ' and up';
     return list.map(function (n) { var r = roles.find(function (x) { return x.name === n; }); return r ? r.label : n; }).join(', ');
   };
   // Written text for documents and forms: blank line = paragraph, ### = heading, - or • = bullet, https:// links.
