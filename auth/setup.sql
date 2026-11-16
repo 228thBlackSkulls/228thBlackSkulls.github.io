@@ -1098,7 +1098,7 @@ create policy trooper_shots_select on storage.objects for select to authenticate
 create policy trooper_shots_insert on storage.objects for insert to authenticated
   with check (bucket_id = 'trooper-profiles' and trooper_ok());
 create policy trooper_shots_delete on storage.objects for delete to authenticated
-  using (bucket_id = 'trooper-profiles' and trooper_ok());
+  using (bucket_id = 'trooper-profiles' and (trooper_ok() or has_perm('docs')));
 
 -- The division section (made if missing) and its Trooper Profiles folder (Battalion Commander and up).
 create or replace function public.trooper_folder(div text) returns bigint
@@ -1181,5 +1181,18 @@ begin
   if t.doc_id is not null then delete from docs where id = t.doc_id; end if;
   return t.images;
 end $$;
-revoke execute on function public.trooper_ok(), public.trooper_folder(text), public.file_trooper_profile(text, text, text, text, text[], text[], text), public.delete_trooper_profile(bigint) from public, anon;
-grant  execute on function public.trooper_ok(), public.file_trooper_profile(text, text, text, text, text[], text[], text), public.delete_trooper_profile(bigint) to authenticated;
+-- Take one screenshot off a document (the x on a screenshot in Documents). Battalion Command and up, or the docs permission.
+-- Returns true when it was removed, so the page then deletes the file.
+create or replace function public.remove_doc_image(did bigint, path text) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare left_n int;
+begin
+  if not (trooper_ok() or has_perm('docs')) then raise exception 'You can''t remove screenshots'; end if;
+  update docs set images = array_remove(images, path) where id = did and path = any(images) returning cardinality(images) into left_n;
+  if left_n is null then return false; end if;
+  update trooper_profiles set images = array_remove(images, path), updated_at = now() where doc_id = did;
+  if left_n = 0 then update docs set body = regexp_replace(body, '\n*### Screenshots\nThe original screenshots are below\.\s*$', '') where id = did; end if;
+  return true;
+end $$;
+revoke execute on function public.trooper_ok(), public.trooper_folder(text), public.file_trooper_profile(text, text, text, text, text[], text[], text), public.delete_trooper_profile(bigint), public.remove_doc_image(bigint, text) from public, anon;
+grant  execute on function public.trooper_ok(), public.file_trooper_profile(text, text, text, text, text[], text[], text), public.delete_trooper_profile(bigint), public.remove_doc_image(bigint, text) to authenticated;
