@@ -200,10 +200,10 @@
         </div>
         <div class="tp-grid">
           <label class="f">Trooper ID<input name="trooper" maxlength="30" placeholder="CT-1234" autocomplete="off"></label>
-          <label class="f">Nickname<input name="nick" maxlength="60" placeholder="Minxy" autocomplete="off"></label>
-          <label class="f">Discord ID<input name="discord" inputmode="numeric" maxlength="21" placeholder="17 to 19 digit number" autocomplete="off">
-            <span class="hint">In Discord, right-click their name and pick Copy User ID. If it isn't there, turn on Developer Mode in Settings, Advanced.</span></label>
-          <label class="f">Division<select name="division"><option value="">Pick one</option><option>Arma 3</option><option>VRChat</option></select></label>
+          <label class="f">Nickname<input name="nick" maxlength="62" placeholder="&quot;Minxy&quot;" autocomplete="off"></label>
+          <label class="f">Discord ID (required)<input name="discord" required inputmode="numeric" maxlength="21" placeholder="17 to 19 digit number" autocomplete="off">
+            <span class="hint">Turn on Developer Mode once (Discord Settings › Advanced). Then right-click their name, or on a phone open their profile and tap ⋯, and pick Copy User ID.</span></label>
+          <label class="f">Division (required)<select name="division" required><option value="">Pick one</option><option>Arma 3</option><option>VRChat</option></select></label>
         </div>
         <div class="f tp-rolebox">
           <span>Roles <span class="muted" id="tp-count"></span></span>
@@ -815,7 +815,7 @@
         s.state = 'done'; s.found = r.roles.length;
         r.roles.forEach(function (x) { addRole(x, true); });
         if (r.trooper && !tpForm.trooper.value.trim()) tpForm.trooper.value = r.trooper;
-        if (r.nickname && !tpForm.nick.value.trim()) tpForm.nick.value = r.nickname;
+        if (r.nickname && !tpForm.nick.value.trim()) { tpForm.nick.value = r.nickname; quoteNick(); }
         if (r.discord && !tpForm.discord.value.trim()) tpForm.discord.value = r.discord;
       } catch (e) { s.state = 'failed'; tpStatus(e.message || 'Couldn\'t read that screenshot.'); }
       drawRoles(); drawShots();
@@ -843,6 +843,8 @@
       c.appendChild(inp); c.appendChild(x); box.appendChild(c);
     });
   }
+  // Nicknames show in quotes, like the callsigns: Flanker -> "Flanker".
+  function quoteNick() { var v = tpForm.nick.value.replace(/["“”]/g, '').trim(); tpForm.nick.value = v ? '"' + v + '"' : ''; }
   function tpReset() {
     shots.forEach(function (s) { URL.revokeObjectURL(s.url); }); shots = []; tpRoles = []; tpForm.reset(); tpStatus(''); tpOut(''); drawShots(); drawRoles();
   }
@@ -897,10 +899,11 @@
     $('tp-add').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('tp-add-btn').click(); } };
     $('tp-clear').onclick = function () { if (shots.length || tpRoles.length) { if (!confirm('Clear this profile and start over?')) return; } tpReset(); };
     $('tp-find').oninput = drawProfiles;
+    tpForm.nick.addEventListener('blur', quoteNick);
     tpForm.discord.addEventListener('input', function () { var v = this.value.replace(/\D/g, ''); if (v !== this.value) this.value = v; });
     tpForm.onsubmit = async function (e) {
       e.preventDefault();
-      var F = tpForm, disc = F.discord.value.trim(), div = F.division.value;
+      quoteNick(); var F = tpForm, disc = F.discord.value.trim(), div = F.division.value;
       if (tpBusy) return tpOut('Still reading the screenshots. Give it a moment.');
       if (!F.trooper.value.trim() && !F.nick.value.trim()) { F.trooper.focus(); return tpOut('Add their trooper ID or nickname.'); }
       if (!/^\d{15,21}$/.test(disc)) { F.discord.focus(); return tpOut('Paste their Discord ID (the long number from Copy User ID).'); }
