@@ -55,12 +55,21 @@ window.RoleReader = (function () {
   var SKIP = /^(roles?|no roles|about me|member since|note|click to add a note|add note|message|send message|add role|add roles|edit roles?|view full (profile|bio)|mutual (servers?|friends?)|activity|playing|listening to|watching|online|idle|do not disturb|offline|bio|connections|server profile|joined|discord member since|pronouns|block|report|edit profile|copy user id|\+)$/i;
   var CALLSIGN = /\b([A-Z]{1,4}(?:-[A-Z])?)\s*[-–—]\s*(\d{4})\b\s*["“”'‘’]?\s*([A-Za-z][A-Za-z0-9 .'’-]{0,30}?)\s*["“”'‘’]?\s*$/;
 
+  // Just the role's own words: no ==== dividers, no "..." where Discord cut a long name off, and none of the stray
+  // marks the coloured dot or a role's little icon read as (@ © # ¢ & 4) and so on).
   function clean(t) {
-    t = t.replace(/[|_~`^]/g, ' ').replace(/\s+/g, ' ').trim();
-    // The coloured dot in front of each role reads as a stray symbol or letter.
-    t = t.replace(/^(?:[^A-Za-z0-9(\[]+|[eoOcCa©®°@*•.]\s+)+/, '').replace(/[\s.,;:·•]+$/, '');
-    return t.trim();
+    t = t.replace(/[=_|~`^]+/g, ' ').replace(/(\.\.\.|…)+/g, ' ').replace(/[—–]{2,}/g, ' ').replace(/\s+/g, ' ').trim();
+    var w = t.split(' ');
+    function junk(x, edge) { return !/[A-Za-z]/.test(x) || (x.length <= 2 && !/^(?:[A-Z]{2}|[A-Za-z]\d?|\d[A-Za-z])$/.test(x) && edge) || /^[eoOcCa]$/.test(x) && edge === 'start'; }
+    while (w.length && junk(w[0], 'start')) w.shift();
+    while (w.length && junk(w[w.length - 1], 'end')) w.pop();
+    t = w.join(' ').replace(/^[^A-Za-z0-9(\[]+/, '').replace(/[\s.,;:·•'’"“”*#&%¢©®°@$£¥€\-]+$/, '').trim();
+    // Close a bracket the cut-off left open: "EOD [Explosive Ordnance Dispos" -> "EOD [Explosive Ordnance Dispos]".
+    if ((t.match(/\[/g) || []).length > (t.match(/\]/g) || []).length) t += ']';
+    return t;
   }
+  // A chip worth keeping: at least 3 characters with 2 letters, or a 2-letter all-caps short name like "QM".
+  function realRole(t) { return /[A-Za-z].*[A-Za-z]/.test(t) && (t.length >= 3 || /^[A-Z]{2}$/.test(t)); }
 
   // Split each line into chips where the gap between words is wider than a normal space.
   function chipsFrom(data) {
@@ -92,7 +101,7 @@ window.RoleReader = (function () {
     chips.forEach(function (c, i) {
       var raw = c.text.trim(), t = clean(raw);
       if (/^@?[a-z0-9_.]{2,32}$/.test(raw) && /[_.\d]/.test(raw)) return; // their username
-      if (!t || t.length < 2 || c.conf < 45 || SKIP.test(t)) return;
+      if (!t || !realRole(t) || c.conf < 30 || SKIP.test(t) || /^\d+ online$/i.test(t)) return;
       var cs = t.match(CALLSIGN);
       if (cs && !res.trooper) { res.trooper = cs[1] + '-' + cs[2]; res.nickname = (cs[3] || '').trim(); return; }
       if (at >= 0 && i <= at) return;
