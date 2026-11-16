@@ -78,6 +78,9 @@
 .shots a{display:block;width:160px;height:160px;border:1px solid var(--line);background:#000}
 .shots a:hover{border-color:var(--accent)}
 .shots img{width:100%;height:100%;object-fit:cover;display:block}
+.shot{position:relative}
+.shot .x{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:rgba(0,0,0,.8);color:#fff;font-size:1.1rem;line-height:1;cursor:pointer}
+.shot .x:hover{border-color:var(--accent);color:var(--accent)}
 .none{color:var(--muted);font-size:.92rem;margin:6px 0 10px}
 .hit>summary .t{color:var(--accent)}
 /* Edit mode */
@@ -245,8 +248,22 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
         if (r.error) { g.appendChild(A.el('p', 'none', 'Couldn\'t load the screenshots.')); return; }
         r.data.forEach(function (x, i) {
           if (!x.signedUrl) return;
+          var box = A.el('div', 'shot');
           var a = A.el('a'); a.href = x.signedUrl; a.target = '_blank'; a.rel = 'noopener'; a.title = 'Open screenshot ' + (i + 1);
-          var im = A.el('img'); im.src = x.signedUrl; im.alt = 'Screenshot ' + (i + 1); im.loading = 'lazy'; a.appendChild(im); g.appendChild(a);
+          var im = A.el('img'); im.src = x.signedUrl; im.alt = 'Screenshot ' + (i + 1); im.loading = 'lazy'; a.appendChild(im); box.appendChild(a);
+          // Battalion Command and up (and the docs permission) can take a screenshot off.
+          if (canEdit || A.can(me, 'profiles')) {
+            var del = A.el('button', 'x', '×'); del.type = 'button'; del.title = 'Delete this screenshot'; del.setAttribute('aria-label', 'Delete screenshot ' + (i + 1));
+            del.onclick = async function () {
+              if (!confirm('Delete this screenshot? It can\'t be undone.')) return;
+              var path = d.images[i], rr = await sb.rpc('remove_doc_image', { did: d.id, path: path });
+              if (rr.error) return A.fail(msg, /remove_doc_image/.test(rr.error.message || '') ? { message: 'Deleting screenshots needs the latest database update first.' } : rr.error);
+              await sb.storage.from('trooper-profiles').remove([path]);
+              ok('Screenshot deleted.'); refresh();
+            };
+            box.appendChild(del);
+          }
+          g.appendChild(box);
         });
       });
     }
