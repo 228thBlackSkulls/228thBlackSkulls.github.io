@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202611061805";
+(function(){var v="202611161700";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="../auth/auth.css?v=13">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=24"></script>
+<script src="../auth/auth.js?v=25"></script>
 <script src="../auth/fx.js?v=9"></script>
 <style>
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 22px}
@@ -51,7 +51,7 @@
 .f2>summary .t{font:600 .82rem var(--mono);letter-spacing:.14em;text-transform:uppercase}
 .f2>.in{padding:0 0 16px 14px;border-left:2px solid var(--accent-deep);margin-left:2px}
 /* Documents */
-.doc{border-bottom:1px solid var(--line)}
+.doc{border-bottom:1px solid var(--line);scroll-margin-top:84px}
 .doc:last-child{border-bottom:0}
 .doc>summary{padding:13px 0}
 .doc>summary .t{font:600 1.02rem var(--body)}
@@ -65,6 +65,10 @@
 .doc-text li{margin:.25em 0}
 .doc-text a{color:var(--accent);overflow-wrap:anywhere}
 .doc-meta{font:500 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.shots{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 6px}
+.shots a{display:block;width:160px;height:160px;border:1px solid var(--line);background:#000}
+.shots a:hover{border-color:var(--accent)}
+.shots img{width:100%;height:100%;object-fit:cover;display:block}
 .none{color:var(--muted);font-size:.92rem;margin:6px 0 10px}
 .hit>summary .t{color:var(--accent)}
 /* Edit mode */
@@ -223,6 +227,20 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
     }
     if (d.updated_at) inn.appendChild(A.el('p', 'doc-meta', 'Updated ' + A.date(d.updated_at)));
     inn.appendChild(renderText(d.body));
+    // Screenshots (Trooper Profiles): private files, fetched with short-lived links when the document is opened.
+    if (d.images && d.images.length) {
+      var g = A.el('div', 'shots'); inn.appendChild(g);
+      det.addEventListener('toggle', async function () {
+        if (!det.open || g.dataset.done) return; g.dataset.done = 1;
+        var r = await sb.storage.from('trooper-profiles').createSignedUrls(d.images, 3600);
+        if (r.error) { g.appendChild(A.el('p', 'none', 'Couldn\'t load the screenshots.')); return; }
+        r.data.forEach(function (x, i) {
+          if (!x.signedUrl) return;
+          var a = A.el('a'); a.href = x.signedUrl; a.target = '_blank'; a.rel = 'noopener'; a.title = 'Open screenshot ' + (i + 1);
+          var im = A.el('img'); im.src = x.signedUrl; im.alt = 'Screenshot ' + (i + 1); im.loading = 'lazy'; a.appendChild(im); g.appendChild(a);
+        });
+      });
+    }
     det.appendChild(inn);
     return det;
   }
@@ -239,6 +257,13 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 
   try { await load(); } catch (e) { tree.textContent = ''; return A.fail(msg, e); }
   draw();
+  // ?doc=12 opens that document (links from Command Center > Trooper Profiles).
+  (function () {
+    var id = new URL(location.href).searchParams.get('doc'), el = id && tree.querySelector('[data-doc="' + id.replace(/\D/g, '') + '"]');
+    if (!el) return;
+    el.open = true; var s = el.parentNode.closest('details'); while (s) { s.open = true; s = s.parentNode.closest('details'); }
+    el.classList.add('hit'); setTimeout(function () { el.scrollIntoView({ block: 'start' }); }, 50);
+  })();
 
   $('open-all').onclick = function () { tree.querySelectorAll('details.folder').forEach(function (x) { x.open = true; }); };
   $('close-all').onclick = function () { tree.querySelectorAll('details').forEach(function (x) { x.open = false; }); };

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202611061805";
+(function(){var v="202611161700";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -33,11 +33,34 @@
 #members .row .acts{grid-column:2/-1;justify-content:flex-start;padding-top:10px;border-top:1px solid var(--line)}
 #members .row .acts select{max-width:100%}
 @media (max-width:640px){#members .row .acts{grid-column:1/-1}}
+.tp-drop{border:1px dashed var(--line);border-radius:2px;padding:16px;display:grid;gap:12px;transition:border-color .2s,background .2s}
+.tp-drop.over{border-color:var(--accent);background:rgba(226,51,59,.06)}
+.tp-drop p{margin:0}
+.tp-shots{display:flex;gap:10px;flex-wrap:wrap}
+.tp-shots:empty{display:none}
+.tp-shot{position:relative;width:110px;height:110px;border:1px solid var(--line);background:#000}
+.tp-shot img{width:100%;height:100%;object-fit:cover;display:block}
+.tp-shot button{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.75);color:#fff;cursor:pointer;font-size:1rem;line-height:1}
+.tp-shot .st{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);font:500 .62rem var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:3px 6px;color:var(--soft)}
+.tp-shot .st.ok{color:var(--ok)}.tp-shot .st.bad{color:var(--accent)}
+.tp-status{font-size:.9rem;color:var(--soft)}
+.tp-status:empty{display:none}
+.tp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px;align-items:start}
+.tp-rolebox{display:grid;gap:8px}
+.tp-rolebox>span:first-child{font:500 .72rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tp-rolebox .chip{text-transform:none;letter-spacing:.02em;font-size:.8rem;cursor:text}
+.tp-rolebox .chip input{background:none;border:0;color:inherit;font:inherit;padding:0;width:auto;min-width:4ch}
+.tp-rolebox .hint{font-size:.85rem;color:var(--muted)}
+.tp-add{display:flex;gap:8px;max-width:420px}
+.tp-add input{flex:1}
+#tp-list .row{grid-template-columns:minmax(0,1fr) auto}
+#tp-list .rolechips{margin-top:6px}
+#tp-list .chip{text-transform:none;letter-spacing:.02em}
 .rolechips .chip button{background:none;border:0;color:inherit;cursor:pointer;padding:0;font:inherit;line-height:1}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=24"></script>
+<script src="../auth/auth.js?v=25"></script>
 <script src="../auth/fx.js?v=9"></script>
 </head>
 <body>
@@ -70,6 +93,7 @@
       <button type="button" role="tab" aria-selected="false" data-tab="events">Events</button>
       <button type="button" role="tab" aria-selected="false" data-tab="calendar">Calendar</button>
       <button type="button" role="tab" aria-selected="false" data-tab="briefings">Briefings</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="profiles">Trooper Profiles</button>
       <button type="button" role="tab" aria-selected="false" data-tab="store">Store Requests<span class="count" id="store-count"></span></button>
     </div>
 
@@ -88,6 +112,12 @@
           <button type="button" class="ocard" data-go="events"><span class="label">Active timers</span><strong id="ov-ev">0</strong><small id="ov-ev-t">No events scheduled</small></button>
           <button type="button" class="ocard" data-go="calendar"><span class="label">Weekly calendar</span><strong id="ov-cal">0</strong><small>standing events, Sunday to Saturday</small></button>
           <button type="button" class="ocard" data-go="briefings"><span class="label">Briefings</span><strong id="ov-posts">0</strong><small id="ov-posts-t">No briefings yet</small></button>
+        </div>
+      </div>
+      <div class="stack" data-go-group="profiles">
+        <p class="label">Records</p>
+        <div class="cards">
+          <button type="button" class="ocard" data-go="profiles"><span class="label">Trooper profiles</span><strong id="ov-tp">0</strong><small>filed in Documents</small></button>
         </div>
       </div>
       <div class="stack" data-go-group="store">
@@ -158,6 +188,39 @@
       <div class="rows" id="posts"></div>
     </section>
 
+    <section data-pane="profiles" class="stack" hidden>
+      <p class="muted" style="font-size:.92rem">Keep a record of a trooper before their roles come off on Discord, like when they retire. Add screenshots of their Discord roles, paste their Discord ID and pick the division. The site reads the roles from the screenshots for you to check, and filing it makes their profile in Documents, under the division's Trooper Profiles folder. Only Battalion Commander and up can see these.</p>
+      <form class="panel stack" id="tp-form" novalidate>
+        <h3>New trooper profile</h3>
+        <div class="tp-drop" id="tp-drop">
+          <input type="file" id="tp-files" accept="image/png,image/jpeg,image/webp" multiple hidden>
+          <p><b>Screenshots of their roles.</b> Drop them here, paste one with Ctrl+V, or <button type="button" class="btn ghost small" id="tp-pick">Choose files</button></p>
+          <div class="tp-shots" id="tp-shots"></div>
+          <p class="tp-status" id="tp-status" role="status"></p>
+        </div>
+        <div class="tp-grid">
+          <label class="f">Trooper ID<input name="trooper" maxlength="30" placeholder="CT-1234" autocomplete="off"></label>
+          <label class="f">Nickname<input name="nick" maxlength="60" placeholder="Minxy" autocomplete="off"></label>
+          <label class="f">Discord ID<input name="discord" inputmode="numeric" maxlength="21" placeholder="17 to 19 digit number" autocomplete="off">
+            <span class="hint">In Discord, right-click their name and pick Copy User ID. If it isn't there, turn on Developer Mode in Settings, Advanced.</span></label>
+          <label class="f">Division<select name="division"><option value="">Pick one</option><option>Arma 3</option><option>VRChat</option></select></label>
+        </div>
+        <div class="f tp-rolebox">
+          <span>Roles <span class="muted" id="tp-count"></span></span>
+          <div class="rolechips" id="tp-roles"><span class="muted" style="font-size:.9rem">Roles show up here once the screenshots are read.</span></div>
+          <div class="tp-add"><input id="tp-add" maxlength="100" placeholder="Add a role it missed" aria-label="Add a role"><button type="button" class="btn ghost small" id="tp-add-btn">Add</button></div>
+          <span class="hint">Check these against the screenshots. Click a role to fix its spelling, or × to take it off.</span>
+        </div>
+        <label class="f">Notes (optional)<textarea name="notes" maxlength="4000" placeholder="e.g. Retired November 2026, honorable discharge"></textarea></label>
+        <div class="msg" id="tp-out" role="status"></div>
+        <div class="acts" style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button class="btn ghost" type="button" id="tp-clear">Clear</button><button class="btn" type="submit" id="tp-submit">File profile</button></div>
+      </form>
+      <div class="stack" style="gap:12px">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between"><h3 style="margin:0">Filed profiles</h3><input type="search" id="tp-find" placeholder="Find by name, ID or role" aria-label="Find a profile" style="flex:0 1 280px"></div>
+        <div class="rows" id="tp-list"></div>
+      </div>
+    </section>
+
     <section data-pane="store" class="stack" hidden>
       <p class="muted" style="font-size:.92rem">Merch ideas sent from the Gear Up section on the main site. Only Admin and Marshal Commander can see these. Set a status as you work through them, and keep notes for yourself.</p>
       <div class="radios" id="store-filter" role="group" aria-label="Show">
@@ -195,7 +258,7 @@
   $('dash').hidden = false;
   // Each tab and Overview card shows only if this person's roles allow it (Admin sees everything).
   var can = function (p) { return A.can(me, p); };
-  var allow = { requests: can('members'), members: can('members') || can('bios'), roles: can('roles'), events: can('events'), calendar: can('events'), briefings: can('briefings'), store: A.canStore(me) };
+  var allow = { requests: can('members'), members: can('members') || can('bios'), roles: can('roles'), events: can('events'), calendar: can('events'), briefings: can('briefings'), store: A.canStore(me), profiles: can('profiles') };
   Object.keys(allow).forEach(function (k) {
     document.querySelectorAll('[data-tab="' + k + '"],[data-go="' + k + '"],[data-go-group="' + k + '"]').forEach(function (n) { n.hidden = !allow[k]; });
   });
@@ -716,8 +779,157 @@
   }
   document.querySelectorAll('[name=sf]').forEach(function (x) { x.onchange = renderStore; });
 
+  // ---- Trooper Profiles (Battalion Commander and up) ----
+  // Screenshots are read in the browser (auth/rolereader.js), shrunk, put in the private trooper-profiles bucket,
+  // and file_trooper_profile() writes the document under Documents > <division> > Trooper Profiles.
+  var shots = [], tpRoles = [], tpList = [], tpForm = $('tp-form'), tpBusy = 0;
+  function tpStatus(t) { $('tp-status').textContent = t || ''; }
+  function tpOut(t, good) { var o = $('tp-out'); o.className = 'msg' + (good ? ' ok' : ''); o.textContent = (t && (t.message || t)) || ''; if (t && !good) console.error(t); }
+  function addShots(files) {
+    Array.prototype.forEach.call(files || [], function (f) {
+      if (!/^image\/(png|jpe?g|webp)$/.test(f.type)) { tpStatus('"' + (f.name || 'That file') + '" isn\'t a PNG, JPG or WebP picture.'); return; }
+      if (shots.length >= 12) { tpStatus('That\'s the most screenshots for one profile (12).'); return; }
+      var s = { file: f, url: URL.createObjectURL(f), state: 'waiting' }; shots.push(s); readShot(s);
+    });
+    drawShots();
+  }
+  function drawShots() {
+    var box = $('tp-shots'); box.textContent = '';
+    shots.forEach(function (s, i) {
+      var d = A.el('div', 'tp-shot'), im = A.el('img'); im.src = s.url; im.alt = 'Screenshot ' + (i + 1); d.appendChild(im);
+      var x = A.el('button', null, '×'); x.type = 'button'; x.title = 'Remove this screenshot'; x.setAttribute('aria-label', 'Remove screenshot ' + (i + 1));
+      x.onclick = function () { URL.revokeObjectURL(s.url); shots.splice(shots.indexOf(s), 1); drawShots(); };
+      d.appendChild(x);
+      d.appendChild(A.el('span', 'st' + (s.state === 'done' ? ' ok' : s.state === 'failed' ? ' bad' : ''), s.state === 'done' ? (s.found + ' role' + (s.found === 1 ? '' : 's')) : s.state === 'failed' ? 'Couldn\'t read' : s.state === 'reading' ? 'Reading ' + (s.pct || 0) + '%' : 'Waiting'));
+      box.appendChild(d);
+    });
+  }
+  var readQueue = Promise.resolve();
+  function readShot(s) {
+    tpBusy++; tpStatus('Reading the screenshots…');
+    readQueue = readQueue.then(async function () {
+      if (shots.indexOf(s) < 0) return;
+      s.state = 'reading'; drawShots();
+      try {
+        var r = await RoleReader.read(s.file, function (m) { if (m.status === 'recognizing text') { var p = Math.round(m.progress * 100); if (p !== s.pct) { s.pct = p; drawShots(); } } else if (/loading|initializ/.test(m.status)) tpStatus('Getting the text reader ready (first time takes a few seconds)…'); });
+        s.state = 'done'; s.found = r.roles.length;
+        r.roles.forEach(function (x) { addRole(x, true); });
+        if (r.trooper && !tpForm.trooper.value.trim()) tpForm.trooper.value = r.trooper;
+        if (r.nickname && !tpForm.nick.value.trim()) tpForm.nick.value = r.nickname;
+        if (r.discord && !tpForm.discord.value.trim()) tpForm.discord.value = r.discord;
+      } catch (e) { s.state = 'failed'; tpStatus(e.message || 'Couldn\'t read that screenshot.'); }
+      drawRoles(); drawShots();
+    }).finally(function () {
+      tpBusy--; if (tpBusy) return;
+      var bad = shots.filter(function (x) { return x.state === 'failed'; }).length;
+      tpStatus((tpRoles.length ? 'Read ' + tpRoles.length + ' role' + (tpRoles.length === 1 ? '' : 's') + '. Check them below, then file it.' : 'No roles found yet. Type them in below, or try a clearer screenshot.')
+        + (bad ? ' ' + bad + ' screenshot' + (bad === 1 ? '' : 's') + ' couldn\'t be read.' : ''));
+    });
+  }
+  function addRole(t, quiet) {
+    t = (t || '').replace(/\s+/g, ' ').trim(); if (!t) return false;
+    if (tpRoles.some(function (x) { return x.toLowerCase() === t.toLowerCase(); })) return false;
+    tpRoles.push(t); if (!quiet) drawRoles(); return true;
+  }
+  function drawRoles() {
+    var box = $('tp-roles'); box.textContent = '';
+    $('tp-count').textContent = tpRoles.length ? '(' + tpRoles.length + ')' : '';
+    if (!tpRoles.length) { box.appendChild(A.el('span', 'muted', 'Roles show up here once the screenshots are read.')).style.fontSize = '.9rem'; return; }
+    tpRoles.forEach(function (r, i) {
+      var c = A.el('span', 'chip'), inp = A.el('input'); inp.value = r; inp.size = Math.max(4, r.length); inp.maxLength = 100; inp.setAttribute('aria-label', 'Role ' + (i + 1));
+      inp.oninput = function () { inp.size = Math.max(4, inp.value.length); };
+      inp.onchange = function () { var v = inp.value.replace(/\s+/g, ' ').trim(); if (v) tpRoles[i] = v; else tpRoles.splice(i, 1); drawRoles(); };
+      var x = A.el('button', null, '×'); x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + r); x.onclick = function () { tpRoles.splice(i, 1); drawRoles(); };
+      c.appendChild(inp); c.appendChild(x); box.appendChild(c);
+    });
+  }
+  function tpReset() {
+    shots.forEach(function (s) { URL.revokeObjectURL(s.url); }); shots = []; tpRoles = []; tpForm.reset(); tpStatus(''); tpOut(''); drawShots(); drawRoles();
+  }
+  // Shrink a screenshot for storage (WebP, at most 1800px on the long side).
+  function shrink(file) {
+    return new Promise(function (ok) {
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        var k = Math.min(1, 1800 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+        c.toBlob(function (b) { ok(b && b.size < file.size ? { blob: b, ext: 'webp', type: 'image/webp' } : { blob: file, ext: file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg', type: file.type }); }, 'image/webp', 0.9);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); ok({ blob: file, ext: 'jpg', type: file.type }); };
+      img.src = url;
+    });
+  }
+  async function loadProfiles() {
+    var r = await sb.from('trooper_profiles').select('*').order('updated_at', { ascending: false });
+    if (r.error) { $('tp-list').textContent = ''; $('tp-list').appendChild(A.el('p', 'empty', /trooper_profiles/.test(r.error.message || '') ? 'Trooper Profiles need the latest database update before they can be filed.' : 'Couldn\'t load profiles: ' + r.error.message)); return; }
+    tpList = r.data; $('ov-tp').textContent = tpList.length; drawProfiles();
+  }
+  function drawProfiles() {
+    var q = $('tp-find').value.trim().toLowerCase(), box = $('tp-list'); box.textContent = '';
+    var list = tpList.filter(function (p) { return !q || [p.trooper_id, p.nickname, p.discord_id, p.division].concat(p.roles).join(' ').toLowerCase().indexOf(q) >= 0; });
+    if (!list.length) box.appendChild(A.el('p', 'empty', tpList.length ? 'No profiles match.' : 'No profiles filed yet.'));
+    list.forEach(function (p) {
+      var row = A.el('div', 'row'), w = A.el('div', 'who');
+      var m = A.el('div', 'meta'); m.appendChild(A.el('span', 'chip', p.division)); w.appendChild(m);
+      w.appendChild(A.el('b', null, [p.trooper_id, p.nickname ? '"' + p.nickname + '"' : ''].filter(Boolean).join(' ')));
+      w.appendChild(A.el('small', null, ['Discord ID ' + p.discord_id, p.roles.length + ' role' + (p.roles.length === 1 ? '' : 's'), p.images.length + ' screenshot' + (p.images.length === 1 ? '' : 's'), 'Filed ' + A.date(p.created_at) + (p.filed_name ? ' by ' + p.filed_name : '')].join(' · ')));
+      if (p.roles.length) { var rc = A.el('div', 'rolechips'); p.roles.slice(0, 14).forEach(function (x) { rc.appendChild(A.el('span', 'chip', x)); }); if (p.roles.length > 14) rc.appendChild(A.el('span', 'muted', '+' + (p.roles.length - 14) + ' more')); w.appendChild(rc); }
+      var acts = A.el('div', 'acts');
+      if (p.doc_id) { var a = A.el('a', 'btn small ghost', 'Open in Documents'); a.href = A.url('docs/?doc=' + p.doc_id); acts.appendChild(a); }
+      row.appendChild(w); row.appendChild(acts); box.appendChild(row);
+    });
+  }
+  if (allow.profiles) {
+    var s = document.createElement('script'); s.src = '../auth/rolereader.js?v=1'; document.head.appendChild(s);
+    $('tp-pick').onclick = function () { $('tp-files').click(); };
+    $('tp-files').onchange = function () { addShots(this.files); this.value = ''; };
+    var drop = $('tp-drop');
+    ['dragenter', 'dragover'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function (e) { addShots(e.dataTransfer.files); });
+    document.addEventListener('paste', function (e) {
+      if (document.querySelector('[data-pane="profiles"]').hidden) return;
+      var fs = Array.prototype.filter.call((e.clipboardData && e.clipboardData.files) || [], function (f) { return /^image\//.test(f.type); });
+      if (fs.length) { e.preventDefault(); addShots(fs); }
+    });
+    $('tp-add-btn').onclick = function () { if (addRole($('tp-add').value)) $('tp-add').value = ''; $('tp-add').focus(); };
+    $('tp-add').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('tp-add-btn').click(); } };
+    $('tp-clear').onclick = function () { if (shots.length || tpRoles.length) { if (!confirm('Clear this profile and start over?')) return; } tpReset(); };
+    $('tp-find').oninput = drawProfiles;
+    tpForm.discord.addEventListener('input', function () { var v = this.value.replace(/\D/g, ''); if (v !== this.value) this.value = v; });
+    tpForm.onsubmit = async function (e) {
+      e.preventDefault();
+      var F = tpForm, disc = F.discord.value.trim(), div = F.division.value;
+      if (tpBusy) return tpOut('Still reading the screenshots. Give it a moment.');
+      if (!F.trooper.value.trim() && !F.nick.value.trim()) { F.trooper.focus(); return tpOut('Add their trooper ID or nickname.'); }
+      if (!/^\d{15,21}$/.test(disc)) { F.discord.focus(); return tpOut('Paste their Discord ID (the long number from Copy User ID).'); }
+      if (!div) { F.division.focus(); return tpOut('Pick their division.'); }
+      if (!tpRoles.length && !confirm('No roles are listed. File the profile anyway?')) return;
+      tpOut(''); var b = $('tp-submit'); b.disabled = true; b.textContent = 'Filing…';
+      try {
+        var paths = [], folder = (div === 'Arma 3' ? 'arma3' : 'vrchat') + '/' + disc + '/';
+        for (var i = 0; i < shots.length; i++) {
+          tpStatus('Saving screenshot ' + (i + 1) + ' of ' + shots.length + '…');
+          var sm = await shrink(shots[i].file), path = folder + Date.now() + '-' + (i + 1) + '.' + sm.ext;
+          var up = await sb.storage.from('trooper-profiles').upload(path, sm.blob, { contentType: sm.type, upsert: false });
+          if (up.error) throw up.error;
+          paths.push(path);
+        }
+        tpStatus('Filing the profile…');
+        var r = await sb.rpc('file_trooper_profile', { p_trooper: F.trooper.value, p_nick: F.nick.value, p_discord: disc, p_division: div, p_roles: tpRoles, p_images: paths, p_notes: F.notes.value });
+        if (r.error) { if (paths.length) sb.storage.from('trooper-profiles').remove(paths); throw r.error; }
+        var again = tpList.some(function (p) { return p.discord_id === disc && p.division === div; });
+        tpReset();
+        tpOut(again ? 'Profile updated in Documents.' : 'Profile filed in Documents > ' + div + ' > Trooper Profiles.', true);
+        loadProfiles();
+      } catch (err) { tpStatus(''); tpOut(err.message ? err : 'Something went wrong. Try again.'); }
+      finally { b.disabled = false; b.textContent = 'File profile'; }
+    };
+  }
+
   await loadRoles();
-  await Promise.all([allow.store ? loadStore() : null, allow.members ? loadPeople() : null, allow.briefings ? loadPosts() : null, allow.events ? loadWeekly().then(loadEvents) : null, allow.calendar ? loadCalendar() : null]);
+  await Promise.all([allow.profiles ? loadProfiles() : null, allow.store ? loadStore() : null, allow.members ? loadPeople() : null, allow.briefings ? loadPosts() : null, allow.events ? loadWeekly().then(loadEvents) : null, allow.calendar ? loadCalendar() : null]);
 })();
 </script>
 </body>
