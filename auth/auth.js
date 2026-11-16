@@ -25,7 +25,7 @@
     if (!r.data) return { status: 'pending', user: s.user, missing: true, perms: [] };
     var me = Object.assign(r.data, { user: s.user, perms: [] });
     // What this person's roles let them do (set per role on the Dashboard). Admin can do everything.
-    if (me.status === 'approved') { var pr = await A.sb.rpc('my_perms'); me.perms = (!pr.error && pr.data) || (me.role === 'admin' ? ['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'selfroles', 'roles'] : []); }
+    if (me.status === 'approved') { var pr = await A.sb.rpc('my_perms'); me.perms = (!pr.error && pr.data) || (me.role === 'admin' ? ['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'selfroles', 'roles', 'profiles'] : []); }
     return me;
   };
   A.isApproved = function (p) { return !!p && p.status === 'approved'; };

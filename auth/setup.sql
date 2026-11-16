@@ -163,6 +163,14 @@ language sql stable security definer set search_path = public as $$
   select all_roles from profiles where id = auth.uid() and status = 'approved';
 $$;
 
+-- Battalion Command and up (Battalion Commander's rank or higher, Admin always): submits and reads Trooper Profiles
+-- (Flanker 2026-11-16). Follows the rank order on the Dashboard, so a rank dragged above Battalion Commander counts too.
+create or replace function public.trooper_ok() returns boolean
+language sql stable security definer set search_path = public as $$
+  select is_admin() or exists (select 1 from roles r where r.name = any(my_roles()) and not r.divider
+    and r.rank >= (select b.rank from roles b where b.name = 'battalion-commander'));
+$$;
+
 -- Permissions per role, like Discord. Admin always has every one; any other role gets only what's ticked on the Dashboard.
 --   events    = create, edit and delete events and timers
 --   briefings = post and delete briefings
@@ -192,10 +200,12 @@ language sql stable security definer set search_path = public as $$
 $$;
 create or replace function public.my_perms() returns text[]
 language sql stable security definer set search_path = public as $$
-  select case when is_admin() then array['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'selfroles', 'roles']
+  -- 'profiles' (Trooper Profiles in Command Center) isn't ticked per role: Battalion Command and up get it, see trooper_ok().
+  select case when is_admin() then array['events', 'briefings', 'bios', 'members', 'docs', 'forms', 'selfroles', 'roles', 'profiles']
     else coalesce((select array_agg(distinct x) from (
       select unnest(r.perms) x from roles r where r.name = any(my_roles())
-      union select unnest(p.perms) from profiles p where p.id = auth.uid() and p.status = 'approved') t), '{}') end;
+      union select unnest(p.perms) from profiles p where p.id = auth.uid() and p.status = 'approved'
+      union select 'profiles' where trooper_ok()) t), '{}') end;
 $$;
 revoke execute on function public.has_perm(text), public.my_perms() from public, anon;
 grant  execute on function public.has_perm(text), public.my_perms() to authenticated;
@@ -603,6 +613,10 @@ create table if not exists public.docs (
   updated_at timestamptz not null default now(),
   updated_by uuid default auth.uid()
 );
+-- key marks the folders the site files things into itself (unit, arma3, vrchat, profiles-arma3, profiles-vrchat), so they
+-- can be renamed or moved freely. images = private screenshots (trooper-profiles bucket) shown under a document.
+alter table public.doc_folders add column if not exists key text unique;
+alter table public.docs add column if not exists images text[] not null default '{}';
 alter table public.doc_folders drop constraint if exists doc_folders_fields_check;
 alter table public.doc_folders add constraint doc_folders_fields_check check (length(trim(title)) between 1 and 80 and parent_id is distinct from id);
 alter table public.docs drop constraint if exists docs_fields_check;
@@ -618,12 +632,14 @@ create trigger docs_touch before update on public.docs for each row execute func
 create or replace function public.doc_folder_ok(fid bigint) returns boolean
 language sql stable security definer set search_path = public as $$
   with recursive up as (
-    select id, parent_id, visible_to, 1 as depth from doc_folders where id = fid
+    select id, parent_id, visible_to, key, 1 as depth from doc_folders where id = fid
     union all
-    select f.id, f.parent_id, f.visible_to, up.depth + 1 from doc_folders f join up on f.id = up.parent_id where up.depth < 20
+    select f.id, f.parent_id, f.visible_to, f.key, up.depth + 1 from doc_folders f join up on f.id = up.parent_id where up.depth < 20
   )
+  -- Trooper Profiles folders always let Battalion Command and up in, even if a rank was added after the folder was made.
   select my_roles() is not null and (has_perm('docs')
-    or not exists (select 1 from up where cardinality(visible_to) > 0 and not (visible_to && my_roles())));
+    or not exists (select 1 from up where cardinality(visible_to) > 0 and not (visible_to && my_roles())
+                   and not (coalesce(key, '') like 'profiles-%' and trooper_ok())));
 $$;
 revoke execute on function public.doc_folder_ok(bigint) from public, anon;
 grant  execute on function public.doc_folder_ok(bigint) to authenticated;
@@ -684,6 +700,36 @@ begin
 - Raiders are only allowed to "spin glitch" through doors, not walls. This includes no spin glitching to seats in the offices.
 - No killing anyone trying to train new recruits in the training room.
 - No false recruiting. (This is an instant kick.)$b$, 0);
+end $$;
+
+-- Documents layout (Flanker 2026-11-16): three top sections, Unit Wide, Arma 3 and VRChat. The two division folders move out
+-- of "Divisions & Branches" to the top, MOS and Qualifications go inside Unit Wide, and the empty "Divisions & Branches"
+-- folder is removed. Runs once (it marks the folders with a key); after that, move things freely on the Documents page.
+do $$
+declare uw bigint; a3 bigint; vr bigint; db bigint; n int := 3; x record;
+begin
+  if exists (select 1 from public.doc_folders where key in ('unit', 'arma3', 'vrchat')) then return; end if;
+  select id into uw from public.doc_folders where parent_id is null and title ~* '^(228th|unit)[ -]?wide$' order by sort, id limit 1;
+  if uw is null then insert into public.doc_folders (title, sort) values ('Unit Wide', 0) returning id into uw; end if;
+  select id into db from public.doc_folders where parent_id is null and title = 'Divisions & Branches' order by id limit 1;
+  select f.id into a3 from public.doc_folders f where f.title ~* '^arma ?3$' order by (f.parent_id is not distinct from db) desc, f.id limit 1;
+  if a3 is null then insert into public.doc_folders (title) values ('Arma 3') returning id into a3; end if;
+  select f.id into vr from public.doc_folders f where f.title ~* '^(vr ?chat|vrc)$' order by (f.parent_id is not distinct from db) desc, f.id limit 1;
+  if vr is null then insert into public.doc_folders (title) values ('VRChat') returning id into vr; end if;
+  update public.doc_folders set parent_id = null, sort = 0, key = 'unit' where id = uw;
+  update public.doc_folders set parent_id = null, sort = 1, key = 'arma3' where id = a3;
+  update public.doc_folders set parent_id = null, sort = 2, key = 'vrchat' where id = vr;
+  -- MOS and Qualifications (top level) go inside Unit Wide, after whatever is already there.
+  update public.doc_folders set parent_id = uw,
+      sort = (select coalesce(max(sort), -1) + 1 from public.doc_folders where parent_id = uw) + (case when title = 'MOS' then 0 else 1 end)
+    where parent_id is null and title in ('MOS', 'Qualifications');
+  if db is not null and not exists (select 1 from public.doc_folders where parent_id = db) and not exists (select 1 from public.docs where folder_id = db) then
+    delete from public.doc_folders where id = db;
+  end if;
+  -- Any other top folders keep their order, after the three sections.
+  for x in select id from public.doc_folders where parent_id is null and id not in (uw, a3, vr) order by sort, id loop
+    update public.doc_folders set sort = n where id = x.id; n := n + 1;
+  end loop;
 end $$;
 
 -- Forms: the members-only Forms page (like Google Forms, but answers stay on the site). Each member fills a form in once
@@ -1011,3 +1057,117 @@ create policy store_send   on public.store_requests for insert to anon, authenti
 create policy store_read   on public.store_requests for select to authenticated using (store_ok());
 create policy store_change on public.store_requests for update to authenticated using (store_ok()) with check (store_ok());
 create policy store_delete on public.store_requests for delete to authenticated using (store_ok());
+
+-- Trooper Profiles (Flanker 2026-11-16): Battalion Command and up file a record of a trooper from screenshots of their Discord
+-- roles (Command Center > Trooper Profiles), so the roles can be taken off on Discord when someone retires. The site reads the
+-- roles from the screenshots, then this files a document in Documents > <division> > Trooper Profiles (Battalion Commander and up).
+-- Sending the same Discord ID again in the same division updates that trooper's document instead of making a second one.
+create table if not exists public.trooper_profiles (
+  id           bigint generated always as identity primary key,
+  trooper_id   text,
+  nickname     text,
+  discord_id   text not null,
+  division     text not null check (division in ('Arma 3', 'VRChat')),
+  roles        text[] not null default '{}',
+  images       text[] not null default '{}',
+  notes        text,
+  doc_id       bigint references public.docs on delete set null,
+  filed_by     uuid default auth.uid() references auth.users on delete set null,
+  filed_name   text,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now(),
+  unique (division, discord_id)
+);
+alter table public.trooper_profiles enable row level security;
+revoke all on public.trooper_profiles from anon, authenticated;
+grant select, delete on public.trooper_profiles to authenticated;
+drop policy if exists trooper_read   on public.trooper_profiles;
+drop policy if exists trooper_delete on public.trooper_profiles;
+create policy trooper_read   on public.trooper_profiles for select to authenticated using (trooper_ok());
+create policy trooper_delete on public.trooper_profiles for delete to authenticated using (trooper_ok());
+
+-- Screenshots: private bucket, only Battalion Command and up (and the docs permission) can see them.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('trooper-profiles', 'trooper-profiles', false, 4194304, array['image/webp', 'image/jpeg', 'image/png'])
+on conflict (id) do nothing;
+drop policy if exists trooper_shots_select on storage.objects;
+drop policy if exists trooper_shots_insert on storage.objects;
+drop policy if exists trooper_shots_delete on storage.objects;
+create policy trooper_shots_select on storage.objects for select to authenticated
+  using (bucket_id = 'trooper-profiles' and (trooper_ok() or has_perm('docs')));
+create policy trooper_shots_insert on storage.objects for insert to authenticated
+  with check (bucket_id = 'trooper-profiles' and trooper_ok());
+create policy trooper_shots_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'trooper-profiles' and trooper_ok());
+
+-- The division section (made if missing) and its Trooper Profiles folder (Battalion Commander and up).
+create or replace function public.trooper_folder(div text) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare k text := case div when 'Arma 3' then 'arma3' else 'vrchat' end; top bigint; fid bigint; see text[];
+begin
+  select id into fid from doc_folders where key = 'profiles-' || k;
+  if fid is not null then return fid; end if;
+  select id into top from doc_folders where key = k;
+  if top is null then
+    insert into doc_folders (title, sort, key) values (div, (select coalesce(max(sort), 0) + 1 from doc_folders where parent_id is null), k) returning id into top;
+  end if;
+  select array_agg(name order by rank desc) into see from roles where not divider
+    and rank >= (select rank from roles where name = 'battalion-commander');
+  insert into doc_folders (parent_id, title, sort, visible_to, key)
+    values (top, 'Trooper Profiles', (select coalesce(max(sort), -1) + 1 from doc_folders where parent_id = top), coalesce(see, array['admin']), 'profiles-' || k)
+    returning id into fid;
+  return fid;
+end $$;
+
+create or replace function public.file_trooper_profile(p_trooper text, p_nick text, p_discord text, p_division text,
+  p_roles text[], p_images text[], p_notes text) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare fid bigint; did bigint; prev trooper_profiles; v_title text; v_body text; r text; who text; imgs text[]; rl text[];
+begin
+  if not trooper_ok() then raise exception 'Only Battalion Command and up can file Trooper Profiles'; end if;
+  p_trooper := nullif(upper(trim(coalesce(p_trooper, ''))), ''); p_nick := nullif(trim(both ' "“”' from coalesce(p_nick, '')), '');
+  p_discord := trim(coalesce(p_discord, '')); p_notes := nullif(trim(coalesce(p_notes, '')), '');
+  if p_discord !~ '^\d{15,21}$' then raise exception 'The Discord ID should be the 17 to 19 digit number (right-click their name > Copy User ID)'; end if;
+  if p_division not in ('Arma 3', 'VRChat') then raise exception 'Pick a division'; end if;
+  if p_trooper is null and p_nick is null then raise exception 'Add their trooper ID or nickname'; end if;
+  if length(coalesce(p_trooper, '')) > 30 or length(coalesce(p_nick, '')) > 60 or length(coalesce(p_notes, '')) > 4000 then raise exception 'One of the fields is too long'; end if;
+  -- Keep the order they were read in (Discord lists roles highest first), dropping blanks and repeats.
+  select array_agg(v order by o) into rl from (select distinct on (lower(trim(x))) left(trim(x), 100) v, o
+    from unnest(coalesce(p_roles, '{}')) with ordinality u(x, o) where trim(x) <> '' order by lower(trim(x)), o) t;
+  rl := coalesce(rl, '{}');
+  if cardinality(rl) > 300 or cardinality(coalesce(p_images, '{}')) > 20 then raise exception 'Too many roles or screenshots'; end if;
+  if exists (select 1 from unnest(coalesce(p_images, '{}')) x where x !~ '^[a-z0-9]+/\d+/[A-Za-z0-9._-]+$') then raise exception 'Bad screenshot path'; end if;
+
+  select display_name into who from profiles where id = auth.uid();
+  select * into prev from trooper_profiles where division = p_division and discord_id = p_discord;
+  imgs := coalesce(prev.images, '{}') || coalesce(p_images, '{}');
+  fid := trooper_folder(p_division);
+  v_title := left(trim(concat_ws(' ', p_trooper, case when p_nick is not null then '"' || p_nick || '"' end)), 120);
+  v_body := '### Trooper' || E'\n'
+    || '- Trooper ID: ' || coalesce(p_trooper, 'not given') || E'\n'
+    || '- Nickname: ' || coalesce(p_nick, 'not given') || E'\n'
+    || '- Discord ID: ' || p_discord || E'\n'
+    || '- Division: ' || p_division || E'\n'
+    || '- Filed: ' || to_char(coalesce(prev.created_at, now()) at time zone 'America/New_York', 'Mon DD, YYYY') || ' by ' || coalesce(who, 'Command')
+    || case when prev.id is not null then E'\n- Updated: ' || to_char(now() at time zone 'America/New_York', 'Mon DD, YYYY') || ' by ' || coalesce(who, 'Command') else '' end
+    || E'\n\n### Discord roles (' || cardinality(rl) || ')';
+  if cardinality(rl) = 0 then v_body := v_body || E'\nNone read.'; else v_body := v_body || E'\n'; end if;
+  foreach r in array rl loop v_body := v_body || E'\n- ' || r; end loop;
+  if p_notes is not null then v_body := v_body || E'\n\n### Notes\n' || p_notes; end if;
+  if cardinality(imgs) > 0 then v_body := v_body || E'\n\n### Screenshots\nThe original screenshots are below.'; end if;
+
+  if prev.doc_id is not null and exists (select 1 from docs where id = prev.doc_id) then
+    did := prev.doc_id;
+    update docs set title = v_title, body = v_body, images = imgs where id = did;
+  else
+    insert into docs (folder_id, title, body, images, sort)
+      values (fid, v_title, v_body, imgs, (select coalesce(max(sort), -1) + 1 from docs where folder_id = fid)) returning id into did;
+  end if;
+  insert into trooper_profiles (trooper_id, nickname, discord_id, division, roles, images, notes, doc_id, filed_name)
+    values (p_trooper, p_nick, p_discord, p_division, rl, imgs, p_notes, did, who)
+  on conflict (division, discord_id) do update set trooper_id = excluded.trooper_id, nickname = excluded.nickname, roles = excluded.roles,
+    images = excluded.images, notes = excluded.notes, doc_id = excluded.doc_id, updated_at = now();
+  return did;
+end $$;
+revoke execute on function public.trooper_ok(), public.trooper_folder(text), public.file_trooper_profile(text, text, text, text, text[], text[], text) from public, anon;
+grant  execute on function public.trooper_ok(), public.file_trooper_profile(text, text, text, text, text[], text[], text) to authenticated;
