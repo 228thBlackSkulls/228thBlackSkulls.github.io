@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* Site update check: phones keep old copies of pages for a while, so each page asks for the current
    version and, if it has changed, reloads itself fresh. Bump the number here and in version.txt on every publish. */
-(function(){var v="202611161730";
+(function(){var v="202611161745";
   var u=new URL(location.href);if(u.searchParams.get("preview")||u.searchParams.get("code")||/access_token|type=recovery/.test(location.hash))return;
   fetch("../version.txt?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.text():"";}).then(function(t){t=t.trim();
     if(!t||t===v||u.searchParams.get("v")===t)return;u.searchParams.set("v",t);location.replace(u.href);}).catch(function(){});})();</script>
@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="../auth/auth.css?v=13">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/dist/umd/supabase.js"></script>
 <script src="../auth/config.js?v=3"></script>
-<script src="../auth/auth.js?v=25"></script>
+<script src="../auth/auth.js?v=26"></script>
 <script src="../auth/fx.js?v=9"></script>
 <style>
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 22px}
@@ -31,7 +31,16 @@
 .dtree summary::after{content:"+";margin-left:auto;flex:none;font:500 1.2rem var(--mono);color:var(--accent);width:1.2em;text-align:center}
 .dtree details[open]>summary::after{content:"\2013"}
 .dtree summary:hover .t{color:var(--accent)}
-.dtree .t{transition:color .2s;min-width:0;overflow-wrap:anywhere}
+.dtree .t{transition:color .2s;min-width:0;overflow-wrap:anywhere;flex:0 1 auto}
+/* The who-can-see-it label gives way first: it shortens with ... rather than squeezing the folder name. */
+.dtree summary small.lock{flex:0 1000 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* On phones it drops onto its own line under the name and wraps instead. */
+@media (max-width:640px){
+  .dtree summary{flex-wrap:wrap;row-gap:8px}
+  .dtree summary .t{flex:1 1 0}
+  .dtree summary::after{order:2}
+  .dtree summary small.lock{order:3;flex:1 1 100%;white-space:normal;overflow:visible;line-height:1.5}
+}
 .dtree summary small{font:500 .68rem var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .dtree .lock{color:var(--accent);border-color:rgba(226,51,59,.45)}
 /* Top folders: big numbered rows */
@@ -166,7 +175,7 @@ dialog.form .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
   var tree = $('tree');
 
   async function load() {
-    var r = await Promise.all([sb.from('doc_folders').select('*'), sb.from('docs').select('*'), roles.length ? null : sb.from('roles').select('name,label,rank')]);
+    var r = await Promise.all([sb.from('doc_folders').select('*'), sb.from('docs').select('*'), roles.length ? null : sb.from('roles').select('name,label,rank,divider')]);
     if (r[0].error) throw r[0].error; if (r[1].error) throw r[1].error;
     if (r[2] && !r[2].error) roles = r[2].data.slice().sort(function (a, b) { return b.rank - a.rank; });
     var order = function (a, b) { return a.sort - b.sort || a.id - b.id; };

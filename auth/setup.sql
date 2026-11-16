@@ -1111,8 +1111,8 @@ begin
   if top is null then
     insert into doc_folders (title, sort, key) values (div, (select coalesce(max(sort), 0) + 1 from doc_folders where parent_id is null), k) returning id into top;
   end if;
-  select array_agg(name order by rank desc) into see from roles where not divider
-    and rank >= (select rank from roles where name = 'battalion-commander');
+  select array_agg(name order by rank desc) into see from roles
+    where rank >= (select rank from roles where name = 'battalion-commander');
   insert into doc_folders (parent_id, title, sort, visible_to, key)
     values (top, 'Trooper Profiles', (select coalesce(max(sort), -1) + 1 from doc_folders where parent_id = top), coalesce(see, array['admin']), 'profiles-' || k)
     returning id into fid;
